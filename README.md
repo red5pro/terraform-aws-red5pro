@@ -352,6 +352,7 @@ output "module_output" {
 ## Future updates
 
 * Add logic to validate existing Security group (open ports)
+* Finish configuration scripts for Red5 Pro extra configurations (Round-trip auth, postprocessing, etc.)
 * Add logic to create node gorup automaticaly using SM API + scripts
 * Add Monitoring tools
 * Add Mixer parts
