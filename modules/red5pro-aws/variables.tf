@@ -282,7 +282,7 @@ variable "red5pro_api_key" {
 variable "origin_image_create" {
   description = "value to set the origin node image"
   type        = bool
-  default     = false
+  default     = true
 }
 variable "origin_image_instance_type" {
   description = "value to set the instance type for origin node"

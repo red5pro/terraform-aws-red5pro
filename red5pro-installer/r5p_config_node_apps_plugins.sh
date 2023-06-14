@@ -10,6 +10,12 @@
 # NODE_SOCIALPUSHER_ENABLE=true
 # NODE_SUPPRESSOR_ENABLE=true
 # NODE_HLS_ENABLE=true
+# ROUND_TRIP_AUTH_ENABLE=true
+# ROUND_TRIP_AUTH_HOST=round-trip-auth.red5pro.com
+# ROUND_TRIP_AUTH_PORT=443
+# ROUND_TRIP_AUTH_PROTOCOL=https
+# ROUND_TRIP_AUTH_ENDPOINT_VALIDATE="/validateCredentials"
+# ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE="/invalidateCredentials"
 
 RED5_HOME="/usr/local/red5pro"
 
@@ -120,6 +126,13 @@ config_node_apps_plugins(){
         if ls $RED5_HOME/plugins/red5pro-client-suppressor* >/dev/null 2>&1; then
             rm $RED5_HOME/plugins/red5pro-client-suppressor*
         fi
+    fi
+    ### Red5Pro Round-trip-auth
+    if [[ "$ROUND_TRIP_AUTH_ENABLE" == "true" ]]; then
+        log_i "Red5Pro Round-trip-auth - enable"
+        log_i "HERE need to add Round-trip-auth configuration!!!"
+    else
+        log_d "Red5Pro Round-trip-auth - disable"
     fi
 }
 

@@ -57,7 +57,6 @@ module "red5pro" {
   red5pro_api_key               = "abc123"                                    # Red5 Pro server API key (https://qa-site.red5pro.com/docs/development/api/overview/#gatsby-focus-wrapper)
 
   # Red5 Pro autoscaling Origin node image configuration
-  origin_image_create                             = true                      # true - create new Origin node image, false - not create new Origin node image
   origin_image_instance_type                      = "t3.medium"               # Instance type for Origin node image
   origin_image_volume_size                        = 8                         # Volume size for Origin node image
   origin_image_red5pro_inspector_enable           = false                     # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/#gatsby-focus-wrapper)
