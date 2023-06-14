@@ -219,7 +219,7 @@ output "module_output" {
 
 ---
 
-## Red5 Pro Stream Manager cluster with AWS autoscaling Stream Managers (autoscaling) - [example](examples/autoscale.tf)
+## Red5 Pro Stream Manager cluster with AWS autoscaling Stream Managers (autoscaling) - [example](examples/autoscaling.tf)
 
 * VPC create or use existing
 * Security groups will be created automatically (Stream Managers, Nodes, MySQL DB)
