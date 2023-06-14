@@ -352,7 +352,7 @@ output "module_output" {
 ## Future updates
 
 * Add logic to validate existing Security group (open ports)
-* Add logic to create node gorup using SM API
+* Add logic to create node gorup automaticaly using SM API + scripts
 * Add Monitoring tools
 * Add Mixer parts
 
