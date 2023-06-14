@@ -1,10 +1,5 @@
 
 locals {
-  #check_current_environment_type = var.deployment_type == "small" ? var.small : var.deployment_type == "medium" ? var.medium : var.large
-  #check_vpc_public_subnets = length(keys({ for key, value in data.aws_subnet.all_subnets : key => value.map_public_ip_on_launch if value.map_public_ip_on_launch == true })) >= 2 ? true : false
-  #check_active_vpc_id      = local.check_current_environment_type["vpc"] == "true" ? module.vpc-new[0].vpc_id : module.vpc-current[0].vpc_id
-  #check_active_subnet_ids = local.check_current_environment_type["vpc"] == "true" ? module.vpc-new[0].vpc_id : module.vpc-current[0].subnet_ids
-
   single        = var.type == "single" ? true : false
   cluster       = var.type == "cluster" ? true : false
   autoscaling   = var.type == "autoscaling" ? true : false
@@ -17,14 +12,11 @@ locals {
   vpc_name   = var.vpc_create ? aws_vpc.red5pro_vpc[0].tags.Name : data.aws_vpc.selected[0].tags.Name
   subnet_ids = var.vpc_create ? tolist(aws_subnet.red5pro_subnets[*].id) : data.aws_subnets.all[0].ids
 
-  #security_group_id = local.autoscaling ? var.security_group_create ? aws_security_group.red5pro_single_sg[0].id : var.security_group_id_existing : null # Need to verify current security group configuration
+  mysql_rds_create   = local.autoscaling ? true : local.cluster && var.mysql_rds_create ? true : false
+  mysql_host         = local.autoscaling ? aws_db_instance.red5pro_mysql[0].address : var.mysql_rds_create ? aws_db_instance.red5pro_mysql[0].address : "localhost"
+  mysql_local_enable = local.autoscaling ? false : var.mysql_rds_create ? false : true
 
   elastic_ip = local.autoscaling ? null : var.elastic_ip_create ? aws_eip.elastic_ip[0].public_ip : data.aws_eip.elastic_ip[0].public_ip
-
-  mysql_create       = local.autoscaling ? true : var.mysql_create
-  mysql_host         = local.autoscaling ? aws_db_instance.red5pro_mysql[0].address : var.mysql_create ? aws_db_instance.red5pro_mysql[0].address : "localhost"
-  mysql_local_enable = local.autoscaling ? false : var.mysql_create ? false : true
-
   stream_manager_ip = local.autoscaling ? aws_lb.red5pro_sm_lb[0].dns_name : local.elastic_ip
 }
 
@@ -259,7 +251,7 @@ resource "aws_security_group" "red5pro_node_sg" {
 
 # Security group for MySQL database (AWS RDS)
 resource "aws_security_group" "red5pro_mysql_sg" {
-  count      = local.autoscaling ? 1 : local.cluster || var.mysql_create ? 1 : 0
+  count      = local.mysql_rds_create ? 1 : 0
   name        = "${var.name}-mysql-sg"
   description = "Allow inbound/outbound traffic for MySQL"
   vpc_id      = local.vpc_id
@@ -348,7 +340,7 @@ resource "aws_security_group" "red5pro_single_sg" {
 
 # MySQL DataBase subnet group (AWS RDS)
 resource "aws_db_subnet_group" "red5pro_mysql_subnet_group" {
-  count      = local.mysql_create ? 1 : 0
+  count      = local.mysql_rds_create ? 1 : 0
   name       = "${var.name}-mysql-subnet-group"
   subnet_ids = local.subnet_ids
   tags       = merge({ "Name" = "${var.name}-mysql-subnet-group" }, var.tags, )
@@ -356,7 +348,7 @@ resource "aws_db_subnet_group" "red5pro_mysql_subnet_group" {
 
 # MySQL DataBase parameter group (AWS RDS)
 resource "aws_db_parameter_group" "red5pro_mysql_pg" {
-  count  = local.mysql_create ? 1 : 0
+  count  = local.mysql_rds_create ? 1 : 0
   name   = "${var.name}-mysql-pg"
   family = "mysql8.0"
 
@@ -369,12 +361,12 @@ resource "aws_db_parameter_group" "red5pro_mysql_pg" {
 
 # MySQL DataBase (AWS RDS)
 resource "aws_db_instance" "red5pro_mysql" {
-  count                  = local.mysql_create ? 1 : 0
+  count                  = local.mysql_rds_create ? 1 : 0
   identifier             = "${var.name}-mysql"
   allocated_storage      = 10
   engine                 = "mysql"
   engine_version         = "8.0"
-  instance_class         = var.mysql_instance_type
+  instance_class         = var.mysql_rds_instance_type
   username               = var.mysql_user_name
   password               = var.mysql_password
   port                   = var.mysql_port
@@ -434,8 +426,8 @@ resource "aws_instance" "red5pro_sm" {
       "sudo cloud-init status --wait",
       "export LICENSE_KEY='${var.red5pro_license_key}'",
       "export SM_API_KEY='${var.stream_manager_api_key}'",
-      "export NODE_API_KEY='${var.red5pro_node_api_key}'",
-      "export NODE_CLUSTER_KEY='${var.red5pro_node_cluster_key}'",
+      "export NODE_API_KEY='${var.red5pro_api_key}'",
+      "export NODE_CLUSTER_KEY='${var.red5pro_cluster_key}'",
       "export NODE_PREFIX_NAME='${var.name}-node'",
       "export DB_LOCAL_ENABLE='${local.mysql_local_enable}'",
       "export DB_HOST='${local.mysql_host}'",
@@ -565,8 +557,8 @@ resource "aws_lb_target_group" "red5pro_sm_tg" {
 
 # AWS Stream Manager autoscaling - SSL certificate
 data "aws_acm_certificate" "red5pro_sm_cert" {
-  count    = local.autoscaling && var.https_aws_certificate_manager_use_existing ? 1 : 0
-  domain   = var.https_aws_certificate_manager_certificate_name
+  count    = local.autoscaling && var.https_certificate_manager_use_existing ? 1 : 0
+  domain   = var.https_certificate_manager_certificate_name
   statuses = ["ISSUED"]
 }
 
@@ -599,7 +591,7 @@ resource "aws_lb_listener" "red5pro_sm_http" {
 
 # AWS Stream Manager autoscaling - LB HTTPS listener
 resource "aws_lb_listener" "red5pro_sm_https" {
-  count             = local.autoscaling && var.https_aws_certificate_manager_use_existing ? 1 : 0
+  count             = local.autoscaling && var.https_certificate_manager_use_existing ? 1 : 0
   load_balancer_arn = aws_lb.red5pro_sm_lb[0].arn
   port              = "443"
   protocol          = "HTTPS"
@@ -626,15 +618,15 @@ resource "aws_autoscaling_attachment" "red5pro_sm_aa" {
 
 # ORIGIN Node instance for AMI (AWS EC2)
 resource "aws_instance" "red5pro_node_origin" {
-  count                  = var.origin_node_image ? 1 : 0
+  count                  = var.origin_image_create ? 1 : 0
   ami                    = data.aws_ami.latest_ubuntu.id
-  instance_type          = var.origin_node_image_instance_type
+  instance_type          = var.origin_image_instance_type
   key_name               = local.ssh_key_name
   subnet_id              = element(local.subnet_ids, 0)
   vpc_security_group_ids = [aws_security_group.red5pro_images_sg[0].id]
 
   root_block_device {
-    volume_size = var.origin_node_image_volume_size
+    volume_size = var.origin_image_volume_size
   }
 
   provisioner "file" {
@@ -654,14 +646,20 @@ resource "aws_instance" "red5pro_node_origin" {
       "sudo cloud-init status --wait",
       "export LICENSE_KEY='${var.red5pro_license_key}'",
       "export SM_IP='${local.stream_manager_ip}'",
-      "export NODE_CLUSTER_KEY='${var.red5pro_node_cluster_key}'",
-      "export NODE_API_ENABLE='${var.origin_node_image_api}'",
-      "export NODE_API_KEY='${var.red5pro_node_api_key}'",
-      "export NODE_INSPECTOR_ENABLE='${var.origin_node_image_inspector}'",
-      "export NODE_RESTREAMER_ENABLE='${var.origin_node_image_restreamer}'",
-      "export NODE_SOCIALPUSHER_ENABLE='${var.origin_node_image_socialpusher}'",
-      "export NODE_SUPPRESSOR_ENABLE='${var.origin_node_image_suppressor}'",
-      "export NODE_HLS_ENABLE='${var.origin_node_image_hls}'",
+      "export NODE_CLUSTER_KEY='${var.red5pro_cluster_key}'",
+      "export NODE_API_ENABLE='${var.red5pro_api_enable}'",
+      "export NODE_API_KEY='${var.red5pro_api_key}'",
+      "export NODE_INSPECTOR_ENABLE='${var.origin_image_red5pro_inspector_enable}'",
+      "export NODE_RESTREAMER_ENABLE='${var.origin_image_red5pro_restreamer_enable}'",
+      "export NODE_SOCIALPUSHER_ENABLE='${var.origin_image_red5pro_socialpusher_enable}'",
+      "export NODE_SUPPRESSOR_ENABLE='${var.origin_image_red5pro_suppressor_enable}'",
+      "export NODE_HLS_ENABLE='${var.origin_image_red5pro_hls_enable}'",
+      "export ROUND_TRIP_AUTH_ENABLE='${var.origin_image_red5pro_round_trip_auth_enable}'",
+      "export ROUND_TRIP_AUTH_HOST='${var.origin_image_red5pro_round_trip_auth_host}'",
+      "export ROUND_TRIP_AUTH_PORT='${var.origin_image_red5pro_round_trip_auth_port}'",
+      "export ROUND_TRIP_AUTH_PROTOCOL='${var.origin_image_red5pro_round_trip_auth_protocol}'",
+      "export ROUND_TRIP_AUTH_ENDPOINT_VALIDATE='${var.origin_image_red5pro_round_trip_auth_endpoint_validate}'",
+      "export ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE='${var.origin_image_red5pro_round_trip_auth_endpoint_invalidate}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
@@ -682,15 +680,15 @@ resource "aws_instance" "red5pro_node_origin" {
 
 # EDGE Node instance for AMI (AWS EC2)
 resource "aws_instance" "red5pro_node_edge" {
-  count                  = var.edge_node_image ? 1 : 0
+  count                  = var.edge_image_create ? 1 : 0
   ami                    = data.aws_ami.latest_ubuntu.id
-  instance_type          = var.edge_node_image_instance_type
+  instance_type          = var.edge_image_instance_type
   key_name               = local.ssh_key_name
   subnet_id              = element(local.subnet_ids, 0)
   vpc_security_group_ids = [aws_security_group.red5pro_images_sg[0].id]
 
   root_block_device {
-    volume_size = var.edge_node_image_volume_size
+    volume_size = var.edge_image_volume_size
   }
 
   provisioner "file" {
@@ -710,14 +708,20 @@ resource "aws_instance" "red5pro_node_edge" {
       "sudo cloud-init status --wait",
       "export LICENSE_KEY='${var.red5pro_license_key}'",
       "export SM_IP='${local.stream_manager_ip}'",
-      "export NODE_CLUSTER_KEY='${var.red5pro_node_cluster_key}'",
-      "export NODE_API_ENABLE='${var.edge_node_image_api}'",
-      "export NODE_API_KEY='${var.red5pro_node_api_key}'",
-      "export NODE_INSPECTOR_ENABLE='${var.edge_node_image_inspector}'",
-      "export NODE_RESTREAMER_ENABLE='${var.edge_node_image_restreamer}'",
-      "export NODE_SOCIALPUSHER_ENABLE='${var.edge_node_image_socialpusher}'",
-      "export NODE_SUPPRESSOR_ENABLE='${var.edge_node_image_suppressor}'",
-      "export NODE_HLS_ENABLE='${var.edge_node_image_hls}'",
+      "export NODE_CLUSTER_KEY='${var.red5pro_cluster_key}'",
+      "export NODE_API_ENABLE='${var.red5pro_api_enable}'",
+      "export NODE_API_KEY='${var.red5pro_api_key}'",
+      "export NODE_INSPECTOR_ENABLE='${var.edge_image_red5pro_inspector_enable}'",
+      "export NODE_RESTREAMER_ENABLE='${var.edge_image_red5pro_restreamer_enable}'",
+      "export NODE_SOCIALPUSHER_ENABLE='${var.edge_image_red5pro_socialpusher_enable}'",
+      "export NODE_SUPPRESSOR_ENABLE='${var.edge_image_red5pro_suppressor_enable}'",
+      "export NODE_HLS_ENABLE='${var.edge_image_red5pro_hls_enable}'",
+      "export ROUND_TRIP_AUTH_ENABLE='${var.edge_image_red5pro_round_trip_auth_enable}'",
+      "export ROUND_TRIP_AUTH_HOST='${var.edge_image_red5pro_round_trip_auth_host}'",
+      "export ROUND_TRIP_AUTH_PORT='${var.edge_image_red5pro_round_trip_auth_port}'",
+      "export ROUND_TRIP_AUTH_PROTOCOL='${var.edge_image_red5pro_round_trip_auth_protocol}'",
+      "export ROUND_TRIP_AUTH_ENDPOINT_VALIDATE='${var.edge_image_red5pro_round_trip_auth_endpoint_validate}'",
+      "export ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE='${var.edge_image_red5pro_round_trip_auth_endpoint_invalidate}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
@@ -738,15 +742,15 @@ resource "aws_instance" "red5pro_node_edge" {
 
 # TRANSCODER Node instance for AMI (AWS EC2)
 resource "aws_instance" "red5pro_node_transcoder" {
-  count                  = var.transcoder_node_image ? 1 : 0
+  count                  = var.transcoder_image_create ? 1 : 0
   ami                    = data.aws_ami.latest_ubuntu.id
-  instance_type          = var.transcoder_node_image_instance_type
+  instance_type          = var.transcoder_image_instance_type
   key_name               = local.ssh_key_name
   subnet_id              = element(local.subnet_ids, 0)
   vpc_security_group_ids = [aws_security_group.red5pro_images_sg[0].id]
 
   root_block_device {
-    volume_size = var.transcoder_node_image_volume_size
+    volume_size = var.transcoder_image_volume_size
   }
 
   provisioner "file" {
@@ -766,14 +770,20 @@ resource "aws_instance" "red5pro_node_transcoder" {
       "sudo cloud-init status --wait",
       "export LICENSE_KEY='${var.red5pro_license_key}'",
       "export SM_IP='${local.stream_manager_ip}'",
-      "export NODE_CLUSTER_KEY='${var.red5pro_node_cluster_key}'",
-      "export NODE_API_ENABLE='${var.transcoder_node_image_api}'",
-      "export NODE_API_KEY='${var.red5pro_node_api_key}'",
-      "export NODE_INSPECTOR_ENABLE='${var.transcoder_node_image_inspector}'",
-      "export NODE_RESTREAMER_ENABLE='${var.transcoder_node_image_restreamer}'",
-      "export NODE_SOCIALPUSHER_ENABLE='${var.transcoder_node_image_socialpusher}'",
-      "export NODE_SUPPRESSOR_ENABLE='${var.transcoder_node_image_suppressor}'",
-      "export NODE_HLS_ENABLE='${var.transcoder_node_image_hls}'",
+      "export NODE_CLUSTER_KEY='${var.red5pro_cluster_key}'",
+      "export NODE_API_ENABLE='${var.red5pro_api_enable}'",
+      "export NODE_API_KEY='${var.red5pro_api_key}'",
+      "export NODE_INSPECTOR_ENABLE='${var.transcoder_image_red5pro_inspector_enable}'",
+      "export NODE_RESTREAMER_ENABLE='${var.transcoder_image_red5pro_restreamer_enable}'",
+      "export NODE_SOCIALPUSHER_ENABLE='${var.transcoder_image_red5pro_socialpusher_enable}'",
+      "export NODE_SUPPRESSOR_ENABLE='${var.transcoder_image_red5pro_suppressor_enable}'",
+      "export NODE_HLS_ENABLE='${var.transcoder_image_red5pro_hls_enable}'",
+      "export ROUND_TRIP_AUTH_ENABLE='${var.transcoder_image_red5pro_round_trip_auth_enable}'",
+      "export ROUND_TRIP_AUTH_HOST='${var.transcoder_image_red5pro_round_trip_auth_host}'",
+      "export ROUND_TRIP_AUTH_PORT='${var.transcoder_image_red5pro_round_trip_auth_port}'",
+      "export ROUND_TRIP_AUTH_PROTOCOL='${var.transcoder_image_red5pro_round_trip_auth_protocol}'",
+      "export ROUND_TRIP_AUTH_ENDPOINT_VALIDATE='${var.transcoder_image_red5pro_round_trip_auth_endpoint_validate}'",
+      "export ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE='${var.transcoder_image_red5pro_round_trip_auth_endpoint_invalidate}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
@@ -794,15 +804,15 @@ resource "aws_instance" "red5pro_node_transcoder" {
 
 # RELAY Node instance for AMI (AWS EC2)
 resource "aws_instance" "red5pro_node_relay" {
-  count                  = var.relay_node_image ? 1 : 0
+  count                  = var.relay_image_create ? 1 : 0
   ami                    = data.aws_ami.latest_ubuntu.id
-  instance_type          = var.relay_node_image_instance_type
+  instance_type          = var.relay_image_instance_type
   key_name               = local.ssh_key_name
   subnet_id              = element(local.subnet_ids, 0)
   vpc_security_group_ids = [aws_security_group.red5pro_images_sg[0].id]
 
   root_block_device {
-    volume_size = var.relay_node_image_volume_size
+    volume_size = var.relay_image_volume_size
   }
 
   provisioner "file" {
@@ -822,14 +832,20 @@ resource "aws_instance" "red5pro_node_relay" {
       "sudo cloud-init status --wait",
       "export LICENSE_KEY='${var.red5pro_license_key}'",
       "export SM_IP='${local.stream_manager_ip}'",
-      "export NODE_CLUSTER_KEY='${var.red5pro_node_cluster_key}'",
-      "export NODE_API_ENABLE='${var.relay_node_image_api}'",
-      "export NODE_API_KEY='${var.red5pro_node_api_key}'",
-      "export NODE_INSPECTOR_ENABLE='${var.relay_node_image_inspector}'",
-      "export NODE_RESTREAMER_ENABLE='${var.relay_node_image_restreamer}'",
-      "export NODE_SOCIALPUSHER_ENABLE='${var.relay_node_image_socialpusher}'",
-      "export NODE_SUPPRESSOR_ENABLE='${var.relay_node_image_suppressor}'",
-      "export NODE_HLS_ENABLE='${var.relay_node_image_hls}'",
+      "export NODE_CLUSTER_KEY='${var.red5pro_cluster_key}'",
+      "export NODE_API_ENABLE='${var.red5pro_api_enable}'",
+      "export NODE_API_KEY='${var.red5pro_api_key}'",
+      "export NODE_INSPECTOR_ENABLE='${var.relay_image_red5pro_inspector_enable}'",
+      "export NODE_RESTREAMER_ENABLE='${var.relay_image_red5pro_restreamer_enable}'",
+      "export NODE_SOCIALPUSHER_ENABLE='${var.relay_image_red5pro_socialpusher_enable}'",
+      "export NODE_SUPPRESSOR_ENABLE='${var.relay_image_red5pro_suppressor_enable}'",
+      "export NODE_HLS_ENABLE='${var.relay_image_red5pro_hls_enable}'",
+      "export ROUND_TRIP_AUTH_ENABLE='${var.relay_image_red5pro_round_trip_auth_enable}'",
+      "export ROUND_TRIP_AUTH_HOST='${var.relay_image_red5pro_round_trip_auth_host}'",
+      "export ROUND_TRIP_AUTH_PORT='${var.relay_image_red5pro_round_trip_auth_port}'",
+      "export ROUND_TRIP_AUTH_PROTOCOL='${var.relay_image_red5pro_round_trip_auth_protocol}'",
+      "export ROUND_TRIP_AUTH_ENDPOINT_VALIDATE='${var.relay_image_red5pro_round_trip_auth_endpoint_validate}'",
+      "export ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE='${var.relay_image_red5pro_round_trip_auth_endpoint_invalidate}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
@@ -850,105 +866,6 @@ resource "aws_instance" "red5pro_node_relay" {
 
 
 ################################################################################
-# Origin node - Create image (AWS EC2 AMI)
-resource "aws_ami_from_instance" "red5pro_node_origin_image" {
-  count              = var.origin_node_image ? 1 : 0
-  name               = "${var.name}-node-origin-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
-  source_instance_id = aws_instance.red5pro_node_origin[0].id
-  depends_on         = [aws_instance.red5pro_node_origin[0]]
-  lifecycle {
-    ignore_changes = [name, tags]
-  }
-
-  tags = merge({ "Name" = "${var.name}-node-origin-image-${formatdate("DDMMMYY-hhmm", timestamp())}" }, var.tags, )
-}
-
-# Edge node - Create image (AWS EC2 AMI)
-resource "aws_ami_from_instance" "red5pro_node_edge_image" {
-  count              = var.edge_node_image ? 1 : 0
-  name               = "${var.name}-node-edge-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
-  source_instance_id = aws_instance.red5pro_node_edge[0].id
-  depends_on         = [aws_instance.red5pro_node_edge[0]]
-  lifecycle {
-    ignore_changes = [name, tags]
-  }
-
-  tags = merge({ "Name" = "${var.name}-node-edge-image-${formatdate("DDMMMYY-hhmm", timestamp())}" }, var.tags, )
-}
-# Transcoder node - Create image (AWS EC2 AMI)
-resource "aws_ami_from_instance" "red5pro_node_transcoder_image" {
-  count              = var.transcoder_node_image ? 1 : 0
-  name               = "${var.name}-node-transcoder-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
-  source_instance_id = aws_instance.red5pro_node_transcoder[0].id
-  depends_on         = [aws_instance.red5pro_node_transcoder[0]]
-  lifecycle {
-    ignore_changes = [name, tags]
-  }
-
-  tags = merge({ "Name" = "${var.name}-node-transcoder-image-${formatdate("DDMMMYY-hhmm", timestamp())}" }, var.tags, )
-}
-# Relay node - Create image (AWS EC2 AMI)
-resource "aws_ami_from_instance" "red5pro_node_relay_image" {
-  count              = var.relay_node_image ? 1 : 0
-  name               = "${var.name}-node-relay-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
-  source_instance_id = aws_instance.red5pro_node_relay[0].id
-  depends_on         = [aws_instance.red5pro_node_relay[0]]
-  lifecycle {
-    ignore_changes = [name, tags]
-  }
-
-  tags = merge({ "Name" = "${var.name}-node-relay-image-${formatdate("DDMMMYY-hhmm", timestamp())}" }, var.tags, )
-}
-
-################################################################################
-# Stop instances AWS CLI
-################################################################################
-
-# AWS Stream Manager autoscaling - Stop Stream Manager instance using aws cli
-resource "null_resource" "stop_stream_manager" {
-  count              = local.autoscaling ? 1 : 0
-  provisioner "local-exec" {
-    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_sm[0].id} --region ${var.aws_region}"
-  }
-  depends_on = [aws_ami_from_instance.red5pro_sm_image[0]]
-}
-
-# Stop Origin Node instance using aws cli
-resource "null_resource" "stop_node_origin" {
-  count              = var.origin_node_image ? 1 : 0
-  provisioner "local-exec" {
-    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_origin[0].id} --region ${var.aws_region}"
-  }
-  depends_on = [aws_ami_from_instance.red5pro_node_origin_image[0]]
-}
-# Stop Edge Node instance using aws cli
-resource "null_resource" "stop_node_edge" {
-  count              = var.edge_node_image ? 1 : 0
-  provisioner "local-exec" {
-    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_edge[0].id} --region ${var.aws_region}"
-  }
-  depends_on = [aws_ami_from_instance.red5pro_node_edge_image[0]]
-}
-# Stop Transcoder Node instance using aws cli
-resource "null_resource" "stop_node_transcoder" {
-  count              = var.transcoder_node_image ? 1 : 0
-  provisioner "local-exec" {
-    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_transcoder[0].id} --region ${var.aws_region}"
-  }
-  depends_on = [aws_ami_from_instance.red5pro_node_transcoder_image[0]]
-}
-# Stop Relay Node instance using aws cli
-resource "null_resource" "stop_node_relay" {
-  count              = var.relay_node_image ? 1 : 0
-  provisioner "local-exec" {
-    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_relay[0].id} --region ${var.aws_region}"
-  }
-  depends_on = [aws_ami_from_instance.red5pro_node_relay_image[0]]
-}
-
-
-
-################################################################################
 # Red5 Pro Single server (AWS EC2)
 ################################################################################
 
@@ -956,13 +873,13 @@ resource "null_resource" "stop_node_relay" {
 resource "aws_instance" "red5pro_single" {
   count                  = local.single ? 1 : 0
   ami                    = data.aws_ami.latest_ubuntu.id
-  instance_type          = var.instance_type
+  instance_type          = var.single_instance_type
   key_name               = local.ssh_key_name
   subnet_id              = element(local.subnet_ids, 0)
   vpc_security_group_ids = [ var.security_group_create ? aws_security_group.red5pro_single_sg[0].id : var.security_group_id_existing ]
 
   root_block_device {
-    volume_size = var.origin_node_image_volume_size
+    volume_size = var.single_volume_size
   }
 
   provisioner "file" {
@@ -984,10 +901,16 @@ resource "aws_instance" "red5pro_single" {
       "export NODE_API_ENABLE='${var.red5pro_api_enable}'",
       "export NODE_API_KEY='${var.red5pro_api_key}'",
       "export NODE_INSPECTOR_ENABLE='${var.red5pro_inspector_enable}'",
-      "export NODE_RESTREAMER_ENABLE='${var.origin_node_image_restreamer}'",
-      "export NODE_SOCIALPUSHER_ENABLE='${var.origin_node_image_socialpusher}'",
-      "export NODE_SUPPRESSOR_ENABLE='${var.origin_node_image_suppressor}'",
-      "export NODE_HLS_ENABLE='${var.origin_node_image_hls}'",
+      "export NODE_RESTREAMER_ENABLE='${var.red5pro_restreamer_enable}'",
+      "export NODE_SOCIALPUSHER_ENABLE='${var.red5pro_socialpusher_enable}'",
+      "export NODE_SUPPRESSOR_ENABLE='${var.red5pro_suppressor_enable}'",
+      "export NODE_HLS_ENABLE='${var.red5pro_hls_enable}'",
+      "export ROUND_TRIP_AUTH_ENABLE='${var.red5pro_round_trip_auth_enable}'",
+      "export ROUND_TRIP_AUTH_HOST='${var.red5pro_round_trip_auth_host}'",
+      "export ROUND_TRIP_AUTH_PORT='${var.red5pro_round_trip_auth_port}'",
+      "export ROUND_TRIP_AUTH_PROTOCOL='${var.red5pro_round_trip_auth_protocol}'",
+      "export ROUND_TRIP_AUTH_ENDPOINT_VALIDATE='${var.red5pro_round_trip_auth_endpoint_validate}'",
+      "export ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE='${var.red5pro_round_trip_auth_endpoint_invalidate}'",
       "export SSL_ENABLE='${var.https_letsencrypt_enable}'",
       "export SSL_DOMAIN='${var.https_letsencrypt_certificate_domain_name}'",
       "export SSL_MAIL='${var.https_letsencrypt_certificate_email}'",
@@ -1010,4 +933,105 @@ resource "aws_instance" "red5pro_single" {
   }
 
   tags = merge({ "Name" = "${var.name}-node-origin-image" }, var.tags, )
+}
+
+
+################################################################################
+# Red5 Pro autoscaling nodes create images (AWS EC2 AMI)
+################################################################################
+
+# Origin node - Create image (AWS EC2 AMI)
+resource "aws_ami_from_instance" "red5pro_node_origin_image" {
+  count              = var.origin_image_create ? 1 : 0
+  name               = "${var.name}-node-origin-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
+  source_instance_id = aws_instance.red5pro_node_origin[0].id
+  depends_on         = [aws_instance.red5pro_node_origin[0]]
+  lifecycle {
+    ignore_changes = [name, tags]
+  }
+
+  tags = merge({ "Name" = "${var.name}-node-origin-image-${formatdate("DDMMMYY-hhmm", timestamp())}" }, var.tags, )
+}
+
+# Edge node - Create image (AWS EC2 AMI)
+resource "aws_ami_from_instance" "red5pro_node_edge_image" {
+  count              = var.edge_image_create ? 1 : 0
+  name               = "${var.name}-node-edge-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
+  source_instance_id = aws_instance.red5pro_node_edge[0].id
+  depends_on         = [aws_instance.red5pro_node_edge[0]]
+  lifecycle {
+    ignore_changes = [name, tags]
+  }
+
+  tags = merge({ "Name" = "${var.name}-node-edge-image-${formatdate("DDMMMYY-hhmm", timestamp())}" }, var.tags, )
+}
+# Transcoder node - Create image (AWS EC2 AMI)
+resource "aws_ami_from_instance" "red5pro_node_transcoder_image" {
+  count              = var.transcoder_image_create ? 1 : 0
+  name               = "${var.name}-node-transcoder-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
+  source_instance_id = aws_instance.red5pro_node_transcoder[0].id
+  depends_on         = [aws_instance.red5pro_node_transcoder[0]]
+  lifecycle {
+    ignore_changes = [name, tags]
+  }
+
+  tags = merge({ "Name" = "${var.name}-node-transcoder-image-${formatdate("DDMMMYY-hhmm", timestamp())}" }, var.tags, )
+}
+# Relay node - Create image (AWS EC2 AMI)
+resource "aws_ami_from_instance" "red5pro_node_relay_image" {
+  count              = var.relay_image_create ? 1 : 0
+  name               = "${var.name}-node-relay-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
+  source_instance_id = aws_instance.red5pro_node_relay[0].id
+  depends_on         = [aws_instance.red5pro_node_relay[0]]
+  lifecycle {
+    ignore_changes = [name, tags]
+  }
+
+  tags = merge({ "Name" = "${var.name}-node-relay-image-${formatdate("DDMMMYY-hhmm", timestamp())}" }, var.tags, )
+}
+
+################################################################################
+# Stop instances which used for create images (AWS CLI)
+################################################################################
+
+# AWS Stream Manager autoscaling - Stop Stream Manager instance using aws cli
+resource "null_resource" "stop_stream_manager" {
+  count              = local.autoscaling ? 1 : 0
+  provisioner "local-exec" {
+    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_sm[0].id} --region ${var.aws_region}"
+  }
+  depends_on = [aws_ami_from_instance.red5pro_sm_image[0]]
+}
+
+# Stop Origin Node instance using aws cli
+resource "null_resource" "stop_node_origin" {
+  count              = var.origin_image_create ? 1 : 0
+  provisioner "local-exec" {
+    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_origin[0].id} --region ${var.aws_region}"
+  }
+  depends_on = [aws_ami_from_instance.red5pro_node_origin_image[0]]
+}
+# Stop Edge Node instance using aws cli
+resource "null_resource" "stop_node_edge" {
+  count              = var.edge_image_create ? 1 : 0
+  provisioner "local-exec" {
+    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_edge[0].id} --region ${var.aws_region}"
+  }
+  depends_on = [aws_ami_from_instance.red5pro_node_edge_image[0]]
+}
+# Stop Transcoder Node instance using aws cli
+resource "null_resource" "stop_node_transcoder" {
+  count              = var.transcoder_image_create ? 1 : 0
+  provisioner "local-exec" {
+    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_transcoder[0].id} --region ${var.aws_region}"
+  }
+  depends_on = [aws_ami_from_instance.red5pro_node_transcoder_image[0]]
+}
+# Stop Relay Node instance using aws cli
+resource "null_resource" "stop_node_relay" {
+  count              = var.relay_image_create ? 1 : 0
+  provisioner "local-exec" {
+    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_relay[0].id} --region ${var.aws_region}"
+  }
+  depends_on = [aws_ami_from_instance.red5pro_node_relay_image[0]]
 }
