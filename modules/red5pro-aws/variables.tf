@@ -282,7 +282,7 @@ variable "red5pro_api_key" {
 variable "origin_image_create" {
   description = "value to set the origin node image"
   type        = bool
-  default     = true
+  default     = false
 }
 variable "origin_image_instance_type" {
   description = "value to set the instance type for origin node"
@@ -778,3 +778,81 @@ variable "security_group_single_egress" {
     },
   ]
 }
+
+ # Red5 Pro autoscaling Node group - (Optional) 
+variable "node_group_create" {
+  description = "Create new node group"
+  type        = bool
+  default     = false
+}
+variable "node_group_name" {
+  description = "Node group name"
+  type        = string
+  default     = "terraform-node-group"
+}
+variable "node_group_type" {
+  description = "Type for Edge node group (o - origin, oe - origin-edge, oer - origin-edge-relay, oet - origin-edge-transcoder, oert - origin-edge-relay-transcoder)"
+  type        = string
+  default     = "oe"
+}
+variable "node_group_origins" {
+  description = "Number of Origins"
+  type        = number
+  default     = 1
+}
+variable "node_group_origins_instance_type" {
+  description = "Instance type for Origins"
+  type        = string
+  default     = "t3.medium"
+}
+variable "node_group_origins_capacity" {
+  description = "Connections capacity for Origins"
+  type        = number
+  default     = 30
+}
+variable "node_group_edges" {
+  description = "Number of Edges"
+  type        = number
+  default     = 1
+}
+variable "node_group_edges_instance_type" {
+  description = "Instance type for Edges"
+  type        = string
+  default     = "t3.medium"
+}
+variable "node_group_edges_capacity" {
+  description = "Connections capacity for Edges"
+  type        = number
+  default     = 300
+}
+variable "node_group_transcoders" {
+  description = "Number of Transcoders"
+  type        = number
+  default     = 1
+}
+variable "node_group_transcoders_instance_type" {
+  description = "Instance type for Transcoders"
+  type        = string
+  default     = "t3.medium"
+}
+variable "node_group_transcoders_capacity" {
+  description = "Connections capacity for Transcoders"
+  type        = number
+  default     = 30
+}
+variable "node_group_relays" {
+  description = "Number of Relays"
+  type        = number
+  default     = 1
+}
+variable "node_group_relays_instance_type" {
+  description = "Instance type for Relays"
+  type        = string
+  default     = "t3.medium"
+}
+variable "node_group_relays_capacity" {
+  description = "Connections capacity for Relays"
+  type        = number
+  default     = 30
+}
+

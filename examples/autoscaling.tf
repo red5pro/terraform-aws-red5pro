@@ -95,7 +95,26 @@ module "red5pro" {
   relay_image_red5pro_hls_enable                  = false                     # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5pro.com/docs/protocols/hls-plugin/hls-vod/#gatsby-focus-wrapper)
   relay_image_red5pro_round_trip_auth_enable      = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://qa-site.red5pro.com/docs/special/round-trip-auth/overview/)
 
-  # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
+  # Red5 Pro autoscaling Node group - (Optional)
+  node_group_create                               = true                      # true - create new Edge node group, false - not create new Edge node group
+  node_group_name                                 = "terraform-node-group"         # Node group name
+  node_group_type                                 = "oe"                      # Type for Edge node group (o - origin, oe - origin-edge, oer - origin-edge-relay, oet - origin-edge-transcoder, oert - origin-edge-relay-transcoder)
+  # Origin node configuration
+  node_group_origins                              = 1                         # Number of Origins
+  node_group_origins_instance_type                = "t3.medium"               # Instance type for Origins
+  node_group_origins_capacity                     = 30                        # Connections capacity for Origins
+  # Edge node configuration
+  node_group_edges                                = 1                         # Number of Edges
+  node_group_edges_instance_type                  = "t3.medium"               # Instance type for Edges
+  node_group_edges_capacity                       = 300                       # Connections capacity for Edges
+  # Transcoder node configuration
+  node_group_transcoders                          = 1                         # Number of Transcoders
+  node_group_transcoders_instance_type            = "t3.medium"               # Instance type for Transcoders
+  node_group_transcoders_capacity                 = 30                        # Connections capacity for Transcoders
+  # Relay node configuration
+  node_group_relays                               = 1                         # Number of Relays
+  node_group_relays_instance_type                 = "t3.medium"               # Instance type for Relays
+  node_group_relays_capacity                      = 30                        # Connections capacity for Relays
 
   tags = {
     Terraform   = "true"

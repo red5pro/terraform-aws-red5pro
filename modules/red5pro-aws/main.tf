@@ -1,4 +1,3 @@
-
 locals {
   single        = var.type == "single" ? true : false
   cluster       = var.type == "cluster" ? true : false
@@ -403,7 +402,7 @@ resource "aws_instance" "red5pro_sm" {
   instance_type          = var.stream_manager_instance_type
   key_name               = local.ssh_key_name
   subnet_id              = element(local.subnet_ids, 0)
-  vpc_security_group_ids = [aws_security_group.red5pro_images_sg[0].id]
+  vpc_security_group_ids = [local.cluster ? aws_security_group.red5pro_sm_sg[0].id : aws_security_group.red5pro_images_sg[0].id]
 
   root_block_device {
     volume_size = var.stream_manager_volume_size
@@ -462,7 +461,7 @@ resource "aws_instance" "red5pro_sm" {
     }
   }
 
-  tags = merge({ "Name" = "${var.name}-stream-manager-image", }, var.tags, )
+  tags = merge({ "Name" = "${var.name}-stream-manager", }, var.tags, )
 }
 
 
@@ -998,7 +997,11 @@ resource "aws_ami_from_instance" "red5pro_node_relay_image" {
 resource "null_resource" "stop_stream_manager" {
   count              = local.autoscaling ? 1 : 0
   provisioner "local-exec" {
-    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_sm[0].id} --region ${var.aws_region}"
+    command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_sm[0].id} --region ${var.aws_region}"
+    environment = {
+      AWS_ACCESS_KEY_ID = "${var.aws_access_key}"
+      AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
+    }
   }
   depends_on = [aws_ami_from_instance.red5pro_sm_image[0]]
 }
@@ -1007,7 +1010,11 @@ resource "null_resource" "stop_stream_manager" {
 resource "null_resource" "stop_node_origin" {
   count              = var.origin_image_create ? 1 : 0
   provisioner "local-exec" {
-    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_origin[0].id} --region ${var.aws_region}"
+    command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_origin[0].id} --region ${var.aws_region}"
+    environment = {
+      AWS_ACCESS_KEY_ID = "${var.aws_access_key}"
+      AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
+    }
   }
   depends_on = [aws_ami_from_instance.red5pro_node_origin_image[0]]
 }
@@ -1015,7 +1022,11 @@ resource "null_resource" "stop_node_origin" {
 resource "null_resource" "stop_node_edge" {
   count              = var.edge_image_create ? 1 : 0
   provisioner "local-exec" {
-    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_edge[0].id} --region ${var.aws_region}"
+    command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_edge[0].id} --region ${var.aws_region}"
+    environment = {
+      AWS_ACCESS_KEY_ID = "${var.aws_access_key}"
+      AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
+    }
   }
   depends_on = [aws_ami_from_instance.red5pro_node_edge_image[0]]
 }
@@ -1023,7 +1034,11 @@ resource "null_resource" "stop_node_edge" {
 resource "null_resource" "stop_node_transcoder" {
   count              = var.transcoder_image_create ? 1 : 0
   provisioner "local-exec" {
-    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_transcoder[0].id} --region ${var.aws_region}"
+    command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_transcoder[0].id} --region ${var.aws_region}"
+    environment = {
+      AWS_ACCESS_KEY_ID = "${var.aws_access_key}"
+      AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
+    }
   }
   depends_on = [aws_ami_from_instance.red5pro_node_transcoder_image[0]]
 }
@@ -1031,7 +1046,58 @@ resource "null_resource" "stop_node_transcoder" {
 resource "null_resource" "stop_node_relay" {
   count              = var.relay_image_create ? 1 : 0
   provisioner "local-exec" {
-    command = "export AWS_ACCESS_KEY_ID=${var.aws_access_key} && export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key} && aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_relay[0].id} --region ${var.aws_region}"
+    command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_relay[0].id} --region ${var.aws_region}"
+    environment = {
+      AWS_ACCESS_KEY_ID = "${var.aws_access_key}"
+      AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
+    }
   }
   depends_on = [aws_ami_from_instance.red5pro_node_relay_image[0]]
+}
+
+################################################################################
+# Create node group (Stream Manager API)
+################################################################################
+
+resource "null_resource" "node_group" {
+  count = var.node_group_create ? 1 : 0
+  triggers = {
+    trigger_name  = "node-group-trigger"
+    SM_IP = "${local.stream_manager_ip}"
+    SM_API_KEY = "${var.stream_manager_api_key}"
+  }
+  provisioner "local-exec" {
+    when    = create
+    command = "bash ./red5pro-installer/r5p_create_node_group.sh"
+    environment = {
+      NAME = "${var.name}"
+      SM_IP = "${local.stream_manager_ip}"
+      SM_API_KEY = "${var.stream_manager_api_key}"
+      NODE_GROUP_REGION ="${var.aws_region}"
+      NODE_GROUP_NAME = "${var.node_group_name}"
+      NODE_GROUP_TYPE = "${var.node_group_type}"
+      ORIGINS = "${var.node_group_origins}"
+      EDGES = "${var.node_group_edges}"
+      TRANSCODERS = "${var.node_group_transcoders}"
+      RELAYS = "${var.node_group_relays}"
+      ORIGIN_INSTANCE_TYPE = "${var.node_group_origins_instance_type}"
+      EDGE_INSTANCE_TYPE = "${var.node_group_edges_instance_type}"
+      TRANSCODER_INSTANCE_TYPE = "${var.node_group_transcoders_instance_type}"
+      RELAY_INSTANCE_TYPE = "${var.node_group_relays_instance_type}"
+      ORIGIN_CAPACITY = "${var.node_group_origins_capacity}"
+      EDGE_CAPACITY = "${var.node_group_edges_capacity}"
+      TRANSCODER_CAPACITY = "${var.node_group_transcoders_capacity}"
+      RELAY_CAPACITY = "${var.node_group_relays_capacity}"
+      ORIGIN_IMAGE_NAME = "${try(aws_ami_from_instance.red5pro_node_origin_image[0].name, null)}"
+      EDGE_IMAGE_NAME = "${try(aws_ami_from_instance.red5pro_node_edge_image[0].name, null)}"
+      TRANSCODER_IMAGE_NAME = "${try(aws_ami_from_instance.red5pro_node_transcoder_image[0].name, null)}"
+      RELAY_IMAGE_NAME = "${try(aws_ami_from_instance.red5pro_node_relay_image[0].name, null)}"
+    }
+  }
+    provisioner "local-exec" {
+    when    = destroy
+    command = "bash ./red5pro-installer/r5p_delete_node_group.sh ${self.triggers.SM_IP} ${self.triggers.SM_API_KEY}"
+  }
+
+  depends_on = [aws_instance.red5pro_sm[0], aws_autoscaling_group.red5pro_sm_ag[0]]
 }
