@@ -207,7 +207,6 @@ module "red5pro" {
   # Red5 Pro autoscaling Node group - (Optional)
   node_group_create                               = true                      # true - create new Edge node group, false - not create new Edge node group
   node_group_name                                 = "terraform-node-group"    # Node group name
-  node_group_type                                 = "oe"                      # Type for Edge node group (o - origin, oe - origin-edge, oer - origin-edge-relay, oet - origin-edge-transcoder, oert - origin-edge-relay-transcoder)
   # Origin node configuration
   node_group_origins                              = 1                         # Number of Origins
   node_group_origins_instance_type                = "t3.medium"               # Instance type for Origins
@@ -217,11 +216,11 @@ module "red5pro" {
   node_group_edges_instance_type                  = "t3.medium"               # Instance type for Edges
   node_group_edges_capacity                       = 300                       # Connections capacity for Edges
   # Transcoder node configuration
-  node_group_transcoders                          = 1                         # Number of Transcoders
+  node_group_transcoders                          = 0                         # Number of Transcoders
   node_group_transcoders_instance_type            = "t3.medium"               # Instance type for Transcoders
   node_group_transcoders_capacity                 = 30                        # Connections capacity for Transcoders
   # Relay node configuration
-  node_group_relays                               = 1                         # Number of Relays
+  node_group_relays                               = 0                         # Number of Relays
   node_group_relays_instance_type                 = "t3.medium"               # Instance type for Relays
   node_group_relays_capacity                      = 30                        # Connections capacity for Relays
   
@@ -351,8 +350,7 @@ module "red5pro" {
 
   # Red5 Pro autoscaling Node group - (Optional)
   node_group_create                               = true                      # true - create new Edge node group, false - not create new Edge node group
-  node_group_name                                 = "terraform-node-group"         # Node group name
-  node_group_type                                 = "oe"                      # Type for Edge node group (o - origin, oe - origin-edge, oer - origin-edge-relay, oet - origin-edge-transcoder, oert - origin-edge-relay-transcoder)
+  node_group_name                                 = "terraform-node-group"    # Node group name
   # Origin node configuration
   node_group_origins                              = 1                         # Number of Origins
   node_group_origins_instance_type                = "t3.medium"               # Instance type for Origins
@@ -362,11 +360,11 @@ module "red5pro" {
   node_group_edges_instance_type                  = "t3.medium"               # Instance type for Edges
   node_group_edges_capacity                       = 300                       # Connections capacity for Edges
   # Transcoder node configuration
-  node_group_transcoders                          = 1                         # Number of Transcoders
+  node_group_transcoders                          = 0                         # Number of Transcoders
   node_group_transcoders_instance_type            = "t3.medium"               # Instance type for Transcoders
   node_group_transcoders_capacity                 = 30                        # Connections capacity for Transcoders
   # Relay node configuration
-  node_group_relays                               = 1                         # Number of Relays
+  node_group_relays                               = 0                         # Number of Relays
   node_group_relays_instance_type                 = "t3.medium"               # Instance type for Relays
   node_group_relays_capacity                      = 30                        # Connections capacity for Relays
 
@@ -461,6 +459,7 @@ No modules.
 | [aws_vpc.red5pro_vpc](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc) | resource |
 | [local_file.red5pro_ssh_key_pem](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [local_file.red5pro_ssh_key_pub](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
+| [null_resource.node_group](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.stop_node_edge](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.stop_node_origin](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.stop_node_relay](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
@@ -511,6 +510,20 @@ No modules.
 | <a name="input_mysql_rds_instance_type"></a> [mysql\_rds\_instance\_type](#input\_mysql\_rds\_instance\_type) | MySQL instance type | `string` | `"db.t2.micro"` | no |
 | <a name="input_mysql_user_name"></a> [mysql\_user\_name](#input\_mysql\_user\_name) | MySQL user name | `string` | `"smadmin"` | no |
 | <a name="input_name"></a> [name](#input\_name) | Name to be used on all the resources as identifier | `string` | `""` | no |
+| <a name="input_node_group_create"></a> [node\_group\_create](#input\_node\_group\_create) | Create new node group | `bool` | `false` | no |
+| <a name="input_node_group_edges"></a> [node\_group\_edges](#input\_node\_group\_edges) | Number of Edges | `number` | `0` | no |
+| <a name="input_node_group_edges_capacity"></a> [node\_group\_edges\_capacity](#input\_node\_group\_edges\_capacity) | Connections capacity for Edges | `number` | `300` | no |
+| <a name="input_node_group_edges_instance_type"></a> [node\_group\_edges\_instance\_type](#input\_node\_group\_edges\_instance\_type) | Instance type for Edges | `string` | `"t3.medium"` | no |
+| <a name="input_node_group_name"></a> [node\_group\_name](#input\_node\_group\_name) | Node group name | `string` | `"terraform-node-group"` | no |
+| <a name="input_node_group_origins"></a> [node\_group\_origins](#input\_node\_group\_origins) | Number of Origins | `number` | `0` | no |
+| <a name="input_node_group_origins_capacity"></a> [node\_group\_origins\_capacity](#input\_node\_group\_origins\_capacity) | Connections capacity for Origins | `number` | `30` | no |
+| <a name="input_node_group_origins_instance_type"></a> [node\_group\_origins\_instance\_type](#input\_node\_group\_origins\_instance\_type) | Instance type for Origins | `string` | `"t3.medium"` | no |
+| <a name="input_node_group_relays"></a> [node\_group\_relays](#input\_node\_group\_relays) | Number of Relays | `number` | `0` | no |
+| <a name="input_node_group_relays_capacity"></a> [node\_group\_relays\_capacity](#input\_node\_group\_relays\_capacity) | Connections capacity for Relays | `number` | `30` | no |
+| <a name="input_node_group_relays_instance_type"></a> [node\_group\_relays\_instance\_type](#input\_node\_group\_relays\_instance\_type) | Instance type for Relays | `string` | `"t3.medium"` | no |
+| <a name="input_node_group_transcoders"></a> [node\_group\_transcoders](#input\_node\_group\_transcoders) | Number of Transcoders | `number` | `0` | no |
+| <a name="input_node_group_transcoders_capacity"></a> [node\_group\_transcoders\_capacity](#input\_node\_group\_transcoders\_capacity) | Connections capacity for Transcoders | `number` | `30` | no |
+| <a name="input_node_group_transcoders_instance_type"></a> [node\_group\_transcoders\_instance\_type](#input\_node\_group\_transcoders\_instance\_type) | Instance type for Transcoders | `string` | `"t3.medium"` | no |
 | <a name="input_origin_image_create"></a> [origin\_image\_create](#input\_origin\_image\_create) | value to set the origin node image | `bool` | `false` | no |
 | <a name="input_origin_image_instance_type"></a> [origin\_image\_instance\_type](#input\_origin\_image\_instance\_type) | value to set the instance type for origin node | `string` | `"t2.medium"` | no |
 | <a name="input_origin_image_red5pro_hls_enable"></a> [origin\_image\_red5pro\_hls\_enable](#input\_origin\_image\_red5pro\_hls\_enable) | value to set the hls for origin node | `bool` | `false` | no |
