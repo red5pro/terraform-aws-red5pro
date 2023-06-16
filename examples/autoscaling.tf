@@ -97,8 +97,7 @@ module "red5pro" {
 
   # Red5 Pro autoscaling Node group - (Optional)
   node_group_create                               = true                      # true - create new Edge node group, false - not create new Edge node group
-  node_group_name                                 = "terraform-node-group"         # Node group name
-  node_group_type                                 = "oe"                      # Type for Edge node group (o - origin, oe - origin-edge, oer - origin-edge-relay, oet - origin-edge-transcoder, oert - origin-edge-relay-transcoder)
+  node_group_name                                 = "terraform-node-group"    # Node group name
   # Origin node configuration
   node_group_origins                              = 1                         # Number of Origins
   node_group_origins_instance_type                = "t3.medium"               # Instance type for Origins
@@ -108,14 +107,15 @@ module "red5pro" {
   node_group_edges_instance_type                  = "t3.medium"               # Instance type for Edges
   node_group_edges_capacity                       = 300                       # Connections capacity for Edges
   # Transcoder node configuration
-  node_group_transcoders                          = 1                         # Number of Transcoders
+  node_group_transcoders                          = 0                         # Number of Transcoders
   node_group_transcoders_instance_type            = "t3.medium"               # Instance type for Transcoders
   node_group_transcoders_capacity                 = 30                        # Connections capacity for Transcoders
   # Relay node configuration
-  node_group_relays                               = 1                         # Number of Relays
+  node_group_relays                               = 0                         # Number of Relays
   node_group_relays_instance_type                 = "t3.medium"               # Instance type for Relays
   node_group_relays_capacity                      = 30                        # Connections capacity for Relays
 
+  # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {
     Terraform   = "true"
     Environment = "dev"

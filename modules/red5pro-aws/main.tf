@@ -1075,7 +1075,6 @@ resource "null_resource" "node_group" {
       SM_API_KEY = "${var.stream_manager_api_key}"
       NODE_GROUP_REGION ="${var.aws_region}"
       NODE_GROUP_NAME = "${var.node_group_name}"
-      NODE_GROUP_TYPE = "${var.node_group_type}"
       ORIGINS = "${var.node_group_origins}"
       EDGES = "${var.node_group_edges}"
       TRANSCODERS = "${var.node_group_transcoders}"

@@ -790,15 +790,10 @@ variable "node_group_name" {
   type        = string
   default     = "terraform-node-group"
 }
-variable "node_group_type" {
-  description = "Type for Edge node group (o - origin, oe - origin-edge, oer - origin-edge-relay, oet - origin-edge-transcoder, oert - origin-edge-relay-transcoder)"
-  type        = string
-  default     = "oe"
-}
 variable "node_group_origins" {
   description = "Number of Origins"
   type        = number
-  default     = 1
+  default     = 0
 }
 variable "node_group_origins_instance_type" {
   description = "Instance type for Origins"
@@ -813,7 +808,7 @@ variable "node_group_origins_capacity" {
 variable "node_group_edges" {
   description = "Number of Edges"
   type        = number
-  default     = 1
+  default     = 0
 }
 variable "node_group_edges_instance_type" {
   description = "Instance type for Edges"
@@ -828,7 +823,7 @@ variable "node_group_edges_capacity" {
 variable "node_group_transcoders" {
   description = "Number of Transcoders"
   type        = number
-  default     = 1
+  default     = 0
 }
 variable "node_group_transcoders_instance_type" {
   description = "Instance type for Transcoders"
@@ -843,7 +838,7 @@ variable "node_group_transcoders_capacity" {
 variable "node_group_relays" {
   description = "Number of Relays"
   type        = number
-  default     = 1
+  default     = 0
 }
 variable "node_group_relays_instance_type" {
   description = "Instance type for Relays"

@@ -6,7 +6,6 @@
 # NODE_GROUP_REGION
 
 # NODE_GROUP_NAME="terra-node-group"
-# NODE_GROUP_TYPE="oe"
 
 # ORIGINS=1
 # EDGES=1
@@ -215,6 +214,35 @@ check_node_group(){
         sleep 30
     done
 }
+
+if [ -z "$ORIGINS" ]; then
+    ORIGINS=0
+fi
+if [ -z "$EDGES" ]; then
+    EDGES=0
+fi
+if [ -z "$RELAYS" ]; then
+    RELAYS=0
+fi
+if [ -z "$TRANSCODERS" ]; then
+    TRANSCODERS=0
+fi
+
+if [ "$ORIGINS" -gt 0 ] && [ "$EDGES" -gt 0 ] && [ "$RELAYS" -gt 0 ] && [ "$TRANSCODERS" -gt 0 ]; then
+    NODE_GROUP_TYPE="oetr"
+elif [ "$ORIGINS" -gt 0 ] && [ "$EDGES" -gt 0 ] && [ "$RELAYS" -gt 0 ]; then
+    NODE_GROUP_TYPE="oer"
+elif [ "$ORIGINS" -gt 0 ] && [ "$EDGES" -gt 0 ] && [ "$TRANSCODERS" -gt 0 ]; then
+    NODE_GROUP_TYPE="oet"
+elif [ "$ORIGINS" -gt 0 ] && [ "$EDGES" -gt 0 ]; then
+    NODE_GROUP_TYPE="oe"
+elif [ "$ORIGINS" -gt 0 ]; then
+    NODE_GROUP_TYPE="o"
+else
+    log_e "Node group type was not found: $NODE_GROUP_TYPE, EXIT...";
+fi
+
+log_i "NODE_GROUP_TYPE: $NODE_GROUP_TYPE"
 
 case $NODE_GROUP_TYPE in
     o) 
