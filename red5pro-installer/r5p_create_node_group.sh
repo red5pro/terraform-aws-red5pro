@@ -93,7 +93,7 @@ check_stream_manager(){
     
     SM_STATUS_URL="http://$SM_IP:5080/streammanager/api/4.0/admin/debug/cloudcontroller?accessToken=$SM_API_KEY"
 
-    for i in {1..5}; do
+    for i in {1..20}; do
         curl -s -m 5 -o /dev/null -w "%{http_code}" curl "$SM_STATUS_URL" > /dev/null
         if [ $? -eq 0 ]; then
             code_resp=$(curl -s -o /dev/null -w "%{http_code}" "$SM_STATUS_URL")
@@ -107,7 +107,7 @@ check_stream_manager(){
             log_w "Cycle $i - Stream Manager is not running!"
         fi
         
-        if [ "$i" -eq 5 ]; then
+        if [ "$i" -eq 20 ]; then
             log_e "EXIT..."
         fi
         sleep 5
