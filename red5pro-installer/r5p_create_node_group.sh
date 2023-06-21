@@ -206,6 +206,9 @@ check_node_group(){
         
         if [[ $node_bad_state -ne 1 ]]; then
             log_i "All nodes are ready to go! :)"
+            if [ -f temp.txt ]; then
+                rm temp.txt
+            fi
             break
         fi
         if [[ $i -eq 10 ]]; then
