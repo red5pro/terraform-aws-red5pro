@@ -26,13 +26,6 @@ locals {
 
 resource "aws_eip" "elastic_ip" {
   count = local.autoscaling ? 0 : var.elastic_ip_create ? 1 : 0
-  vpc = false
-
-    lifecycle {
-    ignore_changes = [
-      vpc,
-    ]
-  }
 }
 
 data "aws_eip" "elastic_ip" {
@@ -255,26 +248,22 @@ resource "aws_security_group" "red5pro_mysql_sg" {
   description = "Allow inbound/outbound traffic for MySQL"
   vpc_id      = local.vpc_id
 
-  dynamic "ingress" {
-    for_each = var.security_group_mysql_ingress
-    content {
-      from_port        = lookup(ingress.value, "from_port", 0)
-      to_port          = lookup(ingress.value, "to_port", 0)
-      protocol         = lookup(ingress.value, "protocol", "tcp")
-      cidr_blocks      = [lookup(ingress.value, "cidr_block", "0.0.0.0/0")]
-      ipv6_cidr_blocks = [lookup(ingress.value, "ipv6_cidr_block", "::/0")]
+  ingress {
+    description      = "Access to MySQL from Stream Manager security group"
+    from_port        = 3306
+    to_port          = 3306
+    protocol         = "tcp"
+    security_groups  = [aws_security_group.red5pro_sm_sg[0].id, aws_security_group.red5pro_images_sg[0].id]
     }
+  egress {
+    description      = "Access from MySQL to 0.0.0.0/0"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
-  dynamic "egress" {
-    for_each = var.security_group_mysql_egress
-    content {
-      from_port        = lookup(egress.value, "from_port", 0)
-      to_port          = lookup(egress.value, "to_port", 0)
-      protocol         = lookup(egress.value, "protocol", "-1")
-      cidr_blocks      = [lookup(egress.value, "cidr_block", "0.0.0.0/0")]
-      ipv6_cidr_blocks = [lookup(egress.value, "ipv6_cidr_block", "::/0")]
-    }
-  }
+
   tags = merge({ "Name" = "${var.name}-mysql-sg" }, var.tags, )
 }
 
@@ -1095,7 +1084,7 @@ resource "null_resource" "node_group" {
   }
     provisioner "local-exec" {
     when    = destroy
-    command = "bash ./red5pro-installer/r5p_delete_node_group.sh ${self.triggers.SM_IP} ${self.triggers.SM_API_KEY}"
+    command = "bash ./red5pro-installer/r5p_delete_node_group.sh '${self.triggers.SM_IP}' '${self.triggers.SM_API_KEY}'"
   }
 
   depends_on = [aws_instance.red5pro_sm[0], aws_autoscaling_group.red5pro_sm_ag[0]]

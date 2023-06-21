@@ -282,7 +282,7 @@ variable "red5pro_api_key" {
 variable "origin_image_create" {
   description = "value to set the origin node image"
   type        = bool
-  default     = false
+  default     = true
 }
 variable "origin_image_instance_type" {
   description = "value to set the instance type for origin node"
@@ -669,34 +669,6 @@ variable "security_group_node_ingress" {
 
 variable "security_group_node_egress" {
   description = "Security group for Node - egress"
-  type        = list(map(string))
-  default = [
-    {
-      from_port       = 0
-      to_port         = 0
-      protocol        = "-1"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-  ]
-}
-
-variable "security_group_mysql_ingress" {
-  description = "Security group for MySQL - ingress"
-  type        = list(map(string))
-  default = [
-    {
-      from_port       = 3306
-      to_port         = 3306
-      protocol        = "tcp"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-  ]
-}
-
-variable "security_group_mysql_egress" {
-  description = "Security group for MySQL - egress"
   type        = list(map(string))
   default = [
     {
