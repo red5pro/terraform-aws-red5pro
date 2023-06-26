@@ -12,6 +12,9 @@ Terraform Red5 Pro AWS module which create Red5 Pro resources on AWS.
 
 ## Preparation
 
+* Install **terraform** https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
+* Install **AWS CLI** https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+* Install **jq** - `apt install jq`
 * Download Red5 Pro server build: (Example: red5pro-server-10.9.2.b735-release.zip) https://account.red5pro.com/downloads
 * Download Red5 Pro Autoscale controller for AWS: (Example: aws-cloud-controller-10.9.0.jar) https://account.red5pro.com/downloads
 * Get Red5 Pro License key: (Example: 1111-2222-3333-4444) https://account.red5pro.com
