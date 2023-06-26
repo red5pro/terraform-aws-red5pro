@@ -573,7 +573,7 @@ variable "tags" {
 variable "vpc_public_subnets" {
   description = "A list of public subnets inside the VPC"
   type        = list(string)
-  default     = ["10.5.0.0/22", "10.5.4.0/22", "10.5.8.0/22", "10.5.12.0/22", "10.5.16.0/22"]
+  default     = ["10.5.0.0/22", "10.5.4.0/22", "10.5.8.0/22", "10.5.12.0/22", "10.5.16.0/22", "10.5.20.0/22", "10.5.24.0/22", "10.5.28.0/22", "10.5.32.0/22", "10.5.36.0/22", "10.5.40.0/22", "10.5.44.0/22"]
 }
 
 variable "security_group_stream_manager_ingress" {
