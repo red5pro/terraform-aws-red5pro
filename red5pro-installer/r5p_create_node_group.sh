@@ -119,7 +119,7 @@ create_scale_policy(){
     
     CREATE_SCALE_POLICY_URL="http://$SM_IP:5080/streammanager/api/4.0/admin/configurations/scalepolicy?accessToken=$SM_API_KEY"
 
-    resp=$(curl -s --location --request POST "$CREATE_SCALE_POLICY_URL" --header 'Content-Type: application/json' --data-raw "$scale_policy")
+    resp=$(curl -s --location --request POST "$CREATE_SCALE_POLICY_URL" --header 'Content-Type: application/json' -d "$scale_policy")
     scale_policy_name_resp=$(echo "$resp" | jq -r '.policy.name')
 
     if [[ "$scale_policy_name_resp" == "$scale_policy_name" ]]; then
@@ -135,7 +135,7 @@ create_launch_config(){
 
     CREATE_LAUNCH_CONFIG_URL="http://$SM_IP:5080/streammanager/api/4.0/admin/configurations/launchconfig?accessToken=$SM_API_KEY"
     
-    resp=$(curl -s --location --request POST "$CREATE_LAUNCH_CONFIG_URL" --header 'Content-Type: application/json' --data-raw "$launch_config")
+    resp=$(curl -s --location --request POST "$CREATE_LAUNCH_CONFIG_URL" --header 'Content-Type: application/json' -d "$launch_config")
     launch_config_name_resp=$(echo "$resp" | jq -r '.name')
 
     if [[ "$launch_config_name_resp" == "$launch_config_name" ]]; then
@@ -152,7 +152,7 @@ create_new_node_group(){
     CREATE_NODE_GROUP_URL="http://$SM_IP:5080/streammanager/api/4.0/admin/nodegroup?accessToken=$SM_API_KEY"   
     node_group="{"regions":["$NODE_GROUP_REGION"],"launchConfig":"$launch_config_name","scalePolicy":"$scale_policy_name","name":"$NODE_GROUP_NAME"}"
 
-    resp=$(curl -s --location --request POST "$CREATE_NODE_GROUP_URL" --header 'Content-Type: application/json' --data-raw "$node_group")
+    resp=$(curl -s --location --request POST "$CREATE_NODE_GROUP_URL" --header 'Content-Type: application/json' -d "$node_group")
     node_group_name_resp=$(echo "$resp" | jq -r '.name')
 
     if [[ "$node_group_name_resp" == "$NODE_GROUP_NAME" ]]; then
