@@ -70,34 +70,34 @@ config_sm_properties_aws(){
         exit 1
     fi
 
-    local awd_defaultzone_pattern='#aws.defaultzone={default-region}'
-    local awd_defaultzone_new="aws.defaultzone=${AWS_DEFAULT_ZONE}"
+    local aws_defaultzone_pattern='#aws.defaultzone={default-region}'
+    local aws_defaultzone_new="aws.defaultzone=${AWS_DEFAULT_ZONE}"
 
-    local awd_operationTimeout_pattern='#aws.operationTimeoutMilliseconds=200000'
-    local awd_operationTimeout_new="aws.operationTimeoutMilliseconds=200000"
+    local aws_operationTimeout_pattern='#aws.operationTimeoutMilliseconds=200000'
+    local aws_operationTimeout_new="aws.operationTimeoutMilliseconds=200000"
 
-    local awd_accessKey_pattern='#aws.accessKey={account-accessKey}'
-    local awd_accessKey_new="aws.accessKey=${AWS_ACCESS_KEY}"
+    local aws_accessKey_pattern='#aws.accessKey={account-accessKey}'
+    local aws_accessKey_new="aws.accessKey=${AWS_ACCESS_KEY}"
 
-    local awd_accessSecret_pattern='#aws.accessSecret={account-accessSecret}'
-    local awd_accessSecret_new="aws.accessSecret=${AWS_SECRET_KEY}"
+    local aws_accessSecret_pattern='#aws.accessSecret={account-accessSecret}'
+    local aws_accessSecret_new="aws.accessSecret=${AWS_SECRET_KEY}"
 
-    local awd_keypair_pattern='#aws.ec2KeyPairName={keyPairName}'
-    local awd_keypair_new="aws.ec2KeyPairName=${AWS_SSH_KEY_NAME}"
+    local aws_keypair_pattern='#aws.ec2KeyPairName={keyPairName}'
+    local aws_keypair_new="aws.ec2KeyPairName=${AWS_SSH_KEY_NAME}"
 
-    local awd_securitygroup_pattern='#aws.ec2SecurityGroup={securityGroupName}'
-    local awd_securitygroup_new="aws.ec2SecurityGroup=${AWS_SECURITY_GROUP_NAME}"
+    local aws_securitygroup_pattern='#aws.ec2SecurityGroup={securityGroupName}'
+    local aws_securitygroup_new="aws.ec2SecurityGroup=${AWS_SECURITY_GROUP_NAME}"
 
-    local awd_defaultvpc_pattern='#aws.defaultVPC={boolean}'
-    local awd_defaultvpc_new="aws.defaultVPC=false"
+    local aws_defaultvpc_pattern='#aws.defaultVPC={boolean}'
+    local aws_defaultvpc_new="aws.defaultVPC=false"
 
-    local awd_vpc_pattern='#aws.vpcName={vpcname}'
-    local awd_vpc_new="aws.vpcName=${AWS_VPC_NAME}"
+    local aws_vpc_pattern='#aws.vpcName={vpcname}'
+    local aws_vpc_new="aws.vpcName=${AWS_VPC_NAME}"
 
-    local awd_milliseconds_pattern='#aws.faultZoneBlockMilliseconds=3600000'
-    local awd_milliseconds_new="aws.faultZoneBlockMilliseconds=3600000"
+    local aws_milliseconds_pattern='#aws.faultZoneBlockMilliseconds=3600000'
+    local aws_milliseconds_new="aws.faultZoneBlockMilliseconds=3600000"
 
-    sudo sed -i -e "s|$awd_defaultzone_pattern|$awd_defaultzone_new|" -e "s|$awd_operationTimeout_pattern|$awd_operationTimeout_new|" -e "s|$awd_accessKey_pattern|$awd_accessKey_new|" -e "s|$awd_accessSecret_pattern|$awd_accessSecret_new|" -e "s|$awd_keypair_pattern|$awd_keypair_new|" -e "s|$awd_securitygroup_pattern|$awd_securitygroup_new|" -e "s|$awd_defaultvpc_pattern|$awd_defaultvpc_new|" -e "s|$awd_vpc_pattern|$awd_vpc_new|" -e "s|$awd_milliseconds_pattern|$awd_milliseconds_new|" "$RED5_HOME/webapps/streammanager/WEB-INF/red5-web.properties"
+    sudo sed -i -e "s|$aws_defaultzone_pattern|$aws_defaultzone_new|" -e "s|$aws_operationTimeout_pattern|$aws_operationTimeout_new|" -e "s|$aws_accessKey_pattern|$aws_accessKey_new|" -e "s|$aws_accessSecret_pattern|$aws_accessSecret_new|" -e "s|$aws_keypair_pattern|$aws_keypair_new|" -e "s|$aws_securitygroup_pattern|$aws_securitygroup_new|" -e "s|$aws_defaultvpc_pattern|$aws_defaultvpc_new|" -e "s|$aws_vpc_pattern|$aws_vpc_new|" -e "s|$aws_milliseconds_pattern|$aws_milliseconds_new|" "$RED5_HOME/webapps/streammanager/WEB-INF/red5-web.properties"
 
 }
 
@@ -251,6 +251,28 @@ config_sm_cors(){
     sed -i "/<\/web-app>/i $STR1 $STR2" "$RED5_HOME/webapps/streammanager/WEB-INF/web.xml"
 }
 
+config_whip_whep(){
+    log_i "Start Whip/Whep configuration"
+
+    live_web_config="$RED5_HOME/webapps/live/WEB-INF/web.xml"
+
+    if grep "com.red5pro.whip.servlet.WhipEndpoint" $live_web_config &> /dev/null
+    then
+        log_i "Change from: com.red5pro.whip.servlet.WhipEndpoint to com.red5pro.whip.servlet.WHProxy"
+        local servlet_whipendpoint='com.red5pro.whip.servlet.WhipEndpoint'
+        local servlet_whipendpoint_new="com.red5pro.whip.servlet.WHProxy"
+        sudo sed -i -e "s|$servlet_whipendpoint|$servlet_whipendpoint_new|" "$live_web_config"
+    fi
+
+    if grep "com.red5pro.whip.servlet.WhepEndpoint" $live_web_config &> /dev/null
+    then
+        log_i "Changed from: com.red5pro.whip.servlet.WhepEndpoint to com.red5pro.whip.servlet.WHProxy"
+        local servlet_whipendpoint='com.red5pro.whip.servlet.WhepEndpoint'
+        local servlet_whipendpoint_new="com.red5pro.whip.servlet.WHProxy"
+        sudo sed -i -e "s|$servlet_whipendpoint|$servlet_whipendpoint_new|" "$live_web_config"
+    fi
+}
+
 config_mysql(){
     log_i "Check MySQL Database cluster configuration.."
     RESULT=$(mysqlshow -h $DB_HOST -P $DB_PORT -u $DB_USER -p$DB_PASSWORD | grep -o cluster)
@@ -268,6 +290,7 @@ config_mysql(){
 install_sm
 config_sm_applicationContext
 config_sm_cors
+config_whip_whep
 config_sm_properties_main
 config_sm_properties_aws
 config_mysql
