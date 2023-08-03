@@ -117,11 +117,12 @@ rpro_ssl_get(){
     log_i "Getting a new certificate for domain: $SSL_DOMAIN ..."
     rpro_ssl_response=$(certbot certonly --non-interactive --standalone --email "$SSL_MAIL" --agree-tos -d "$SSL_DOMAIN" 2>&1 | tee /dev/tty)
     
-    echo "$rpro_ssl_response" | grep 'Successfully received certificate.' &> /dev/null
+    echo "$rpro_ssl_response" | grep 'Success' &> /dev/null
     if [ $? == 0 ]; then
         log_i "SSL Certificate successfully generated!"
     else
         log_e "SSL Certificate generation did not succeed. Please rectify any errors mentioned in the logging and try again! EXIT."
+        log_e "Error Details: $rpro_ssl_response"
         error=1
     fi
 }

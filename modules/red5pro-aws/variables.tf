@@ -588,6 +588,13 @@ variable "security_group_stream_manager_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      from_port       = 80
+      to_port         = 80
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+    {
       from_port       = 443
       to_port         = 443
       protocol        = "tcp"
