@@ -10,12 +10,16 @@
 # NODE_SOCIALPUSHER_ENABLE=true
 # NODE_SUPPRESSOR_ENABLE=true
 # NODE_HLS_ENABLE=true
-# ROUND_TRIP_AUTH_ENABLE=true
-# ROUND_TRIP_AUTH_HOST=round-trip-auth.red5pro.com
-# ROUND_TRIP_AUTH_PORT=443
-# ROUND_TRIP_AUTH_PROTOCOL=https
-# ROUND_TRIP_AUTH_ENDPOINT_VALIDATE="/validateCredentials"
-# ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE="/invalidateCredentials"
+
+# NODE_WEBHOOKS_ENABLE=true
+# NODE_WEBHOOKS_ENDPOINT="https://test.webhook.app/api/v1/broadcast/webhook"
+
+# NODE_ROUND_TRIP_AUTH_ENABLE=true
+# NODE_ROUND_TRIP_AUTH_HOST=round-trip-auth.red5pro.com
+# NODE_ROUND_TRIP_AUTH_PORT=443
+# NODE_ROUND_TRIP_AUTH_PROTOCOL=https
+# NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE="/validateCredentials"
+# NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE="/invalidateCredentials"
 
 RED5_HOME="/usr/local/red5pro"
 
@@ -127,10 +131,53 @@ config_node_apps_plugins(){
             rm $RED5_HOME/plugins/red5pro-client-suppressor*
         fi
     fi
+    ### Red5Pro Webhooks
+    if [[ "$NODE_WEBHOOKS_ENABLE" == "true" ]]; then
+        log_i "Red5Pro Webhooks - enable"
+        if [ -z "$NODE_WEBHOOKS_ENDPOINT" ]; then
+            log_e "Parameter NODE_WEBHOOKS_ENDPOINT is empty. EXIT."
+            exit 1
+        fi
+        echo "webhooks.endpoint=$NODE_WEBHOOKS_ENDPOINT" >> $RED5_HOME/webapps/live/WEB-INF/red5-web.properties
+    fi
     ### Red5Pro Round-trip-auth
-    if [[ "$ROUND_TRIP_AUTH_ENABLE" == "true" ]]; then
+    if [[ "$NODE_ROUND_TRIP_AUTH_ENABLE" == "true" ]]; then
         log_i "Red5Pro Round-trip-auth - enable"
-        log_i "HERE need to add Round-trip-auth configuration!!!"
+        if [ -z "$NODE_ROUND_TRIP_AUTH_HOST" ]; then
+            log_e "Parameter NODE_ROUND_TRIP_AUTH_HOST is empty. EXIT."
+            exit 1
+        fi
+        if [ -z "$NODE_ROUND_TRIP_AUTH_PORT" ]; then
+            log_e "Parameter NODE_ROUND_TRIP_AUTH_PORT is empty. EXIT."
+            exit 1
+        fi
+        if [ -z "$NODE_ROUND_TRIP_AUTH_PROTOCOL" ]; then
+            log_e "Parameter NODE_ROUND_TRIP_AUTH_PROTOCOL is empty. EXIT."
+            exit 1
+        fi
+        if [ -z "$NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE" ]; then
+            log_e "Parameter NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE is empty. EXIT."
+            exit 1
+        fi
+        if [ -z "$NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE" ]; then
+            log_e "Parameter NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE is empty. EXIT."
+            exit 1
+        fi
+
+        log_i "Configuration Live App red5-web.properties with MOCK Round trip server ..."
+        {
+            echo "server.validateCredentialsEndPoint=${NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE}"
+            echo "server.invalidateCredentialsEndPoint=${NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE}"
+            echo "server.host=${NODE_ROUND_TRIP_AUTH_HOST}"
+            echo "server.port=${NODE_ROUND_TRIP_AUTH_PORT}"
+            echo "server.protocol=${NODE_ROUND_TRIP_AUTH_PROTOCOL}://"
+        } >> $RED5_HOME/webapps/live/WEB-INF/red5-web.properties
+
+        log_i "Uncomment Round trip auth in the Live app: red5-web.xml"
+        # Delete line with <!-- after pattern <!-- uncomment below for Round Trip Authentication-->
+        sed -i '/uncomment below for Round Trip Authentication/{n;d;}' "$RED5_HOME/webapps/live/WEB-INF/red5-web.xml"
+        # Delete line with --> before pattern <!-- uncomment above for Round Trip Authentication-->
+        sed -i '$!N;/\n.*uncomment above for Round Trip Authentication/!P;D' "$RED5_HOME/webapps/live/WEB-INF/red5-web.xml"
     else
         log_d "Red5Pro Round-trip-auth - disable"
     fi
