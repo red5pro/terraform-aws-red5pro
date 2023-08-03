@@ -128,8 +128,24 @@ rpro_ssl_get(){
 
 rpro_ssl_config(){
     log_i "Red5pro SSL configuration ..."
-    cp $CURRENT_DIRECTORY/configs/jee-container.xml $RED5_HOME/conf/
-    
+
+    log_i "Modify $RED5_HOME/conf/jee-container.xml"
+    # Comment line <!-- Non-secured transports for HTTP and WS -->
+    gsed -i 's/<!-- Non-secured transports for HTTP and WS -->/<!-- Disabled: Non-secured transports for HTTP and WS -->\n<!--/' "$RED5_HOME/conf/jee-container.xml"
+    # Comment before line <!-- Non-secured transports for HTTP and WS -->
+    gsed -i 's/<!-- Secure transports for HTTPS and WSS -->/-->\n\t<!-- Secure transports for HTTPS and WSS -->/' "$RED5_HOME/conf/jee-container.xml"
+    # Delete 1 line after <!-- Secure transports for HTTPS and WSS -->
+    gsed -i '/<!-- Secure transports for HTTPS and WSS -->/{n;d;}' "$RED5_HOME/conf/jee-container.xml"
+    # Delete 2 lines before </beans>
+    gsed -i '$!N;/\n.*<\/beans>/!P;D' "$RED5_HOME/conf/jee-container.xml"
+    gsed -i '$!N;/\n.*<\/beans>/!P;D' "$RED5_HOME/conf/jee-container.xml"
+
+    log_w "Debug: XML file: $RED5_HOME/conf/red5.properties"
+    cat $RED5_HOME/conf/red5.properties
+    sleep 3
+
+
+    log_i "Modify config file: $RED5_HOME/conf/red5.properties"
     local https_port_pattern="https.port=.*"
     local https_port_replacement_value="https.port=443"
     
@@ -145,7 +161,7 @@ rpro_ssl_config(){
     sudo sed -i -e "s|$https_port_pattern|$https_port_replacement_value|" -e "s|$rtmps_keystorepass_pattern|$rtmps_keystorepass_replacement_value|" -e "s|$rtmps_keystorefile_pattern|$rtmps_keystorefile_replacement_value|" -e "s|$rtmps_truststorepass_pattern|$rtmps_truststorepass_replacement_value|" -e "s|$rtmps_truststorefile_pattern|$rtmps_truststorefile_replacement_value|"   "$RED5_HOME/conf/red5.properties"
 }
 
-if $SSL_ENABLE ; then
+if [[ "$SSL_ENABLE" == "true" ]] ; then
     log_i "SSL installation is enabled."
 else
     exit 0
