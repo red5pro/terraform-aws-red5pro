@@ -41,7 +41,7 @@ module "red5pro" {
 
   # Stream Manager HTTPS/SSL certificate configuration
   https_letsencrypt_enable                   = true                           # true - create new Let's Encrypt HTTPS/SSL certificate, false - use Red5 Pro server without HTTPS/SSL certificate
-  https_letsencrypt_certificate_domain_name  = "terra-sm-cluster.red5.net"    # Domain name for Let's Encrypt SSL certificate
+  https_letsencrypt_certificate_domain_name  = "terra-sm-cluster.example.com" # Domain name for Let's Encrypt SSL certificate
   https_letsencrypt_certificate_email        = "oles@infrared5.com"           # Email for Let's Encrypt SSL certificate
   https_letsencrypt_certificate_password     = "abc123"                       # Password for Let's Encrypt SSL certificate
 
@@ -53,51 +53,51 @@ module "red5pro" {
   # Red5 Pro general configuration
   red5pro_license_key           = "1111-2222-3333-4444"                       # Red5 Pro license key (https://account.red5pro.com/login)
   red5pro_cluster_key           = "abc123"                                    # Red5 Pro cluster key
-  red5pro_api_enable            = true                                        # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://qa-site.red5pro.com/docs/development/api/overview/#gatsby-focus-wrapper)
-  red5pro_api_key               = "abc123"                                    # Red5 Pro server API key (https://qa-site.red5pro.com/docs/development/api/overview/#gatsby-focus-wrapper)
+  red5pro_api_enable            = true                                        # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5pro.com/docs/development/api/overview/#gatsby-focus-wrapper)
+  red5pro_api_key               = "abc123"                                    # Red5 Pro server API key (https://www.red5pro.com/docs/development/api/overview/#gatsby-focus-wrapper)
 
   # Red5 Pro autoscaling Origin node image configuration
   origin_image_instance_type                      = "t3.medium"               # Instance type for Origin node image
   origin_image_volume_size                        = 8                         # Volume size for Origin node image
   origin_image_red5pro_inspector_enable           = false                     # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/#gatsby-focus-wrapper)
-  origin_image_red5pro_restreamer_enable          = false                     # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://qa-site.red5pro.com/docs/special/restreamer/overview/#gatsby-focus-wrapper)
+  origin_image_red5pro_restreamer_enable          = false                     # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5pro.com/docs/special/restreamer/overview/#gatsby-focus-wrapper)
   origin_image_red5pro_socialpusher_enable        = false                     # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5pro.com/docs/special/social-media-plugin/overview/#gatsby-focus-wrapper)
   origin_image_red5pro_suppressor_enable          = false                     # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
   origin_image_red5pro_hls_enable                 = false                     # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5pro.com/docs/protocols/hls-plugin/hls-vod/#gatsby-focus-wrapper)
-  origin_image_red5pro_round_trip_auth_enable     = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://qa-site.red5pro.com/docs/special/round-trip-auth/overview/)
+  origin_image_red5pro_round_trip_auth_enable     = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
 
   # Red5 Pro autoscaling Edge node image configuration - (Optional)
   edge_image_create                               = false                     # true - create new Edge node image, false - not create new Edge node image
   edge_image_instance_type                        = "t3.medium"               # Instance type for Edge node image
   edge_image_volume_size                          = 8                         # Volume size for Edge node image
   edge_image_red5pro_inspector_enable             = false                     # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/#gatsby-focus-wrapper)
-  edge_image_red5pro_restreamer_enable            = false                     # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://qa-site.red5pro.com/docs/special/restreamer/overview/#gatsby-focus-wrapper)
+  edge_image_red5pro_restreamer_enable            = false                     # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5pro.com/docs/special/restreamer/overview/#gatsby-focus-wrapper)
   edge_image_red5pro_socialpusher_enable          = false                     # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5pro.com/docs/special/social-media-plugin/overview/#gatsby-focus-wrapper)
   edge_image_red5pro_suppressor_enable            = false                     # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
   edge_image_red5pro_hls_enable                   = false                     # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5pro.com/docs/protocols/hls-plugin/hls-vod/#gatsby-focus-wrapper)
-  edge_image_red5pro_round_trip_auth_enable       = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://qa-site.red5pro.com/docs/special/round-trip-auth/overview/)
+  edge_image_red5pro_round_trip_auth_enable       = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
 
   # Red5 Pro autoscaling Transcoder node image configuration - (Optional)
   transcoder_image_create                         = false                     # true - create new Transcoder node image, false - not create new Edge node image
   transcoder_image_instance_type                  = "t3.medium"               # Instance type for Transcoder node image
   transcoder_image_volume_size                    = 8                         # Volume size for Transcoder node image
   transcoder_image_red5pro_inspector_enable       = false                     # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/#gatsby-focus-wrapper)
-  transcoder_image_red5pro_restreamer_enable      = false                     # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://qa-site.red5pro.com/docs/special/restreamer/overview/#gatsby-focus-wrapper)
+  transcoder_image_red5pro_restreamer_enable      = false                     # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5pro.com/docs/special/restreamer/overview/#gatsby-focus-wrapper)
   transcoder_image_red5pro_socialpusher_enable    = false                     # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5pro.com/docs/special/social-media-plugin/overview/#gatsby-focus-wrapper)
   transcoder_image_red5pro_suppressor_enable      = false                     # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
   transcoder_image_red5pro_hls_enable             = false                     # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5pro.com/docs/protocols/hls-plugin/hls-vod/#gatsby-focus-wrapper)
-  transcoder_image_red5pro_round_trip_auth_enable = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://qa-site.red5pro.com/docs/special/round-trip-auth/overview/)
+  transcoder_image_red5pro_round_trip_auth_enable = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
 
   # Red5 Pro autoscaling Relay node image configuration - (Optional)
   relay_image_create                              = false                     # true - create new Relay node image, false - not create new Edge node image
   relay_image_instance_type                       = "t3.medium"               # Instance type for Relay node image
   relay_image_volume_size                         = 8                         # Volume size for Relay node image
   relay_image_red5pro_inspector_enable            = false                     # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/#gatsby-focus-wrapper)
-  relay_image_red5pro_restreamer_enable           = false                     # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://qa-site.red5pro.com/docs/special/restreamer/overview/#gatsby-focus-wrapper)
+  relay_image_red5pro_restreamer_enable           = false                     # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5pro.com/docs/special/restreamer/overview/#gatsby-focus-wrapper)
   relay_image_red5pro_socialpusher_enable         = false                     # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5pro.com/docs/special/social-media-plugin/overview/#gatsby-focus-wrapper)
   relay_image_red5pro_suppressor_enable           = false                     # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
   relay_image_red5pro_hls_enable                  = false                     # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5pro.com/docs/protocols/hls-plugin/hls-vod/#gatsby-focus-wrapper)
-  relay_image_red5pro_round_trip_auth_enable      = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://qa-site.red5pro.com/docs/special/round-trip-auth/overview/)
+  relay_image_red5pro_round_trip_auth_enable      = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
 
   # Red5 Pro autoscaling Node group - (Optional)
   node_group_create                               = true                      # true - create new Edge node group, false - not create new Edge node group
