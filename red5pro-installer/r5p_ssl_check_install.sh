@@ -130,23 +130,26 @@ rpro_ssl_get(){
 rpro_ssl_config(){
     log_i "Red5pro SSL configuration ..."
 
-    log_i "Modify $RED5_HOME/conf/jee-container.xml"
-    # Comment line <!-- Non-secured transports for HTTP and WS -->
-    gsed -i 's/<!-- Non-secured transports for HTTP and WS -->/<!-- Disabled: Non-secured transports for HTTP and WS -->\n<!--/' "$RED5_HOME/conf/jee-container.xml"
-    # Comment before line <!-- Non-secured transports for HTTP and WS -->
-    gsed -i 's/<!-- Secure transports for HTTPS and WSS -->/-->\n\t<!-- Secure transports for HTTPS and WSS -->/' "$RED5_HOME/conf/jee-container.xml"
+    log_i "Configuring $RED5_HOME/conf/jee-container.xml"
+
+    local http1='<!-- Non-secured transports for HTTP and WS -->'
+    local http1_new='<!-- Non-secured transports for HTTP and WS --> <!--'
+
+    local http2='<!-- Secure transports for HTTPS and WSS -->'
+    local http2_new='--> <!-- Secure transports for HTTPS and WSS -->'
+
+    sed -i -e "s|$http1|$http1_new|" -e "s|$http2|$http2_new|" "$RED5_HOME/conf/jee-container.xml"
+    
     # Delete 1 line after <!-- Secure transports for HTTPS and WSS -->
-    gsed -i '/<!-- Secure transports for HTTPS and WSS -->/{n;d;}' "$RED5_HOME/conf/jee-container.xml"
-    # Delete 2 lines before </beans>
-    gsed -i '$!N;/\n.*<\/beans>/!P;D' "$RED5_HOME/conf/jee-container.xml"
-    gsed -i '$!N;/\n.*<\/beans>/!P;D' "$RED5_HOME/conf/jee-container.xml"
+    sed -i '/Secure transports for HTTPS and WSS/{n;d}' "$RED5_HOME/conf/jee-container.xml"
 
-    log_w "Debug: XML file: $RED5_HOME/conf/red5.properties"
-    cat $RED5_HOME/conf/red5.properties
-    sleep 3
+    # Delete first line before </beans>
+    sed -i '$!N;/\n.*beans>/!P;D' "$RED5_HOME/conf/jee-container.xml"
+    # Delete second line before </beans>
+    sed -i '$!N;/\n.*beans>/!P;D' "$RED5_HOME/conf/jee-container.xml"
 
 
-    log_i "Modify config file: $RED5_HOME/conf/red5.properties"
+    log_i "Configuring: $RED5_HOME/conf/red5.properties"
     local https_port_pattern="https.port=.*"
     local https_port_replacement_value="https.port=443"
     
