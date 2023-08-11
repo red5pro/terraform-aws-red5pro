@@ -14,18 +14,18 @@ Terraform Red5 Pro AWS module which create Red5 Pro resources on AWS.
 
 * Install **terraform** https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
 * Install **AWS CLI** https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-* Install **jq** - `apt install jq`
-* Download Red5 Pro server build: (Example: red5pro-server-10.9.2.b735-release.zip) https://account.red5pro.com/downloads
-* Download Red5 Pro Autoscale controller for AWS: (Example: aws-cloud-controller-10.9.0.jar) https://account.red5pro.com/downloads
+* Install **jq** Linux or Mac OS only - `apt install jq` or `brew install jq` (It is using in bash scripts to create/delete Stream Manager node group using API)
+* Download Red5 Pro server build: (Example: red5pro-server-11.0.0.b835-release.zip) https://account.red5pro.com/downloads
+* Download Red5 Pro Autoscale controller for AWS: (Example: aws-cloud-controller-11.1.0.jar) https://account.red5pro.com/downloads
 * Get Red5 Pro License key: (Example: 1111-2222-3333-4444) https://account.red5pro.com
 * Get AWS Access key and AWS Secret key or use existing (AWS IAM - EC2 full access, RDS full access, VPC full access, Certificate manager read only)
-* Copy Red5 Pro server build and Red5 Pro Autoscale controller for AWS to folder with installations scripts: `./red5pro-installer/`
+* Copy Red5 Pro server build and Red5 Pro Autoscale controller for AWS to the root folder of your project
 
 Example:  
 
 ```bash
-cp ~/Downloads/red5pro-server-10.9.2.b735-release.zip ./red5pro-installer/
-cp ~/Downloads/aws-cloud-controller-10.9.0.jar ./red5pro-installer/
+cp ~/Downloads/red5pro-server-11.0.0.b835-release.zip ./
+cp ~/Downloads/aws-cloud-controller-11.1.0.jar ./
 ```
 
 ## Single Red5 Pro server deployment (single) - [Example](https://github.com/red5pro/terraform-aws-red5pro/tree/master/examples/single)
@@ -40,10 +40,12 @@ cp ~/Downloads/aws-cloud-controller-10.9.0.jar ./red5pro-installer/
 
 ```hcl
 module "red5pro" {
-  source = "../.."
+  source  = "red5pro/red5pro/aws"
 
   type = "single"                                                            # Deployment type: single, cluster, autoscaling
   name = "red5pro-single"                                                    # Name to be used on all the resources as identifier
+
+  path_to_red5pro_build        = "./red5pro-server-11.0.0.b835-release.zip"   # Absolute path or relative path to Red5 Pro server ZIP file
 
   # SSH key configuration
   ssh_key_create            = false                                           # true - create new SSH key, false - use existing SSH key
@@ -116,12 +118,14 @@ output "module_output" {
 ## Usage (cluster)
 
 ```hcl
-
 module "red5pro" {
-  source = "../.."
+  source  = "red5pro/red5pro/aws"
 
   type = "cluster"                                                            # Deployment type: single, cluster, autoscaling
   name = "red5pro-cluster"                                                    # Name to be used on all the resources as identifier
+
+  path_to_red5pro_build        = "./red5pro-server-11.0.0.b835-release.zip"   # Absolute path or relative path to Red5 Pro server ZIP file
+  path_to_aws_cloud_controller = "./aws-cloud-controller-11.1.0.jar"          # Absolute path or relative path to AWS Cloud Controller JAR file
 
   # AWS authetification variables it use for Stream Manager autoscaling configuration
   aws_region     = "us-west-1"                                               # AWS region 
@@ -166,6 +170,7 @@ module "red5pro" {
   red5pro_api_key               = "examplekey"                                # Red5 Pro server API key (https://www.red5pro.com/docs/development/api/overview/#gatsby-focus-wrapper)
 
   # Red5 Pro autoscaling Origin node image configuration
+  origin_image_create                             = true                      # Default: true for Autoscaling and Cluster, true - create new Origin node image, false - not create new Origin node image
   origin_image_instance_type                      = "t3.medium"               # Instance type for Origin node image
   origin_image_volume_size                        = 8                         # Volume size for Origin node image
   origin_image_red5pro_inspector_enable           = false                     # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/#gatsby-focus-wrapper)
@@ -187,7 +192,7 @@ module "red5pro" {
   edge_image_red5pro_round_trip_auth_enable       = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
 
   # Red5 Pro autoscaling Transcoder node image configuration - (Optional)
-  transcoder_image_create                         = false                     # true - create new Transcoder node image, false - not create new Edge node image
+  transcoder_image_create                         = false                     # true - create new Transcoder node image, false - not create new Transcoder node image
   transcoder_image_instance_type                  = "t3.medium"               # Instance type for Transcoder node image
   transcoder_image_volume_size                    = 8                         # Volume size for Transcoder node image
   transcoder_image_red5pro_inspector_enable       = false                     # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/#gatsby-focus-wrapper)
@@ -198,7 +203,7 @@ module "red5pro" {
   transcoder_image_red5pro_round_trip_auth_enable = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
 
   # Red5 Pro autoscaling Relay node image configuration - (Optional)
-  relay_image_create                              = false                     # true - create new Relay node image, false - not create new Edge node image
+  relay_image_create                              = false                     # true - create new Relay node image, false - not create new Relay node image
   relay_image_instance_type                       = "t3.medium"               # Instance type for Relay node image
   relay_image_volume_size                         = 8                         # Volume size for Relay node image
   relay_image_red5pro_inspector_enable            = false                     # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/#gatsby-focus-wrapper)
@@ -209,7 +214,7 @@ module "red5pro" {
   relay_image_red5pro_round_trip_auth_enable      = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
 
   # Red5 Pro autoscaling Node group - (Optional)
-  node_group_create                               = true                      # true - create new Edge node group, false - not create new Edge node group
+  node_group_create                               = true                      # Linux or Mac OS only. true - create new Node group, false - not create new Node group
   node_group_name                                 = "terraform-node-group"    # Node group name
   # Origin node configuration
   node_group_origins                              = 1                         # Number of Origins
@@ -266,10 +271,13 @@ output "module_output" {
 
 ```hcl
 module "red5pro" {
-  source = "../.."
+  source  = "red5pro/red5pro/aws"
 
   type = "autoscaling"                                                        # Deployment type: single, cluster, autoscaling
   name = "red5pro-auto"                                                       # Name to be used on all the resources as identifier
+
+  path_to_red5pro_build        = "./red5pro-server-11.0.0.b835-release.zip"   # Absolute path or relative path to Red5 Pro server ZIP file
+  path_to_aws_cloud_controller = "./aws-cloud-controller-11.1.0.jar"          # Absolute path or relative path to AWS Cloud Controller JAR file
 
   # AWS authetification variables it use for Stream Manager autoscaling configuration
   aws_region     = "us-west-1"                                               # AWS region 
@@ -310,6 +318,7 @@ module "red5pro" {
   red5pro_api_key               = "examplekey"                                # Red5 Pro server API key (https://www.red5pro.com/docs/development/api/overview/#gatsby-focus-wrapper)
 
   # Red5 Pro autoscaling Origin node image configuration
+  origin_image_create                             = true                      # Default: true for Autoscaling and Cluster, true - create new Origin node image, false - not create new Origin node image
   origin_image_instance_type                      = "t3.medium"               # Instance type for Origin node image
   origin_image_volume_size                        = 8                         # Volume size for Origin node image
   origin_image_red5pro_inspector_enable           = false                     # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/#gatsby-focus-wrapper)
@@ -331,7 +340,7 @@ module "red5pro" {
   edge_image_red5pro_round_trip_auth_enable       = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
 
   # Red5 Pro autoscaling Transcoder node image configuration - (Optional)
-  transcoder_image_create                         = false                     # true - create new Transcoder node image, false - not create new Edge node image
+  transcoder_image_create                         = false                     # true - create new Transcoder node image, false - not create new Transcoder node image
   transcoder_image_instance_type                  = "t3.medium"               # Instance type for Transcoder node image
   transcoder_image_volume_size                    = 8                         # Volume size for Transcoder node image
   transcoder_image_red5pro_inspector_enable       = false                     # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/#gatsby-focus-wrapper)
@@ -342,7 +351,7 @@ module "red5pro" {
   transcoder_image_red5pro_round_trip_auth_enable = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
 
   # Red5 Pro autoscaling Relay node image configuration - (Optional)
-  relay_image_create                              = false                     # true - create new Relay node image, false - not create new Edge node image
+  relay_image_create                              = false                     # true - create new Relay node image, false - not create new Relay node image
   relay_image_instance_type                       = "t3.medium"               # Instance type for Relay node image
   relay_image_volume_size                         = 8                         # Volume size for Relay node image
   relay_image_red5pro_inspector_enable            = false                     # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/#gatsby-focus-wrapper)
@@ -353,7 +362,7 @@ module "red5pro" {
   relay_image_red5pro_round_trip_auth_enable      = false                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
 
   # Red5 Pro autoscaling Node group - (Optional)
-  node_group_create                               = true                      # true - create new Edge node group, false - not create new Edge node group
+  node_group_create                               = true                      # Linux or Mac OS only. true - create new Node group, false - not create new Node group
   node_group_name                                 = "terraform-node-group"    # Node group name
   # Origin node configuration
   node_group_origins                              = 1                         # Number of Origins
