@@ -17,7 +17,7 @@ variable "type" {
   }
 }
 variable "path_to_red5pro_build" {
-  description = "Path to the Red5 Pro build zip file, absolute path or relative path. https://account.red5pro.com/downloads"
+  description = "Path to the Red5 Pro build zip file, absolute path or relative path. https://account.red5pro.com/downloads. Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-11.1.0.b835-release.zip"
   type        = string
   default     = ""
   validation {
@@ -26,13 +26,9 @@ variable "path_to_red5pro_build" {
   }
 }
 variable "path_to_aws_cloud_controller" {
-  description = "Path to the AWS Cloud Controller jar file, absolute path or relative path. https://account.red5pro.com/downloads"
+  description = "Path to the AWS Cloud Controller jar file, absolute path or relative path. https://account.red5pro.com/downloads. Example: /home/ubuntu/terraform-aws-red5pro/aws-cloud-controller-11.0.0.jar"
   type        = string
   default     = ""
-  validation {
-    condition     = fileexists(var.path_to_aws_cloud_controller) == true
-    error_message = "The path_to_aws_cloud_controller value must be a valid! Example: /home/ubuntu/terraform-aws-red5pro/aws-cloud-controller-11.0.0.jar"
-  }
 }
 
 variable "aws_region" {
