@@ -19,18 +19,6 @@ output "node_relay_image" {
   description = "AMI image name of the Red5 Pro Node Relay image"
   value = try(aws_ami_from_instance.red5pro_node_relay_image[0].name , null)
 }
-# output "single" {
-#   description = "Deployment type - single"
-#   value = local.single
-# }
-# output "cluster" {
-#   description = "Deployment type - cluster"
-#   value = local.cluster
-# }
-# output "autoscaling" {
-#   description = "Deployment type - autoscaling"
-#   value = local.autoscaling
-# }
 output "ssh_key_name" {
   description = "SSH key name"
   value = local.ssh_key_name

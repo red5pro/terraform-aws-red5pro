@@ -15,7 +15,7 @@
 # NODE_WEBHOOKS_ENDPOINT="https://test.webhook.app/api/v1/broadcast/webhook"
 
 # NODE_ROUND_TRIP_AUTH_ENABLE=true
-# NODE_ROUND_TRIP_AUTH_HOST=round-trip-auth.red5pro.com
+# NODE_ROUND_TRIP_AUTH_HOST=round-trip-auth.example.com
 # NODE_ROUND_TRIP_AUTH_PORT=443
 # NODE_ROUND_TRIP_AUTH_PROTOCOL=https
 # NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE="/validateCredentials"

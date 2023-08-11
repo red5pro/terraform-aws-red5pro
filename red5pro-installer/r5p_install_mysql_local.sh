@@ -4,8 +4,8 @@
 ############################################################################################################
 
 # DB_LOCAL_ENABLE=false
-# DB_USER="smuser"
-# DB_PASSWORD="abc123"
+# DB_USER="exampleuser"
+# DB_PASSWORD="examplepass"
 # DB_PORT="3306"
 
 PACKAGES=(mysql-server)
