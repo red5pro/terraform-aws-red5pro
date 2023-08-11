@@ -398,8 +398,32 @@ resource "aws_instance" "red5pro_sm" {
   }
 
   provisioner "file" {
-    source      = "./red5pro-installer"
-    destination = "/home/ubuntu"
+    source        = "${abspath(path.module)}/red5pro-installer"
+    destination   = "/home/ubuntu"
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "file" {
+    source        = var.path_to_red5pro_build
+    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "file" {
+    source        = var.path_to_aws_cloud_controller
+    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_aws_cloud_controller)}"
 
     connection {
       host        = self.public_ip
@@ -618,8 +642,32 @@ resource "aws_instance" "red5pro_node_origin" {
   }
 
   provisioner "file" {
-    source      = "./red5pro-installer"
-    destination = "/home/ubuntu"
+    source        = "${abspath(path.module)}/red5pro-installer"
+    destination   = "/home/ubuntu"
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "file" {
+    source        = var.path_to_red5pro_build
+    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "file" {
+    source        = var.path_to_aws_cloud_controller
+    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_aws_cloud_controller)}"
 
     connection {
       host        = self.public_ip
@@ -680,8 +728,32 @@ resource "aws_instance" "red5pro_node_edge" {
   }
 
   provisioner "file" {
-    source      = "./red5pro-installer"
-    destination = "/home/ubuntu"
+    source        = "${abspath(path.module)}/red5pro-installer"
+    destination   = "/home/ubuntu"
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "file" {
+    source        = var.path_to_red5pro_build
+    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "file" {
+    source        = var.path_to_aws_cloud_controller
+    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_aws_cloud_controller)}"
 
     connection {
       host        = self.public_ip
@@ -742,8 +814,32 @@ resource "aws_instance" "red5pro_node_transcoder" {
   }
 
   provisioner "file" {
-    source      = "./red5pro-installer"
-    destination = "/home/ubuntu"
+    source        = "${abspath(path.module)}/red5pro-installer"
+    destination   = "/home/ubuntu"
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "file" {
+    source        = var.path_to_red5pro_build
+    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "file" {
+    source        = var.path_to_aws_cloud_controller
+    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_aws_cloud_controller)}"
 
     connection {
       host        = self.public_ip
@@ -804,8 +900,32 @@ resource "aws_instance" "red5pro_node_relay" {
   }
 
   provisioner "file" {
-    source      = "./red5pro-installer"
-    destination = "/home/ubuntu"
+    source        = "${abspath(path.module)}/red5pro-installer"
+    destination   = "/home/ubuntu"
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "file" {
+    source        = var.path_to_red5pro_build
+    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "file" {
+    source        = var.path_to_aws_cloud_controller
+    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_aws_cloud_controller)}"
 
     connection {
       host        = self.public_ip
@@ -871,8 +991,32 @@ resource "aws_instance" "red5pro_single" {
   }
 
   provisioner "file" {
-    source      = "./red5pro-installer"
-    destination = "/home/ubuntu"
+    source        = "${abspath(path.module)}/red5pro-installer"
+    destination   = "/home/ubuntu"
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "file" {
+    source        = var.path_to_red5pro_build
+    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = local.ssh_private_key
+    }
+  }
+
+  provisioner "file" {
+    source        = var.path_to_aws_cloud_controller
+    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_aws_cloud_controller)}"
 
     connection {
       host        = self.public_ip
@@ -1057,7 +1201,7 @@ resource "null_resource" "node_group" {
   }
   provisioner "local-exec" {
     when    = create
-    command = "bash ./red5pro-installer/r5p_create_node_group.sh"
+    command = "bash ${abspath(path.module)}/red5pro-installer/r5p_create_node_group.sh"
     environment = {
       NAME = "${var.name}"
       SM_IP = "${local.stream_manager_ip}"
@@ -1084,7 +1228,7 @@ resource "null_resource" "node_group" {
   }
     provisioner "local-exec" {
     when    = destroy
-    command = "bash ./red5pro-installer/r5p_delete_node_group.sh '${self.triggers.SM_IP}' '${self.triggers.SM_API_KEY}'"
+    command = "bash ${abspath(path.module)}/red5pro-installer/r5p_delete_node_group.sh '${self.triggers.SM_IP}' '${self.triggers.SM_API_KEY}'"
   }
 
   depends_on = [aws_instance.red5pro_sm[0], aws_autoscaling_group.red5pro_sm_ag[0]]

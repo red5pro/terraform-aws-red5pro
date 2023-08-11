@@ -43,10 +43,6 @@ output "mysql_host" {
   description = "MySQL host"
   value = local.mysql_host
 }
-output "mysql_local_enable" {
-  description = "Enable local MySQL"
-  value = local.mysql_local_enable
-}
 output "stream_manager_ip" {
   description = "Stream Manager IP"
   value = local.cluster ? local.stream_manager_ip : null

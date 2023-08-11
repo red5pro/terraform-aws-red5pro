@@ -2,6 +2,10 @@ variable "name" {
   description = "Name to be used on all the resources as identifier"
   type        = string
   default     = ""
+  validation {
+    condition     = length(var.name) > 0
+    error_message = "The name value must be a valid! Example: example-name"
+  }
 }
 variable "type" {
   description = "Type of deployment: single, cluster, autoscaling"
@@ -10,6 +14,24 @@ variable "type" {
   validation {
     condition     = var.type == "single" || var.type == "cluster" || var.type == "autoscaling"
     error_message = "The type value must be a valid! Example: single, cluster, autoscaling"
+  }
+}
+variable "path_to_red5pro_build" {
+  description = "Path to the Red5 Pro build zip file, absolute path or relative path. https://account.red5pro.com/downloads"
+  type        = string
+  default     = ""
+  validation {
+    condition     = fileexists(var.path_to_red5pro_build) == true
+    error_message = "The path_to_red5pro_build value must be a valid! Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-11.1.0.b835-release.zip"
+  }
+}
+variable "path_to_aws_cloud_controller" {
+  description = "Path to the AWS Cloud Controller jar file, absolute path or relative path. https://account.red5pro.com/downloads"
+  type        = string
+  default     = ""
+  validation {
+    condition     = fileexists(var.path_to_aws_cloud_controller) == true
+    error_message = "The path_to_aws_cloud_controller value must be a valid! Example: /home/ubuntu/terraform-aws-red5pro/aws-cloud-controller-11.0.0.jar"
   }
 }
 
@@ -280,9 +302,9 @@ variable "red5pro_api_key" {
 }
 
 variable "origin_image_create" {
-  description = "value to set the origin node image"
+  description = "Default:true for Autoscaling and Cluster, true - create new Origin node image, false - not create new Origin node image"
   type        = bool
-  default     = true
+  default     = false
 }
 variable "origin_image_instance_type" {
   description = "value to set the instance type for origin node"
@@ -351,7 +373,7 @@ variable "origin_image_red5pro_round_trip_auth_endpoint_invalidate" {
 }
 
 variable "edge_image_create" {
-  description = "value to set the edge node image"
+  description = "true - create new Edge node image, false - not create new Edge node image"
   type        = bool
   default     = false
 }
@@ -422,7 +444,7 @@ variable "edge_image_red5pro_round_trip_auth_endpoint_invalidate" {
 }
 
 variable "transcoder_image_create" {
-  description = "Create transcoder node image - true or false"
+  description = "true - create new Transcoder node image, false - not create new Transcoder node image"
   type        = bool
   default     = false
 }
@@ -493,7 +515,7 @@ variable "transcoder_image_red5pro_round_trip_auth_endpoint_invalidate" {
 }
 
 variable "relay_image_create" {
-  description = "Create relay node image - true or false"
+  description = "true - create new Relay node image, false - not create new Relay node image"
   type        = bool
   default     = false
 }
@@ -760,7 +782,7 @@ variable "security_group_single_egress" {
 
  # Red5 Pro autoscaling Node group - (Optional) 
 variable "node_group_create" {
-  description = "Create new node group"
+  description = "Create new node group. Linux or Mac OS only."
   type        = bool
   default     = false
 }
