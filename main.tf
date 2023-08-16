@@ -1014,18 +1014,6 @@ resource "aws_instance" "red5pro_single" {
     }
   }
 
-  provisioner "file" {
-    source        = var.path_to_aws_cloud_controller
-    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_aws_cloud_controller)}"
-
-    connection {
-      host        = self.public_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = local.ssh_private_key
-    }
-  }
-
   provisioner "remote-exec" {
     inline = [
       "sudo cloud-init status --wait",
