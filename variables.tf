@@ -17,16 +17,16 @@ variable "type" {
   }
 }
 variable "path_to_red5pro_build" {
-  description = "Path to the Red5 Pro build zip file, absolute path or relative path. https://account.red5pro.com/downloads. Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-11.1.0.b835-release.zip"
+  description = "Path to the Red5 Pro build zip file, absolute path or relative path. https://account.red5pro.com/downloads. Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-0.0.0.b0-release.zip"
   type        = string
   default     = ""
   validation {
     condition     = fileexists(var.path_to_red5pro_build) == true
-    error_message = "The path_to_red5pro_build value must be a valid! Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-11.1.0.b835-release.zip"
+    error_message = "The path_to_red5pro_build value must be a valid! Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-0.0.0.b0-release.zip"
   }
 }
 variable "path_to_aws_cloud_controller" {
-  description = "Path to the AWS Cloud Controller jar file, absolute path or relative path. https://account.red5pro.com/downloads. Example: /home/ubuntu/terraform-aws-red5pro/aws-cloud-controller-11.0.0.jar"
+  description = "Path to the AWS Cloud Controller jar file, absolute path or relative path. https://account.red5pro.com/downloads. Example: /home/ubuntu/terraform-aws-red5pro/aws-cloud-controller-0.0.0.jar"
   type        = string
   default     = ""
 }
@@ -51,15 +51,15 @@ variable "ssh_key_create" {
   default     = true
 }
 variable "ssh_key_name" {
-  description = "SSH key pair name existing"
+  description = "SSH key pair name new/existing"
   type        = string
-  default     = "red5pro_ssh_key"
+  default     = ""
 }
 
 variable "ssh_private_key_path" {
   description = "SSH private key path existing"
   type        = string
-  default     = "/home/ubuntu/.ssh/red5pro_ssh_key.pem"
+  default     = ""
 }
 
 # VPC configuration
@@ -71,7 +71,7 @@ variable "vpc_create" {
 variable "vpc_id_existing" {
   description = "VPC ID, this VPC should have minimum 2 public subnets."
   type        = string
-  default     = "vpc-000"
+  default     = ""
   validation {
     condition     = length(var.vpc_id_existing) > 4 && substr(var.vpc_id_existing, 0, 4) == "vpc-"
     error_message = "The vpc_id_existing value must be a valid! Example: vpc-12345"
@@ -87,7 +87,7 @@ variable "security_group_create" {
 variable "security_group_id_existing" {
   description = "Security group ID, this Security group should have open default Red5Pro ports: TCP:443,5080,80,1935,8554, UDP:40000-65535"
   type        = string
-  default     = "sg-000"
+  default     = ""
   validation {
     condition     = length(var.security_group_id_existing) > 4 && substr(var.security_group_id_existing, 0, 3) == "sg-"
     error_message = "The security_group_id_existing value must be a valid! Example: sg-12345"
@@ -103,14 +103,14 @@ variable "elastic_ip_create" {
 variable "elastic_ip_existing" { 
   description = "Elastic IP Existing"
   type        = string
-  default     = "10.10.10.10"
+  default     = "1.2.3.4"
 }
 
 # Red5 Pro single server configuration
 variable "single_instance_type" {
   description = "Red5 Pro Single server instance type"
   type        = string
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 variable "single_volume_size" {
   description = "Red5 Pro Single server volume size"
@@ -118,17 +118,17 @@ variable "single_volume_size" {
   default     = 8
 }
 variable "red5pro_inspector_enable" {
-  description = "Red5 Pro Single server Inspector enable"
+  description = "Red5 Pro Single server Inspector enable/disable (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)"
   type        = bool
   default     = false
 }
 variable "red5pro_restreamer_enable" {
-  description = "Red5 Pro Single server Restreamer enable"
+  description = "Red5 Pro Single server Restreamer enable/disable (https://www.red5pro.com/docs/special/restreamer/overview/)"
   type        = bool
   default     = false
 }
 variable "red5pro_socialpusher_enable" {
-  description = "Red5 Pro Single server SocialPusher enable"
+  description = "Red5 Pro Single server SocialPusher enable/disable (https://www.red5pro.com/docs/special/social-media-plugin/rest-api/)"
   type        = bool
   default     = false
 }
@@ -138,45 +138,45 @@ variable "red5pro_suppressor_enable" {
   default     = false
 }
 variable "red5pro_hls_enable" {
-  description = "Red5 Pro Single server HLS enable"
+  description = "Red5 Pro Single server HLS enable/disable (https://www.red5pro.com/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
 }
 variable "red5pro_round_trip_auth_enable" {
-  description = "value to set the round trip auth for origin node"
+  description = "Round trip authentication on the red5pro server enable/disable - Auth server should be deployed separately (https://www.red5pro.com/docs/special/round-trip-auth/overview/)"
   type        = bool
   default     = false
 }
 variable "red5pro_round_trip_auth_host" {
-  description = "value to set the round trip auth host for origin node"
+  description = "Round trip authentication server host"
   type        = string
   default     = ""
 }
 variable "red5pro_round_trip_auth_port" {
-  description = "value to set the round trip auth port for origin node"
+  description = "Round trip authentication server port"
   type        = number
-  default     = 0
+  default     = 3000
 }
 variable "red5pro_round_trip_auth_protocol" {
-  description = "value to set the round trip auth protocol for origin node"
+  description = "Round trip authentication server protocol"
   type        = string
-  default     = ""
+  default     = "http"
 }
 variable "red5pro_round_trip_auth_endpoint_validate" {
-  description = "value to set the round trip auth endpoint valid for origin node"
+  description = "Round trip authentication server endpoint for validate"
   type        = string
-  default     = ""
+  default     = "/validateCredentials"
 }
 variable "red5pro_round_trip_auth_endpoint_invalidate" {
-  description = "value to set the round trip auth endpoint invalid for origin node"
+  description = "Round trip authentication server endpoint for invalidate"
   type        = string
-  default     = ""
+  default     = "/invalidateCredentials"
 }
 
 
 # MySQL configuration
 variable "mysql_rds_create" {
-  description = "Create a new MySQL instance"
+  description = "Create a new RDS MySQL instance"
   type        = bool
   default     = false
 }
@@ -188,7 +188,7 @@ variable "mysql_rds_instance_type" {
 variable "mysql_user_name" {
   description = "MySQL user name"
   type        = string
-  default     = "smadmin"
+  default     = ""
 }
 variable "mysql_password" {
   description = "MySQL password"
@@ -202,7 +202,7 @@ variable "mysql_port" {
 }
 # HTTPS/SSL variables for single/cluster
 variable "https_letsencrypt_enable" {
-  description = "Enable HTTPS and get SSL certificate using Let's Encrypt automaticaly (single/cluster)"
+  description = "Enable HTTPS and get SSL certificate using Let's Encrypt automaticaly (single/cluster) (https://www.red5pro.com/docs/installation/ssl/overview/)"
   type        = bool
   default     = false
 }
@@ -214,7 +214,7 @@ variable "https_letsencrypt_certificate_domain_name" {
 variable "https_letsencrypt_certificate_email" {
   description = "Email for Let's Encrypt ssl certificate (single/cluster)"
   type        = string
-  default     = "terraform@infrared5.com"
+  default     = "email@example.com"
 }
 variable "https_letsencrypt_certificate_password" {
   description = "Password for Let's Encrypt ssl certificate (single/cluster)"
@@ -236,30 +236,17 @@ variable "https_certificate_manager_certificate_name" {
 variable "stream_manager_instance_type" {
   description = "value to set the instance type for stream manager"
   type        = string
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 variable "stream_manager_volume_size" {
   description = "value to set the volume size for stream manager"
   type        = number
   default     = 16
 }
-
 variable "stream_manager_api_key" {
   description = "value to set the api key for stream manager"
   type        = string
   default     = ""
-}
-
-variable "stream_manager_create" {
-  description = "Create a new Stream Manager instance"
-  type        = bool
-  default     = true
-}
-
-variable "stream_manager_autoscaling" {
-  description = "value to enable autoscaling for stream manager"
-  type        = bool
-  default     = false
 }
 variable "stream_manager_autoscaling_desired_capacity" {
   description = "value to set the desired capacity for stream manager autoscaling"
@@ -277,7 +264,7 @@ variable "stream_manager_autoscaling_maximum_capacity" {
   default     = 1
 }
 variable "red5pro_license_key" {
-  description = "Red5 Pro license key"
+  description = "Red5 Pro license key (https://www.red5pro.com/docs/installation/installation/license-key/)"
   type        = string
   default     = ""
 }
@@ -287,7 +274,7 @@ variable "red5pro_cluster_key" {
   default     = ""
 }
 variable "red5pro_api_enable" {
-  description = "Red5 Pro Single server API enable"
+  description = "Red5 Pro Server API enable/disable (https://www.red5pro.com/docs/development/api/overview/)"
   type        = bool
   default     = true
 }
@@ -297,290 +284,293 @@ variable "red5pro_api_key" {
   default     = ""
 }
 
+# Red5 Pro Origin node image configuration
 variable "origin_image_create" {
-  description = "Default:true for Autoscaling and Cluster, true - create new Origin node image, false - not create new Origin node image"
+  description = "Create new Origin node image true/false. (Default:true) (https://www.red5pro.com/docs/special/relays/overview/#origin-and-edge-nodes)"
   type        = bool
   default     = false
 }
 variable "origin_image_instance_type" {
-  description = "value to set the instance type for origin node"
+  description = "Origin node image - instance type"
   type        = string
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 variable "origin_image_volume_size" {
-  description = "value to set the volume size for origin node"
+  description = "Origin node image - volume size"
   type        = number
   default     = 8
 }
 variable "origin_image_red5pro_inspector_enable" {
-  description = "value to set the inspector for origin node"
+  description = "Origin node image - Inspector enable/disable (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)"
   type        = bool
   default     = false
 }
 variable "origin_image_red5pro_restreamer_enable" {
-  description = "value to set the restreamer for origin node"
+  description = "Origin node image - Restreamer enable/disable (https://www.red5pro.com/docs/special/restreamer/overview/)"
   type        = bool
   default     = false
 }
 variable "origin_image_red5pro_socialpusher_enable" {
-  description = "value to set the socialpusher for origin node"
+  description = "Origin node image - SocialPusher enable/disable (https://www.red5pro.com/docs/special/social-media-plugin/rest-api/)"
   type        = bool
   default     = false
 }
 variable "origin_image_red5pro_suppressor_enable" {
-  description = "value to set the suppressor for origin node"
+  description = "Origin node image - Suppressor enable/disable"
   type        = bool
   default     = false
 }
 variable "origin_image_red5pro_hls_enable" {
-  description = "value to set the hls for origin node"
+  description = "Origin node image - HLS enable/disable (https://www.red5pro.com/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
 }
 variable "origin_image_red5pro_round_trip_auth_enable" {
-  description = "value to set the round trip auth for origin node"
+  description = "Origin node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5pro.com/docs/special/round-trip-auth/overview/)"
   type        = bool
   default     = false
 }
 variable "origin_image_red5pro_round_trip_auth_host" {
-  description = "value to set the round trip auth host for origin node"
+  description = "Origin node image - Round trip authentication server host"
   type        = string
   default     = ""
 }
 variable "origin_image_red5pro_round_trip_auth_port" {
-  description = "value to set the round trip auth port for origin node"
+  description = "Origin node image - Round trip authentication server port"
   type        = number
-  default     = 0
+  default     = 3000
 }
 variable "origin_image_red5pro_round_trip_auth_protocol" {
-  description = "value to set the round trip auth protocol for origin node"
+  description = "Origin node image - Round trip authentication server protocol"
   type        = string
-  default     = ""
+  default     = "http"
 }
 variable "origin_image_red5pro_round_trip_auth_endpoint_validate" {
-  description = "value to set the round trip auth endpoint valid for origin node"
+  description = "Origin node image - Round trip authentication server endpoint for validate"
   type        = string
-  default     = ""
+  default     = "/validateCredentials"
 }
 variable "origin_image_red5pro_round_trip_auth_endpoint_invalidate" {
-  description = "value to set the round trip auth endpoint invalid for origin node"
+  description = "Origin node image - Round trip authentication server endpoint for invalidate"
   type        = string
-  default     = ""
+  default     = "/invalidateCredentials"
 }
 
+# Red5 Pro Edge node image configuration
 variable "edge_image_create" {
-  description = "true - create new Edge node image, false - not create new Edge node image"
+  description = "Create new Edge node image true/false. (Default:true) (https://www.red5pro.com/docs/special/relays/overview/#origin-and-edge-nodes)"
   type        = bool
   default     = false
 }
 variable "edge_image_instance_type" {
-  description = "value to set the instance type for edge node"
+  description = "Edge node image - instance type"
   type        = string
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 variable "edge_image_volume_size" {
-  description = "value to set the volume size for edge node"
+  description = "Edge node image - volume size"
   type        = number
   default     = 8
 }
 variable "edge_image_red5pro_inspector_enable" {
-  description = "value to set the inspector for edge node"
+  description = "Edge node image - Inspector enable/disable (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)"
   type        = bool
   default     = false
 }
 variable "edge_image_red5pro_restreamer_enable" {
-  description = "value to set the restreamer for edge node"
+  description = "Edge node image - Restreamer enable/disable (https://www.red5pro.com/docs/special/restreamer/overview/)"
   type        = bool
   default     = false
 }
 variable "edge_image_red5pro_socialpusher_enable" {
-  description = "value to set the socialpusher for edge node"
+  description = "Edge node image - SocialPusher enable/disable (https://www.red5pro.com/docs/special/social-media-plugin/rest-api/)"
   type        = bool
   default     = false
 }
 variable "edge_image_red5pro_suppressor_enable" {
-  description = "value to set the suppressor for edge node"
+  description = "Edge node image - Suppressor enable/disable"
   type        = bool
   default     = false
 }
 variable "edge_image_red5pro_hls_enable" {
-  description = "value to set the hls for edge node"
+  description = "Edge node image - HLS enable/disable (https://www.red5pro.com/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
 }
 variable "edge_image_red5pro_round_trip_auth_enable" {
-  description = "value to set the round trip auth for edge node"
+  description = "Edge node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5pro.com/docs/special/round-trip-auth/overview/)"
   type        = bool
   default     = false
 }
 variable "edge_image_red5pro_round_trip_auth_host" {
-  description = "value to set the round trip auth host for edge node"
+  description = "Edge node image - Round trip authentication server host"
   type        = string
-  default     = "10.10.10.10"
+  default     = ""
 }
 variable "edge_image_red5pro_round_trip_auth_port" {
-  description = "value to set the round trip auth port for edge node"
+  description = "Edge node image - Round trip authentication server port"
   type        = number
   default     = 3000
 }
 variable "edge_image_red5pro_round_trip_auth_protocol" {
-  description = "value to set the round trip auth protocol for edge node"
+  description = "Edge node image - Round trip authentication server protocol"
   type        = string
   default     = "http"
 }
 variable "edge_image_red5pro_round_trip_auth_endpoint_validate" {
-  description = "value to set the round trip auth endpoint valid for edge node"
+  description = "Edge node image - Round trip authentication server endpoint for validate"
   type        = string
   default     = "/validateCredentials"
 }
 variable "edge_image_red5pro_round_trip_auth_endpoint_invalidate" {
-  description = "value to set the round trip auth endpoint invalid for edge node"
+  description = "Edge node image - Round trip authentication server endpoint for invalidate"
   type        = string
   default     = "/invalidateCredentials"
 }
 
+# Red5 Pro Transcoder node image configuration
 variable "transcoder_image_create" {
-  description = "true - create new Transcoder node image, false - not create new Transcoder node image"
+  description = "Create new Transcoder node image true/false. (Default:true) (https://www.red5pro.com/docs/special/relays/overview/#origin-and-edge-nodes)"
   type        = bool
   default     = false
 }
 variable "transcoder_image_instance_type" {
-  description = "value to set the instance type for transcoder node"
+  description = "Transcoder node image - instance type"
   type        = string
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 variable "transcoder_image_volume_size" {
-  description = "value to set the volume size for transcoder node"
+  description = "Transcoder node image - volume size"
   type        = number
   default     = 8
 }
 variable "transcoder_image_red5pro_inspector_enable" {
-  description = "value to set the inspector for transcoder node"
+  description = "Transcoder node image - Inspector enable/disable (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)"
   type        = bool
   default     = false
 }
 variable "transcoder_image_red5pro_restreamer_enable" {
-  description = "value to set the restreamer for transcoder node"
+  description = "Transcoder node image - Restreamer enable/disable (https://www.red5pro.com/docs/special/restreamer/overview/)"
   type        = bool
   default     = false
 }
 variable "transcoder_image_red5pro_socialpusher_enable" {
-  description = "value to set the socialpusher for transcoder node"
+  description = "Transcoder node image - SocialPusher enable/disable (https://www.red5pro.com/docs/special/social-media-plugin/rest-api/)"
   type        = bool
   default     = false
 }
 variable "transcoder_image_red5pro_suppressor_enable" {
-  description = "value to set the suppressor for transcoder node"
+  description = "Transcoder node image - Suppressor enable/disable"
   type        = bool
   default     = false
 }
 variable "transcoder_image_red5pro_hls_enable" {
-  description = "value to set the hls for transcoder node"
+  description = "Transcoder node image - HLS enable/disable (https://www.red5pro.com/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
 }
 variable "transcoder_image_red5pro_round_trip_auth_enable" {
-  description = "value to set the round trip auth for transcoder node"
+  description = "Transcoder node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5pro.com/docs/special/round-trip-auth/overview/)"
   type        = bool
   default     = false
 }
 variable "transcoder_image_red5pro_round_trip_auth_host" {
-  description = "value to set the round trip auth host for transcoder node"
+  description = "Transcoder node image - Round trip authentication server host"
   type        = string
-  default     = "10.10.10.10"
+  default     = ""
 }
 variable "transcoder_image_red5pro_round_trip_auth_port" {
-  description = "value to set the round trip auth port for transcoder node"
+  description = "Transcoder node image - Round trip authentication server port"
   type        = number
   default     = 3000
 }
 variable "transcoder_image_red5pro_round_trip_auth_protocol" {
-  description = "value to set the round trip auth protocol for transcoder node"
+  description = "Transcoder node image - Round trip authentication server protocol"
   type        = string
   default     = "http"
 }
 variable "transcoder_image_red5pro_round_trip_auth_endpoint_validate" {
-  description = "value to set the round trip auth endpoint valid for transcoder node"
+  description = "Transcoder node image - Round trip authentication server endpoint for validate"
   type        = string
   default     = "/validateCredentials"
 }
 variable "transcoder_image_red5pro_round_trip_auth_endpoint_invalidate" {
-  description = "value to set the round trip auth endpoint invalid for transcoder node"
+  description = "Transcoder node image - Round trip authentication server endpoint for invalidate"
   type        = string
   default     = "/invalidateCredentials"
 }
 
+# Red5 Pro Relay node image configuration
 variable "relay_image_create" {
-  description = "true - create new Relay node image, false - not create new Relay node image"
+  description = "Create new Relay node image true/false. (Default:true) (https://www.red5pro.com/docs/special/relays/overview/#origin-and-edge-nodes)"
   type        = bool
   default     = false
 }
 variable "relay_image_instance_type" {
-  description = "value to set the instance type for relay node"
+  description = "Relay node image - instance type"
   type        = string
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 variable "relay_image_volume_size" {
-  description = "value to set the volume size for relay node"
+  description = "Relay node image - volume size"
   type        = number
   default     = 8
 }
 variable "relay_image_red5pro_inspector_enable" {
-  description = "value to set the inspector for relay node"
+  description = "Relay node image - Inspector enable/disable (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)"
   type        = bool
   default     = false
 }
 variable "relay_image_red5pro_restreamer_enable" {
-  description = "value to set the restreamer for relay node"
+  description = "Relay node image - Restreamer enable/disable (https://www.red5pro.com/docs/special/restreamer/overview/)"
   type        = bool
   default     = false
 }
 variable "relay_image_red5pro_socialpusher_enable" {
-  description = "value to set the socialpusher for relay node"
+  description = "Relay node image - SocialPusher enable/disable (https://www.red5pro.com/docs/special/social-media-plugin/rest-api/)"
   type        = bool
   default     = false
 }
 variable "relay_image_red5pro_suppressor_enable" {
-  description = "value to set the suppressor for relay node"
+  description = "Relay node image - Suppressor enable/disable"
   type        = bool
   default     = false
 }
 variable "relay_image_red5pro_hls_enable" {
-  description = "value to set the hls for relay node"
+  description = "Relay node image - HLS enable/disable (https://www.red5pro.com/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
 }
 variable "relay_image_red5pro_round_trip_auth_enable" {
-  description = "value to set the round trip auth for relay node"
+  description = "Relay node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5pro.com/docs/special/round-trip-auth/overview/)"
   type        = bool
   default     = false
 }
 variable "relay_image_red5pro_round_trip_auth_host" {
-  description = "value to set the round trip auth host for relay node"
+  description = "Relay node image - Round trip authentication server host"
   type        = string
-  default     = "10.10.10.10"
+  default     = ""
 }
 variable "relay_image_red5pro_round_trip_auth_port" {
-  description = "value to set the round trip auth port for relay node"
+  description = "Relay node image - Round trip authentication server port"
   type        = number
   default     = 3000
 }
 variable "relay_image_red5pro_round_trip_auth_protocol" {
-  description = "value to set the round trip auth protocol for relay node"
+  description = "Relay node image - Round trip authentication server protocol"
   type        = string
   default     = "http"
 }
 variable "relay_image_red5pro_round_trip_auth_endpoint_validate" {
-  description = "value to set the round trip auth endpoint valid for relay node"
+  description = "Relay node image - Round trip authentication server endpoint for validate"
   type        = string
   default     = "/validateCredentials"
 }
 variable "relay_image_red5pro_round_trip_auth_endpoint_invalidate" {
-  description = "value to set the round trip auth endpoint invalid for relay node"
+  description = "Relay node image - Round trip authentication server endpoint for invalidate"
   type        = string
   default     = "/invalidateCredentials"
 }
-
 
 variable "tags" {
   description = "A map of tags to add to all resources"
