@@ -1004,7 +1004,7 @@ resource "aws_instance" "red5pro_single" {
     }
   }
 
-  tags = merge({ "Name" = "${var.name}-node-origin-image" }, var.tags, )
+  tags = merge({ "Name" = "${var.name}-single-server" }, var.tags, )
 }
 
 

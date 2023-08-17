@@ -722,6 +722,13 @@ variable "security_group_single_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      from_port       = 443
+      to_port         = 443
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+    {
       from_port       = 1935
       to_port         = 1935
       protocol        = "tcp"

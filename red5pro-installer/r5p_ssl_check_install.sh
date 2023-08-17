@@ -187,7 +187,7 @@ while true ; do
             break
         else
             log_w "Something worong with Certbot, getting certificate will repeat after 5 minutes..."
-            sleep 300
+            sleep 120
             error=0
         fi
     else
