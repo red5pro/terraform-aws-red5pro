@@ -39,8 +39,14 @@ cp ~/Downloads/aws-cloud-controller-0.0.0.jar ./
 ## Usage (single)
 
 ```hcl
+provider "aws" {
+  region     = "us-west-1"                                                    # AWS region
+  access_key = ""                                                             # AWS IAM Access key
+  secret_key = ""                                                             # AWS IAM Secret key
+}
+
 module "red5pro" {
-  source  = "../../"
+  source  = "red5pro/red5pro/aws"
 
   type    = "single"                                                              # Deployment type: single, cluster, autoscaling
   name    = "red5pro-single"                                                      # Name to be used on all the resources as identifier
@@ -123,8 +129,14 @@ output "module_output" {
 ## Usage (cluster)
 
 ```hcl
+provider "aws" {
+  region     = "us-west-1"                                                    # AWS region
+  access_key = ""                                                             # AWS IAM Access key
+  secret_key = ""                                                             # AWS IAM Secret key
+}
+
 module "red5pro" {
-  source  = "../../"
+  source  = "red5pro/red5pro/aws"
 
   type    = "cluster"                                                         # Deployment type: single, cluster, autoscaling
   name    = "red5pro-cluster"                                                 # Name to be used on all the resources as identifier
@@ -247,8 +259,14 @@ output "module_output" {
 ## Usage (autoscaling)
 
 ```hcl
+provider "aws" {
+  region     = "us-west-1"                                                    # AWS region
+  access_key = ""                                                             # AWS IAM Access key
+  secret_key = ""                                                             # AWS IAM Secret key
+}
+
 module "red5pro" {
-  source  = "../../"
+  source  = "red5pro/red5pro/aws"
 
   type    = "autoscaling"                                                        # Deployment type: single, cluster, autoscaling
   name    = "red5pro-auto"                                                       # Name to be used on all the resources as identifier

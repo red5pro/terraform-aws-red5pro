@@ -71,7 +71,7 @@ variable "vpc_create" {
 variable "vpc_id_existing" {
   description = "VPC ID, this VPC should have minimum 2 public subnets."
   type        = string
-  default     = ""
+  default     = "vpc-12345"
   validation {
     condition     = length(var.vpc_id_existing) > 4 && substr(var.vpc_id_existing, 0, 4) == "vpc-"
     error_message = "The vpc_id_existing value must be a valid! Example: vpc-12345"
@@ -87,7 +87,7 @@ variable "security_group_create" {
 variable "security_group_id_existing" {
   description = "Security group ID, this Security group should have open default Red5Pro ports: TCP:443,5080,80,1935,8554, UDP:40000-65535"
   type        = string
-  default     = ""
+  default     = "sg-12345"
   validation {
     condition     = length(var.security_group_id_existing) > 4 && substr(var.security_group_id_existing, 0, 3) == "sg-"
     error_message = "The security_group_id_existing value must be a valid! Example: sg-12345"
