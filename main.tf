@@ -128,6 +128,12 @@ data "aws_subnet" "all_subnets" {
 data "aws_availability_zones" "available" {
   count = var.vpc_create ? 1 : 0
   state = "available"
+
+  filter {
+    name   = "zone-type"
+    values = ["availability-zone"]
+  }
+  
   lifecycle {
     postcondition {
       condition     = length(self.names) >= 2
