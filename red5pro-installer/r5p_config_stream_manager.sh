@@ -70,31 +70,31 @@ config_sm_properties_aws(){
         exit 1
     fi
 
-    local aws_defaultzone_pattern='#aws.defaultzone={default-region}'
+    local aws_defaultzone_pattern='#aws.defaultzone=.*'
     local aws_defaultzone_new="aws.defaultzone=${AWS_DEFAULT_ZONE}"
 
-    local aws_operationTimeout_pattern='#aws.operationTimeoutMilliseconds=200000'
+    local aws_operationTimeout_pattern='#aws.operationTimeoutMilliseconds=.*'
     local aws_operationTimeout_new="aws.operationTimeoutMilliseconds=200000"
 
-    local aws_accessKey_pattern='#aws.accessKey={account-accessKey}'
+    local aws_accessKey_pattern='#aws.accessKey=.*'
     local aws_accessKey_new="aws.accessKey=${AWS_ACCESS_KEY}"
 
-    local aws_accessSecret_pattern='#aws.accessSecret={account-accessSecret}'
+    local aws_accessSecret_pattern='#aws.accessSecret=.*'
     local aws_accessSecret_new="aws.accessSecret=${AWS_SECRET_KEY}"
 
-    local aws_keypair_pattern='#aws.ec2KeyPairName={keyPairName}'
+    local aws_keypair_pattern='#aws.ec2KeyPairName=.*'
     local aws_keypair_new="aws.ec2KeyPairName=${AWS_SSH_KEY_NAME}"
 
-    local aws_securitygroup_pattern='#aws.ec2SecurityGroup={securityGroupName}'
+    local aws_securitygroup_pattern='#aws.ec2SecurityGroup=.*'
     local aws_securitygroup_new="aws.ec2SecurityGroup=${AWS_SECURITY_GROUP_NAME}"
 
-    local aws_defaultvpc_pattern='#aws.defaultVPC={boolean}'
+    local aws_defaultvpc_pattern='#aws.defaultVPC=.*'
     local aws_defaultvpc_new="aws.defaultVPC=false"
 
-    local aws_vpc_pattern='#aws.vpcName={vpcname}'
+    local aws_vpc_pattern='#aws.vpcName=.*'
     local aws_vpc_new="aws.vpcName=${AWS_VPC_NAME}"
 
-    local aws_milliseconds_pattern='#aws.faultZoneBlockMilliseconds=3600000'
+    local aws_milliseconds_pattern='#aws.faultZoneBlockMilliseconds=.*'
     local aws_milliseconds_new="aws.faultZoneBlockMilliseconds=3600000"
 
     sudo sed -i -e "s|$aws_defaultzone_pattern|$aws_defaultzone_new|" -e "s|$aws_operationTimeout_pattern|$aws_operationTimeout_new|" -e "s|$aws_accessKey_pattern|$aws_accessKey_new|" -e "s|$aws_accessSecret_pattern|$aws_accessSecret_new|" -e "s|$aws_keypair_pattern|$aws_keypair_new|" -e "s|$aws_securitygroup_pattern|$aws_securitygroup_new|" -e "s|$aws_defaultvpc_pattern|$aws_defaultvpc_new|" -e "s|$aws_vpc_pattern|$aws_vpc_new|" -e "s|$aws_milliseconds_pattern|$aws_milliseconds_new|" "$RED5_HOME/webapps/streammanager/WEB-INF/red5-web.properties"
@@ -142,31 +142,31 @@ config_sm_properties_main(){
 
     fi
 
-    local db_host_pattern='config.dbHost={host}'
+    local db_host_pattern='config.dbHost=.*'
     local db_host_new="config.dbHost=${DB_HOST}"
 
-    local db_port_pattern='config.dbPort=3306'
+    local db_port_pattern='config.dbPort=.*'
     local db_port_new="config.dbPort=${DB_PORT}"
 
-    local db_user_pattern='config.dbUser={username}'
+    local db_user_pattern='config.dbUser=.*'
     local db_user_new="config.dbUser=${DB_USER}"
 
-    local db_pass_pattern='config.dbPass={password}'
+    local db_pass_pattern='config.dbPass=.*'
     local db_pass_new="config.dbPass=${DB_PASSWORD}"
 
-    local node_prefix_pattern='instancecontroller.instanceNamePrefix={unique-value}'
+    local node_prefix_pattern='instancecontroller.instanceNamePrefix=.*'
     local node_prefix_new="instancecontroller.instanceNamePrefix=${NODE_PREFIX_NAME}"
 
-    local node_cluster_password_pattern='cluster.password=changeme'
+    local node_cluster_password_pattern='cluster.password=.*'
     local node_cluster_password_new="cluster.password=${NODE_CLUSTER_KEY}"
 
-    local node_api_token_pattern='serverapi.accessToken={node api security token}'
+    local node_api_token_pattern='serverapi.accessToken=.*'
     local node_api_token_new="serverapi.accessToken=${NODE_API_KEY}"
 
-    local sm_rest_token_pattern='rest.administratorToken='
+    local sm_rest_token_pattern='rest.administratorToken=.*'
     local sm_rest_token_new="rest.administratorToken=${SM_API_KEY}"
 
-    local sm_proxy_enabled_pattern='proxy.enabled=false'
+    local sm_proxy_enabled_pattern='proxy.enabled=.*'
     local sm_proxy_enabled_new='proxy.enabled=true'
 
     sudo sed -i -e "s|$db_host_pattern|$db_host_new|" -e "s|$db_port_pattern|$db_port_new|" -e "s|$db_user_pattern|$db_user_new|" -e "s|$db_pass_pattern|$db_pass_new|" -e "s|$node_prefix_pattern|$node_prefix_new|" -e "s|$node_cluster_password_pattern|$node_cluster_password_new|" -e "s|$node_api_token_pattern|$node_api_token_new|" -e "s|$sm_rest_token_pattern|$sm_rest_token_new|" -e "s|$sm_proxy_enabled_pattern|$sm_proxy_enabled_new|" "$RED5_HOME/webapps/streammanager/WEB-INF/red5-web.properties"
@@ -243,12 +243,17 @@ config_sm_applicationContext(){
 }
 
 config_sm_cors(){
-    log_i "Set CORS * in $RED5_HOME/webapps/streammanager/WEB-INF/web.xml"
+    log_i "Configuring CORS in $RED5_HOME/webapps/streammanager/WEB-INF/web.xml"
 
-    local STR1="<filter>\n<filter-name>CorsFilter</filter-name>\n<filter-class>org.apache.catalina.filters.CorsFilter</filter-class>\n<init-param>\n<param-name>cors.allowed.origins</param-name>\n<param-value>*</param-value>\n</init-param>\n<init-param>\n<param-name>cors.exposed.headers</param-name>\n<param-value>Access-Control-Allow-Origin</param-value>\n</init-param>\n<init-param>\n<param-name>cors.allowed.methods</param-name>\n<param-value>GET, POST, PUT, DELETE</param-value>\n</init-param>\n<async-supported>true</async-supported>\n</filter>"
-    local STR2="\n<filter-mapping>\n<filter-name>CorsFilter</filter-name>\n<url-pattern>/api/*</url-pattern>\n</filter-mapping>"
-    
-    sed -i "/<\/web-app>/i $STR1 $STR2" "$RED5_HOME/webapps/streammanager/WEB-INF/web.xml"
+    if grep -q "org.apache.catalina.filters.CorsFilter" "$RED5_HOME/webapps/streammanager/WEB-INF/web.xml" ; then
+        log_i "org.apache.catalina.filters.CorsFilter exist in the file web.xml - Start old style CORS configuration..."
+
+        local STR1="<filter>\n<filter-name>CorsFilter</filter-name>\n<filter-class>org.apache.catalina.filters.CorsFilter</filter-class>\n<init-param>\n<param-name>cors.allowed.origins</param-name>\n<param-value>*</param-value>\n</init-param>\n<init-param>\n<param-name>cors.exposed.headers</param-name>\n<param-value>Access-Control-Allow-Origin</param-value>\n</init-param>\n<init-param>\n<param-name>cors.allowed.methods</param-name>\n<param-value>GET, POST, PUT, DELETE</param-value>\n</init-param>\n<async-supported>true</async-supported>\n</filter>"
+        local STR2="\n<filter-mapping>\n<filter-name>CorsFilter</filter-name>\n<url-pattern>/api/*</url-pattern>\n</filter-mapping>"
+        sed -i "/<\/web-app>/i $STR1 $STR2" "$RED5_HOME/webapps/streammanager/WEB-INF/web.xml"
+    else
+        log_i "org.apache.catalina.filters.CorsFilter doesn't exist in the file web.xml - Leave it without changes."
+    fi
 }
 
 config_whip_whep(){

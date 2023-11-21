@@ -179,9 +179,8 @@ add_origin_to_node_group(){
 }
 
 check_node_group(){
-    
     log_i "Checking states of nodes in new node group."
-    sleep 30
+
     NODES_URL="http://$SM_IP:5080/streammanager/api/4.0/admin/nodegroup/$NODE_GROUP_NAME/node?accessToken=$SM_API_KEY"
     
     for i in {1..10};
@@ -190,6 +189,12 @@ check_node_group(){
         echo "$resp" |jq -r '.[] | [.identifier, .role, .state] | join(" ")' > temp.txt
         
         nodes=$(awk '{print $1}' < temp.txt)
+
+        if [[ -z "$nodes" ]]; then
+            log_w "Nodes list is empty. Node group was not created."
+            log_e "Something wrong with Stream Manager in this build. EXIT..."
+        fi
+
         node_bad_state=0
         
         for index in $nodes
@@ -206,9 +211,6 @@ check_node_group(){
         
         if [[ $node_bad_state -ne 1 ]]; then
             log_i "All nodes are ready to go! :)"
-            if [ -f temp.txt ]; then
-                rm temp.txt
-            fi
             break
         fi
         if [[ $i -eq 10 ]]; then

@@ -66,11 +66,10 @@ config_node_apps_plugins(){
             log_e "Parameter NODE_API_KEY is empty. EXIT."
             exit 1
         fi
-        local token_pattern='security.accessToken='
-        local debug_logaccess_pattern='debug.logaccess=false'
+        local token_pattern='security.accessToken=.*'
         local token_new="security.accessToken=${NODE_API_KEY}"
-        local debug_logaccess='debug.logaccess=true'
-        sed -i -e "s|$token_pattern|$token_new|" -e "s|$debug_logaccess_pattern|$debug_logaccess|" "$RED5_HOME/webapps/api/WEB-INF/red5-web.properties"
+
+        sed -i -e "s|$token_pattern|$token_new|" "$RED5_HOME/webapps/api/WEB-INF/red5-web.properties"
         echo " " >> $RED5_HOME/webapps/api/WEB-INF/security/hosts.txt
         echo "*" >> $RED5_HOME/webapps/api/WEB-INF/security/hosts.txt
     else
