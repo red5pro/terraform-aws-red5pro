@@ -10,6 +10,12 @@
 # NODE_SOCIALPUSHER_ENABLE=true
 # NODE_SUPPRESSOR_ENABLE=true
 # NODE_HLS_ENABLE=true
+# NODE_CLOUDSTORAGE_ENABLE=true
+# NODE_CLOUDSTORAGE_AWS_ACCESS_KEY
+# NODE_CLOUDSTORAGE_AWS_SECRET_KEY
+# NODE_CLOUDSTORAGE_AWS_BUCKET_NAME=red5pro-bucket
+# NODE_CLOUDSTORAGE_AWS_REGION=us-east-1
+# NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE=true
 
 # NODE_WEBHOOKS_ENABLE=true
 # NODE_WEBHOOKS_ENDPOINT="https://test.webhook.app/api/v1/broadcast/webhook"
@@ -99,6 +105,58 @@ config_node_apps_plugins(){
         if ls $RED5_HOME/plugins/red5pro-mpegts-plugin* >/dev/null 2>&1; then
             rm $RED5_HOME/plugins/red5pro-mpegts-plugin*
         fi
+    fi
+    ### Red5Pro Cloudstorage (S3)
+    if [[ "$NODE_CLOUDSTORAGE_ENABLE" == "true" ]]; then
+        log_i "Red5Pro AWS Cloudstorage plugin (S3) - enable"
+        if [ -z "$NODE_CLOUDSTORAGE_AWS_ACCESS_KEY" ]; then
+            log_e "Parameter NODE_CLOUDSTORAGE_AWS_ACCESS_KEY is empty. EXIT."
+            exit 1
+        fi
+        if [ -z "$NODE_CLOUDSTORAGE_AWS_SECRET_KEY" ]; then
+            log_e "Parameter NODE_CLOUDSTORAGE_AWS_ACCESS_KEY is empty. EXIT."
+            exit 1
+        fi
+        if [ -z "$NODE_CLOUDSTORAGE_AWS_BUCKET_NAME" ]; then
+            log_e "Parameter NODE_CLOUDSTORAGE_AWS_BUCKET_NAME is empty. EXIT."
+            exit 1
+        fi
+        if [ -z "$NODE_CLOUDSTORAGE_AWS_REGION" ]; then
+            log_e "Parameter NODE_CLOUDSTORAGE_AWS_REGION is empty. EXIT."
+            exit 1
+        fi
+
+        log_i "Config AWS Cloudstorage plugin: $RED5_HOME/conf/cloudstorage-plugin.properties"
+        s3_service="#services=com.red5pro.media.storage.s3.S3Uploader,com.red5pro.media.storage.s3.S3BucketLister"
+        s3_service_new="services=com.red5pro.media.storage.s3.S3Uploader,com.red5pro.media.storage.s3.S3BucketLister"
+        max_transcode_min="max.transcode.minutes=.*"
+        max_transcode_min_new="max.transcode.minutes=30"
+
+        aws_access_key="aws.access.key=.*"
+        aws_access_key_new="aws.access.key=${NODE_CLOUDSTORAGE_AWS_ACCESS_KEY}"
+        aws_secret_access_key="aws.secret.access.key=.*"
+        aws_secret_access_key_new="aws.secret.access.key=${NODE_CLOUDSTORAGE_AWS_SECRET_KEY}"
+        aws_bucket_name="aws.bucket.name=.*"
+        aws_bucket_name_new="aws.bucket.name=${NODE_CLOUDSTORAGE_AWS_BUCKET_NAME}"
+        aws_bucket_location="aws.bucket.location=.*"
+        aws_bucket_location_new="aws.bucket.location=${NODE_CLOUDSTORAGE_AWS_REGION}"
+
+        sed -i -e "s|$s3_service|$s3_service_new|" -e "s|$max_transcode_min|$max_transcode_min_new|" -e "s|$aws_access_key|$aws_access_key_new|" -e "s|$aws_secret_access_key|$aws_secret_access_key_new|" -e "s|$aws_bucket_name|$aws_bucket_name_new|" -e "s|$aws_bucket_location|$aws_bucket_location_new|" "$RED5_HOME/conf/cloudstorage-plugin.properties"
+
+        if [[ "$NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE" == "true" ]]; then
+            log_i "Config AWS Cloudstorage plugin - PostProcessor to FLV: $RED5_HOME/conf/red5-common.xml"
+
+            STR1='<property name="writerPostProcessors">\n<set>\n<value>com.red5pro.media.processor.S3UploaderPostProcessor</value>\n</set>\n</property>'
+            sed -i "/Writer post-process example/i $STR1" "$RED5_HOME/conf/red5-common.xml"
+        fi
+
+        log_i "Config AWS Cloudstorage plugin - Live app S3FilenameGenerator in: $RED5_HOME/webapps/live/WEB-INF/red5-web.xml ..."
+
+        local filenamegenerator='<bean id="streamFilenameGenerator" class="com.red5pro.media.storage.s3.S3FilenameGenerator"/>'
+        local filenamegenerator_new='--><bean id="streamFilenameGenerator" class="com.red5pro.media.storage.s3.S3FilenameGenerator"/><!--'
+        sed -i -e "s|$filenamegenerator|$filenamegenerator_new|" "$RED5_HOME/webapps/live/WEB-INF/red5-web.xml"
+    else
+        log_i "Red5Pro AWS Cloudstorage plugin (S3) - disable"
     fi
     ### Red5Pro Restreamer
     if [[ "$NODE_RESTREAMER_ENABLE" == "true" ]]; then
