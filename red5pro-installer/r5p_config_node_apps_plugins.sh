@@ -153,10 +153,10 @@ config_node_apps_plugins(){
         log_i "Config AWS Cloudstorage plugin - Live app S3FilenameGenerator in: $RED5_HOME/webapps/live/WEB-INF/red5-web.xml ..."
 
         local filenamegenerator='<bean id="streamFilenameGenerator" class="com.red5pro.media.storage.s3.S3FilenameGenerator"/>'
-        local filenamegenerator_new='--><bean id="streamFilenameGenerator" class="com.red5pro.media.storage.s3.S3FilenameGenerator"/><!--'
+        local filenamegenerator_new='-->\n<<bean id="streamFilenameGenerator" class="com.red5pro.media.storage.s3.S3FilenameGenerator"/>\n<<!--'
         sed -i -e "s|$filenamegenerator|$filenamegenerator_new|" "$RED5_HOME/webapps/live/WEB-INF/red5-web.xml"
     else
-        log_i "Red5Pro AWS Cloudstorage plugin (S3) - disable"
+        log_d "Red5Pro AWS Cloudstorage plugin (S3) - disable"
     fi
     ### Red5Pro Restreamer
     if [[ "$NODE_RESTREAMER_ENABLE" == "true" ]]; then

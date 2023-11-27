@@ -12,7 +12,7 @@ variable "type" {
   type        = string
   default     = ""
   validation {
-    condition     = var.type == "single" || var.type == "cluster" || var.type == "autoscaling"
+    condition     = var.type == "single" || var.type == "cluster" || var.type == "autoscaling" || var.type == "vpc"
     error_message = "The type value must be a valid! Example: single, cluster, autoscaling"
   }
 }
@@ -904,4 +904,16 @@ variable "node_group_relays_capacity" {
   type        = number
   default     = 30
 }
-
+variable "ubuntu_version_aws_image" {
+  type = map(string)
+  default = {
+    18.04 = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"
+    20.04 = "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"
+    22.04 = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
+  }
+}
+variable "ubuntu_version" {
+  description = "Ubuntu version"
+  type        = string
+  default     = "22.04"
+}

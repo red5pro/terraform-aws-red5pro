@@ -382,7 +382,7 @@ data "aws_ami" "latest_ubuntu" {
   owners      = ["099720109477"] # Canonical
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    values = [lookup(var.ubuntu_version_aws_image, var.ubuntu_version, "what?")]
   }
   filter {
     name   = "virtualization-type"
