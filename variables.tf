@@ -385,6 +385,11 @@ variable "origin_image_red5pro_cloudstorage_postprocessor_enable" {
   type        = bool
   default     = false
 }
+variable "origin_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
+  description = "Origin node image - AWS bucket ACL policy for cloud storage. Example: none, public-read, authenticated-read, private, public-read-write"
+  type        = string
+  default     = "public-read"
+}
 
 # Red5 Pro Edge node image configuration
 variable "edge_image_create" {
@@ -558,6 +563,11 @@ variable "transcoder_image_red5pro_cloudstorage_postprocessor_enable" {
   description = "Transcoder node image - enable/disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)"
   type        = bool
   default     = false
+}
+variable "transcoder_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
+  description = "Transcoder node image - AWS bucket ACL policy for cloud storage. Example: none, public-read, authenticated-read, private, public-read-write"
+  type        = string
+  default     = "public-read"
 }
 
 # Red5 Pro Relay node image configuration
@@ -915,5 +925,5 @@ variable "ubuntu_version_aws_image" {
 variable "ubuntu_version" {
   description = "Ubuntu version"
   type        = string
-  default     = "22.04"
+  default     = "20.04"
 }

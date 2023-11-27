@@ -16,6 +16,7 @@
 # NODE_CLOUDSTORAGE_AWS_BUCKET_NAME=red5pro-bucket
 # NODE_CLOUDSTORAGE_AWS_REGION=us-east-1
 # NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE=true
+# NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY=public-read # none, public-read, authenticated-read, private, public-read-write
 
 # NODE_WEBHOOKS_ENABLE=true
 # NODE_WEBHOOKS_ENDPOINT="https://test.webhook.app/api/v1/broadcast/webhook"
@@ -125,6 +126,10 @@ config_node_apps_plugins(){
             log_e "Parameter NODE_CLOUDSTORAGE_AWS_REGION is empty. EXIT."
             exit 1
         fi
+        if [ -z "$NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY" ]; then
+            log_e "Parameter NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY is empty. EXIT."
+            exit 1
+        fi
 
         log_i "Config AWS Cloudstorage plugin: $RED5_HOME/conf/cloudstorage-plugin.properties"
         s3_service="#services=com.red5pro.media.storage.s3.S3Uploader,com.red5pro.media.storage.s3.S3BucketLister"
@@ -140,8 +145,10 @@ config_node_apps_plugins(){
         aws_bucket_name_new="aws.bucket.name=${NODE_CLOUDSTORAGE_AWS_BUCKET_NAME}"
         aws_bucket_location="aws.bucket.location=.*"
         aws_bucket_location_new="aws.bucket.location=${NODE_CLOUDSTORAGE_AWS_REGION}"
+        aws_bucket_acl_policy="aws.acl.policy=.*"
+        aws_bucket_acl_policy_new="aws.acl.policy=${NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY}"
 
-        sed -i -e "s|$s3_service|$s3_service_new|" -e "s|$max_transcode_min|$max_transcode_min_new|" -e "s|$aws_access_key|$aws_access_key_new|" -e "s|$aws_secret_access_key|$aws_secret_access_key_new|" -e "s|$aws_bucket_name|$aws_bucket_name_new|" -e "s|$aws_bucket_location|$aws_bucket_location_new|" "$RED5_HOME/conf/cloudstorage-plugin.properties"
+        sed -i -e "s|$s3_service|$s3_service_new|" -e "s|$max_transcode_min|$max_transcode_min_new|" -e "s|$aws_access_key|$aws_access_key_new|" -e "s|$aws_secret_access_key|$aws_secret_access_key_new|" -e "s|$aws_bucket_name|$aws_bucket_name_new|" -e "s|$aws_bucket_location|$aws_bucket_location_new|" -e "s|$aws_bucket_acl_policy|$aws_bucket_acl_policy_new|" "$RED5_HOME/conf/cloudstorage-plugin.properties"
 
         if [[ "$NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE" == "true" ]]; then
             log_i "Config AWS Cloudstorage plugin - PostProcessor to FLV: $RED5_HOME/conf/red5-common.xml"
