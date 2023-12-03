@@ -172,7 +172,41 @@ variable "red5pro_round_trip_auth_endpoint_invalidate" {
   type        = string
   default     = "/invalidateCredentials"
 }
-
+variable "red5pro_cloudstorage_enable" {
+  description = "Red5 Pro server cloud storage enable/disable (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)"
+  type        = bool
+  default     = false
+}
+variable "red5pro_cloudstorage_aws_access_key" {
+  description = "Red5 Pro server cloud storage - AWS access key (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "red5pro_cloudstorage_aws_secret_key" {
+  description = "Red5 Pro server cloud storage - AWS secret key (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "red5pro_cloudstorage_aws_bucket_name" {
+  description = "Red5 Pro server cloud storage - AWS bucket name (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "red5pro_cloudstorage_aws_region" {
+  description = "Red5 Pro server cloud storage - AWS region (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "red5pro_cloudstorage_postprocessor_enable" {
+  description = "Red5 Pro server cloud storage - enable/disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)"
+  type        = bool
+  default     = false
+}
+variable "red5pro_cloudstorage_aws_bucket_acl_policy" {
+  description = "Red5 Pro server cloud storage - AWS bucket ACL policy (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
+  type        = string
+  default     = "public-read"
+}
 
 # MySQL configuration
 variable "mysql_rds_create" {
@@ -361,22 +395,22 @@ variable "origin_image_red5pro_cloudstorage_enable" {
   default     = false
 }
 variable "origin_image_red5pro_cloudstorage_aws_access_key" {
-  description = "Origin node image - AWS access key for cloud storage"
+  description = "Origin node image - AWS access key for cloud storage (S3 Bucket)"
   type        = string
   default     = ""
 }
 variable "origin_image_red5pro_cloudstorage_aws_secret_key" {
-  description = "Origin node image - AWS secret key for cloud storage"
+  description = "Origin node image - AWS secret key for cloud storage (S3 Bucket)"
   type        = string
   default     = ""
 }
 variable "origin_image_red5pro_cloudstorage_aws_bucket_name" {
-  description = "Origin node image - AWS bucket name for cloud storage"
+  description = "Origin node image - AWS bucket name for cloud storage (S3 Bucket)"
   type        = string
   default     = ""
 }
 variable "origin_image_red5pro_cloudstorage_aws_region" {
-  description = "Origin node image - AWS region for cloud storage"
+  description = "Origin node image - AWS region for cloud storage (S3 Bucket)"
   type        = string
   default     = ""
 }
@@ -386,7 +420,7 @@ variable "origin_image_red5pro_cloudstorage_postprocessor_enable" {
   default     = false
 }
 variable "origin_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
-  description = "Origin node image - AWS bucket ACL policy for cloud storage. Example: none, public-read, authenticated-read, private, public-read-write"
+  description = "Origin node image - AWS bucket ACL policy for cloud storage (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
   type        = string
   default     = "public-read"
 }
@@ -540,22 +574,22 @@ variable "transcoder_image_red5pro_cloudstorage_enable" {
   default     = false
 }
 variable "transcoder_image_red5pro_cloudstorage_aws_access_key" {
-  description = "Transcoder node image - AWS access key for cloud storage"
+  description = "Transcoder node image - AWS access key for cloud storage (S3 Bucket)"
   type        = string
   default     = ""
 }
 variable "transcoder_image_red5pro_cloudstorage_aws_secret_key" {
-  description = "Transcoder node image - AWS secret key for cloud storage"
+  description = "Transcoder node image - AWS secret key for cloud storage (S3 Bucket)"
   type        = string
   default     = ""
 }
 variable "transcoder_image_red5pro_cloudstorage_aws_bucket_name" {
-  description = "Transcoder node image - AWS bucket name for cloud storage"
+  description = "Transcoder node image - AWS bucket name for cloud storage (S3 Bucket)"
   type        = string
   default     = ""
 }
 variable "transcoder_image_red5pro_cloudstorage_aws_region" {
-  description = "Transcoder node image - AWS region for cloud storage"
+  description = "Transcoder node image - AWS region for cloud storage (S3 Bucket)"
   type        = string
   default     = ""
 }
@@ -565,7 +599,7 @@ variable "transcoder_image_red5pro_cloudstorage_postprocessor_enable" {
   default     = false
 }
 variable "transcoder_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
-  description = "Transcoder node image - AWS bucket ACL policy for cloud storage. Example: none, public-read, authenticated-read, private, public-read-write"
+  description = "Transcoder node image - AWS bucket ACL policy for cloud storage (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
   type        = string
   default     = "public-read"
 }
