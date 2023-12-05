@@ -12,7 +12,7 @@ variable "type" {
   type        = string
   default     = ""
   validation {
-    condition     = var.type == "single" || var.type == "cluster" || var.type == "autoscaling"
+    condition     = var.type == "single" || var.type == "cluster" || var.type == "autoscaling" || var.type == "vpc"
     error_message = "The type value must be a valid! Example: single, cluster, autoscaling"
   }
 }
@@ -172,7 +172,41 @@ variable "red5pro_round_trip_auth_endpoint_invalidate" {
   type        = string
   default     = "/invalidateCredentials"
 }
-
+variable "red5pro_cloudstorage_enable" {
+  description = "Red5 Pro server cloud storage enable/disable (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)"
+  type        = bool
+  default     = false
+}
+variable "red5pro_cloudstorage_aws_access_key" {
+  description = "Red5 Pro server cloud storage - AWS access key (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "red5pro_cloudstorage_aws_secret_key" {
+  description = "Red5 Pro server cloud storage - AWS secret key (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "red5pro_cloudstorage_aws_bucket_name" {
+  description = "Red5 Pro server cloud storage - AWS bucket name (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "red5pro_cloudstorage_aws_region" {
+  description = "Red5 Pro server cloud storage - AWS region (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "red5pro_cloudstorage_postprocessor_enable" {
+  description = "Red5 Pro server cloud storage - enable/disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)"
+  type        = bool
+  default     = false
+}
+variable "red5pro_cloudstorage_aws_bucket_acl_policy" {
+  description = "Red5 Pro server cloud storage - AWS bucket ACL policy (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
+  type        = string
+  default     = "public-read"
+}
 
 # MySQL configuration
 variable "mysql_rds_create" {
@@ -355,6 +389,41 @@ variable "origin_image_red5pro_round_trip_auth_endpoint_invalidate" {
   type        = string
   default     = "/invalidateCredentials"
 }
+variable "origin_image_red5pro_cloudstorage_enable" {
+  description = "Origin node image - enable/disable Red5 Pro server cloud storage (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)"
+  type        = bool
+  default     = false
+}
+variable "origin_image_red5pro_cloudstorage_aws_access_key" {
+  description = "Origin node image - AWS access key for cloud storage (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "origin_image_red5pro_cloudstorage_aws_secret_key" {
+  description = "Origin node image - AWS secret key for cloud storage (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "origin_image_red5pro_cloudstorage_aws_bucket_name" {
+  description = "Origin node image - AWS bucket name for cloud storage (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "origin_image_red5pro_cloudstorage_aws_region" {
+  description = "Origin node image - AWS region for cloud storage (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "origin_image_red5pro_cloudstorage_postprocessor_enable" {
+  description = "Origin node image - enable/disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)"
+  type        = bool
+  default     = false
+}
+variable "origin_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
+  description = "Origin node image - AWS bucket ACL policy for cloud storage (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
+  type        = string
+  default     = "public-read"
+}
 
 # Red5 Pro Edge node image configuration
 variable "edge_image_create" {
@@ -498,6 +567,41 @@ variable "transcoder_image_red5pro_round_trip_auth_endpoint_invalidate" {
   description = "Transcoder node image - Round trip authentication server endpoint for invalidate"
   type        = string
   default     = "/invalidateCredentials"
+}
+variable "transcoder_image_red5pro_cloudstorage_enable" {
+  description = "Transcoder node image - enable/disable Red5 Pro server cloud storage (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)"
+  type        = bool
+  default     = false
+}
+variable "transcoder_image_red5pro_cloudstorage_aws_access_key" {
+  description = "Transcoder node image - AWS access key for cloud storage (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "transcoder_image_red5pro_cloudstorage_aws_secret_key" {
+  description = "Transcoder node image - AWS secret key for cloud storage (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "transcoder_image_red5pro_cloudstorage_aws_bucket_name" {
+  description = "Transcoder node image - AWS bucket name for cloud storage (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "transcoder_image_red5pro_cloudstorage_aws_region" {
+  description = "Transcoder node image - AWS region for cloud storage (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "transcoder_image_red5pro_cloudstorage_postprocessor_enable" {
+  description = "Transcoder node image - enable/disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)"
+  type        = bool
+  default     = false
+}
+variable "transcoder_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
+  description = "Transcoder node image - AWS bucket ACL policy for cloud storage (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
+  type        = string
+  default     = "public-read"
 }
 
 # Red5 Pro Relay node image configuration
@@ -844,4 +948,16 @@ variable "node_group_relays_capacity" {
   type        = number
   default     = 30
 }
-
+variable "ubuntu_version_aws_image" {
+  type = map(string)
+  default = {
+    18.04 = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"
+    20.04 = "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"
+    22.04 = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
+  }
+}
+variable "ubuntu_version" {
+  description = "Ubuntu version"
+  type        = string
+  default     = "20.04"
+}

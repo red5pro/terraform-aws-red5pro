@@ -14,7 +14,7 @@ module "red5pro" {
   type    = "single"                                                              # Deployment type: single, cluster, autoscaling
   name    = "red5pro-single"                                                      # Name to be used on all the resources as identifier
 
-  path_to_red5pro_build     = "./red5pro-server-0.0.0.b0-release.zip"          # Absolute path or relative path to Red5 Pro server ZIP file
+  path_to_red5pro_build     = "./red5pro-server-0.0.0.b0-release.zip"             # Absolute path or relative path to Red5 Pro server ZIP file
 
     # SSH key configuration
   ssh_key_create            = true                                                # true - create new SSH key, false - use existing SSH key
@@ -23,11 +23,11 @@ module "red5pro" {
   
   # VPC configuration
   vpc_create      = true                                                          # true - create new VPC, false - use existing VPC
-  vpc_id_existing = "vpc-example"                                                 # VPC ID for existing VPC
+  vpc_id_existing = "vpc-12345"                                                   # VPC ID for existing VPC
 
   # Security group configuration
   security_group_create      = true                                               # true - create new security group, false - use existing security group
-  security_group_id_existing = "sg-example"                                       # Security group ID for existing security group
+  security_group_id_existing = "sg-12345"                                         # Security group ID for existing security group
 
   # Elastic IP configuration
   elastic_ip_create           = true                                              # true - create new elastic IP, false - use existing elastic IP
@@ -58,6 +58,14 @@ module "red5pro" {
   red5pro_round_trip_auth_protocol              = "http"                                     # Round trip authentication server protocol
   red5pro_round_trip_auth_endpoint_validate     = "/validateCredentials"                     # Round trip authentication server endpoint for validate
   red5pro_round_trip_auth_endpoint_invalidate   = "/invalidateCredentials"                   # Round trip authentication server endpoint for invalidate
+  red5pro_cloudstorage_enable                   = false                                      # true - enable Red5 Pro server cloud storage, false - disable Red5 Pro server cloud storage (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)
+  red5pro_cloudstorage_aws_access_key           = ""                                         # AWS access key for Red5 Pro cloud storage (S3 Bucket)
+  red5pro_cloudstorage_aws_secret_key           = ""                                         # AWS secret key for Red5 Pro cloud storage (S3 Bucket)
+  red5pro_cloudstorage_aws_bucket_name          = "s3-bucket-example-name"                   # AWS bucket name for Red5 Pro cloud storage (S3 Bucket)
+  red5pro_cloudstorage_aws_region               = "us-west-1"                                # AWS region for Red5 Pro cloud storage  (S3 Bucket)
+  red5pro_cloudstorage_postprocessor_enable     = true                                       # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
+  red5pro_cloudstorage_aws_bucket_acl_policy    = "public-read"                              # AWS bucket ACL policy for Red5 Pro cloud storage (S3 Bucket) Example: none, public-read, authenticated-read, private, public-read-write
+
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {

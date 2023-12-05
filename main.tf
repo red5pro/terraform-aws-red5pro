@@ -382,7 +382,7 @@ data "aws_ami" "latest_ubuntu" {
   owners      = ["099720109477"] # Canonical
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    values = [lookup(var.ubuntu_version_aws_image, var.ubuntu_version, "what?")]
   }
   filter {
     name   = "virtualization-type"
@@ -690,6 +690,13 @@ resource "aws_instance" "red5pro_node_origin" {
       "export NODE_ROUND_TRIP_AUTH_PROTOCOL='${var.origin_image_red5pro_round_trip_auth_protocol}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE='${var.origin_image_red5pro_round_trip_auth_endpoint_validate}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE='${var.origin_image_red5pro_round_trip_auth_endpoint_invalidate}'",
+      "export NODE_CLOUDSTORAGE_ENABLE='${var.origin_image_red5pro_cloudstorage_enable}'",
+      "export NODE_CLOUDSTORAGE_AWS_ACCESS_KEY='${var.origin_image_red5pro_cloudstorage_aws_access_key}'",
+      "export NODE_CLOUDSTORAGE_AWS_SECRET_KEY='${var.origin_image_red5pro_cloudstorage_aws_secret_key}'",
+      "export NODE_CLOUDSTORAGE_AWS_BUCKET_NAME='${var.origin_image_red5pro_cloudstorage_aws_bucket_name}'",
+      "export NODE_CLOUDSTORAGE_AWS_REGION='${var.origin_image_red5pro_cloudstorage_aws_region}'",
+      "export NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE='${var.origin_image_red5pro_cloudstorage_postprocessor_enable}'",
+      "export NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY='${var.origin_image_red5pro_cloudstorage_aws_bucket_acl_policy}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
@@ -838,6 +845,13 @@ resource "aws_instance" "red5pro_node_transcoder" {
       "export NODE_ROUND_TRIP_AUTH_PROTOCOL='${var.transcoder_image_red5pro_round_trip_auth_protocol}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE='${var.transcoder_image_red5pro_round_trip_auth_endpoint_validate}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE='${var.transcoder_image_red5pro_round_trip_auth_endpoint_invalidate}'",
+      "export NODE_CLOUDSTORAGE_ENABLE='${var.transcoder_image_red5pro_cloudstorage_enable}'",
+      "export NODE_CLOUDSTORAGE_AWS_ACCESS_KEY='${var.transcoder_image_red5pro_cloudstorage_aws_access_key}'",
+      "export NODE_CLOUDSTORAGE_AWS_SECRET_KEY='${var.transcoder_image_red5pro_cloudstorage_aws_secret_key}'",
+      "export NODE_CLOUDSTORAGE_AWS_BUCKET_NAME='${var.transcoder_image_red5pro_cloudstorage_aws_bucket_name}'",
+      "export NODE_CLOUDSTORAGE_AWS_REGION='${var.transcoder_image_red5pro_cloudstorage_aws_region}'",
+      "export NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE='${var.transcoder_image_red5pro_cloudstorage_postprocessor_enable}'",
+      "export NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY='${var.transcoder_image_red5pro_cloudstorage_aws_bucket_acl_policy}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
@@ -989,6 +1003,13 @@ resource "aws_instance" "red5pro_single" {
       "export NODE_ROUND_TRIP_AUTH_PROTOCOL='${var.red5pro_round_trip_auth_protocol}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE='${var.red5pro_round_trip_auth_endpoint_validate}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE='${var.red5pro_round_trip_auth_endpoint_invalidate}'",
+      "export NODE_CLOUDSTORAGE_ENABLE='${var.red5pro_cloudstorage_enable}'",
+      "export NODE_CLOUDSTORAGE_AWS_ACCESS_KEY='${var.red5pro_cloudstorage_aws_access_key}'",
+      "export NODE_CLOUDSTORAGE_AWS_SECRET_KEY='${var.red5pro_cloudstorage_aws_secret_key}'",
+      "export NODE_CLOUDSTORAGE_AWS_BUCKET_NAME='${var.red5pro_cloudstorage_aws_bucket_name}'",
+      "export NODE_CLOUDSTORAGE_AWS_REGION='${var.red5pro_cloudstorage_aws_region}'",
+      "export NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE='${var.red5pro_cloudstorage_postprocessor_enable}'",
+      "export NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY='${var.red5pro_cloudstorage_aws_bucket_acl_policy}'",
       "export SSL_ENABLE='${var.https_letsencrypt_enable}'",
       "export SSL_DOMAIN='${var.https_letsencrypt_certificate_domain_name}'",
       "export SSL_MAIL='${var.https_letsencrypt_certificate_email}'",

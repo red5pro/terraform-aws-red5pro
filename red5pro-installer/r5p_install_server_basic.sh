@@ -76,6 +76,13 @@ check_linux_and_java_versions(){
                 *) log_e "JDK version is not supported $jdk_version"; pause ;;
             esac
         ;;
+        22.04)
+            case "${jdk_version}" in
+                jdk8) PACKAGES=("${PACKAGES_2004[@]}" "${JDK_8[@]}") ;;
+                jdk11) PACKAGES=("${PACKAGES_2004[@]}" "${JDK_11[@]}") ;;
+                *) log_e "JDK version is not supported $jdk_version"; pause ;;
+            esac
+        ;;
         *) log_e "Linux version is not supported $DISTRIB_RELEASE"; pause ;;
     esac
 }

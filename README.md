@@ -60,11 +60,11 @@ module "red5pro" {
   
   # VPC configuration
   vpc_create      = true                                                          # true - create new VPC, false - use existing VPC
-  vpc_id_existing = "vpc-example"                                                 # VPC ID for existing VPC
+  vpc_id_existing = "vpc-12345"                                                   # VPC ID for existing VPC
 
   # Security group configuration
   security_group_create      = true                                               # true - create new security group, false - use existing security group
-  security_group_id_existing = "sg-example"                                       # Security group ID for existing security group
+  security_group_id_existing = "sg-12345"                                         # Security group ID for existing security group
 
   # Elastic IP configuration
   elastic_ip_create           = true                                              # true - create new elastic IP, false - use existing elastic IP
@@ -95,6 +95,13 @@ module "red5pro" {
   red5pro_round_trip_auth_protocol              = "http"                                     # Round trip authentication server protocol
   red5pro_round_trip_auth_endpoint_validate     = "/validateCredentials"                     # Round trip authentication server endpoint for validate
   red5pro_round_trip_auth_endpoint_invalidate   = "/invalidateCredentials"                   # Round trip authentication server endpoint for invalidate
+  red5pro_cloudstorage_enable                   = false                                      # true - enable Red5 Pro server cloud storage, false - disable Red5 Pro server cloud storage (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)
+  red5pro_cloudstorage_aws_access_key           = ""                                         # AWS access key for Red5 Pro cloud storage (S3 Bucket)
+  red5pro_cloudstorage_aws_secret_key           = ""                                         # AWS secret key for Red5 Pro cloud storage (S3 Bucket)
+  red5pro_cloudstorage_aws_bucket_name          = "s3-bucket-example-name"                   # AWS bucket name for Red5 Pro cloud storage (S3 Bucket)
+  red5pro_cloudstorage_aws_region               = "us-west-1"                                # AWS region for Red5 Pro cloud storage  (S3 Bucket)
+  red5pro_cloudstorage_postprocessor_enable     = true                                       # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
+  red5pro_cloudstorage_aws_bucket_acl_policy    = "public-read"                              # AWS bucket ACL policy for Red5 Pro cloud storage (S3 Bucket) Example: none, public-read, authenticated-read, private, public-read-write
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {
@@ -156,7 +163,7 @@ module "red5pro" {
   
   # VPC configuration
   vpc_create              = true                                              # true - create new VPC, false - use existing VPC
-  vpc_id_existing         = "vpc-example"                                     # VPC ID for existing VPC
+  vpc_id_existing         = "vpc-12345"                                       # VPC ID for existing VPC
 
   # MySQL DB configuration
   mysql_rds_create        = false                                             # true - create new RDS instance, false - install local MySQL server on the Stream Manager EC2 instance
@@ -201,6 +208,13 @@ module "red5pro" {
   origin_image_red5pro_round_trip_auth_protocol             = "http"                        # Round trip authentication server protocol
   origin_image_red5pro_round_trip_auth_endpoint_validate    = "/validateCredentials"        # Round trip authentication server endpoint for validate
   origin_image_red5pro_round_trip_auth_endpoint_invalidate  = "/invalidateCredentials"      # Round trip authentication server endpoint for invalidate
+  origin_image_red5pro_cloudstorage_enable                  = false                         # true - enable Red5 Pro server cloud storage, false - disable Red5 Pro server cloud storage (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)
+  origin_image_red5pro_cloudstorage_aws_access_key          = ""                            # AWS access key for Red5 Pro cloud storage (S3 Bucket)
+  origin_image_red5pro_cloudstorage_aws_secret_key          = ""                            # AWS secret key for Red5 Pro cloud storage (S3 Bucket)
+  origin_image_red5pro_cloudstorage_aws_bucket_name         = "s3-bucket-example-name"      # AWS bucket name for Red5 Pro cloud storage (S3 Bucket)
+  origin_image_red5pro_cloudstorage_aws_region              = "us-west-1"                   # AWS region for Red5 Pro cloud storage  (S3 Bucket)
+  origin_image_red5pro_cloudstorage_postprocessor_enable    = true                          # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
+  origin_image_red5pro_cloudstorage_aws_bucket_acl_policy   = "public-read"                 # AWS bucket ACL policy for Red5 Pro cloud storage (S3 Bucket) Example: none, public-read, authenticated-read, private, public-read-write
 
   # Red5 Pro autoscaling Node group - (Optional)
   node_group_create                               = true                      # Linux or Mac OS only. true - create new Node group, false - not create new Node group
@@ -286,7 +300,7 @@ module "red5pro" {
   
   # VPC configuration
   vpc_create              = true                                             # true - create new VPC, false - use existing VPC
-  vpc_id_existing         = "vpc-example"                                     # VPC ID for existing VPC
+  vpc_id_existing         = "vpc-12345"                                      # VPC ID for existing VPC
 
   # MySQL DB configuration
   mysql_rds_instance_type = "db.t2.micro"                                     # Instance type for RDS instance
@@ -327,7 +341,13 @@ module "red5pro" {
   origin_image_red5pro_round_trip_auth_protocol             = "http"                        # Round trip authentication server protocol
   origin_image_red5pro_round_trip_auth_endpoint_validate    = "/validateCredentials"        # Round trip authentication server endpoint for validate
   origin_image_red5pro_round_trip_auth_endpoint_invalidate  = "/invalidateCredentials"      # Round trip authentication server endpoint for invalidate
-
+  origin_image_red5pro_cloudstorage_enable                  = false                         # true - enable Red5 Pro server cloud storage, false - disable Red5 Pro server cloud storage (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)
+  origin_image_red5pro_cloudstorage_aws_access_key          = ""                            # AWS access key for Red5 Pro cloud storage (S3 Bucket)
+  origin_image_red5pro_cloudstorage_aws_secret_key          = ""                            # AWS secret key for Red5 Pro cloud storage (S3 Bucket)
+  origin_image_red5pro_cloudstorage_aws_bucket_name         = "s3-bucket-example-name"      # AWS bucket name for Red5 Pro cloud storage (S3 Bucket)
+  origin_image_red5pro_cloudstorage_aws_region              = "us-west-1"                   # AWS region for Red5 Pro cloud storage  (S3 Bucket)
+  origin_image_red5pro_cloudstorage_postprocessor_enable    = true                          # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
+  origin_image_red5pro_cloudstorage_aws_bucket_acl_policy   = "public-read"                 # AWS bucket ACL policy for Red5 Pro cloud storage (S3 Bucket) Example: none, public-read, authenticated-read, private, public-read-write
 
   # Red5 Pro autoscaling Node group - (Optional)
   node_group_create                               = true                      # Linux or Mac OS only. true - create new Node group, false - not create new Node group
@@ -369,7 +389,6 @@ output "module_output" {
 * To activate HTTPS/SSL you need to add DNS A record for Elastic IP (single/cluster) or CNAME record for Load Balancer DNS name (autoscaling)
 
 ---
-
 
 ## Future updates
 
