@@ -675,13 +675,16 @@ variable "relay_image_red5pro_round_trip_auth_endpoint_invalidate" {
   type        = string
   default     = "/invalidateCredentials"
 }
-
 variable "tags" {
   description = "A map of tags to add to all resources"
   type        = map(string)
   default     = {}
 }
-
+variable "vpc_cidr_block" {
+  description = "CIDR block for the VPC"
+  type        = string
+  default     = "10.5.0.0/16"
+}
 variable "vpc_public_subnets" {
   description = "A list of public subnets inside the VPC"
   type        = list(string)

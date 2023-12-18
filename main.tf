@@ -144,7 +144,7 @@ data "aws_availability_zones" "available" {
 
 resource "aws_vpc" "red5pro_vpc" {
   count                = var.vpc_create ? 1 : 0
-  cidr_block           = "10.5.0.0/16"
+  cidr_block           = var.vpc_cidr_block
   instance_tenancy     = "default"
   enable_dns_support   = true
   enable_dns_hostnames = true
