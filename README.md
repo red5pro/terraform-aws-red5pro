@@ -15,9 +15,9 @@ Terraform Red5 Pro AWS module which create Red5 Pro resources on AWS.
 * Install **terraform** https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
 * Install **AWS CLI** https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 * Install **jq** Linux or Mac OS only - `apt install jq` or `brew install jq` (It is using in bash scripts to create/delete Stream Manager node group using API)
-* Download Red5 Pro server build: (Example: red5pro-server-0.0.0.b0-release.zip) https://account.red5pro.com/downloads
-* Download Red5 Pro Autoscale controller for AWS: (Example: aws-cloud-controller-0.0.0.jar) https://account.red5pro.com/downloads
-* Get Red5 Pro License key: (Example: 1111-2222-3333-4444) https://account.red5pro.com
+* Download Red5 Pro server build: (Example: red5pro-server-0.0.0.b0-release.zip) https://account.red5.net/downloads
+* Download Red5 Pro Autoscale controller for AWS: (Example: aws-cloud-controller-0.0.0.jar) https://account.red5.net/downloads
+* Get Red5 Pro License key: (Example: 1111-2222-3333-4444) https://account.red5.net
 * Get AWS Access key and AWS Secret key or use existing (AWS IAM - EC2 full access, RDS full access, VPC full access, Certificate manager read only)
 * Copy Red5 Pro server build and Red5 Pro Autoscale controller for AWS to the root folder of your project
 
@@ -81,15 +81,15 @@ module "red5pro" {
   single_volume_size                         = 8                                  # Volume size for Red5 Pro server
 
   # Red5Pro server configuration
-  red5pro_license_key                           = "1111-2222-3333-4444"                      # Red5 Pro license key (https://account.red5pro.com/login)
-  red5pro_api_enable                            = true                                       # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5pro.com/docs/development/api/overview/)
-  red5pro_api_key                               = "examplekey"                               # Red5 Pro server API key (https://www.red5pro.com/docs/development/api/overview/)
-  red5pro_inspector_enable                      = false                                      # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)
-  red5pro_restreamer_enable                     = false                                      # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5pro.com/docs/special/restreamer/overview/)
-  red5pro_socialpusher_enable                   = false                                      # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5pro.com/docs/special/social-media-plugin/overview/)
+  red5pro_license_key                           = "1111-2222-3333-4444"                      # Red5 Pro license key (https://account.red5.net/login)
+  red5pro_api_enable                            = true                                       # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
+  red5pro_api_key                               = "examplekey"                               # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
+  red5pro_inspector_enable                      = false                                      # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5.net/docs/troubleshooting/inspector/overview/)
+  red5pro_restreamer_enable                     = false                                      # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5.net/docs/special/restreamer/overview/)
+  red5pro_socialpusher_enable                   = false                                      # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5.net/docs/special/social-media-plugin/overview/)
   red5pro_suppressor_enable                     = false                                      # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
-  red5pro_hls_enable                            = false                                      # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5pro.com/docs/protocols/hls-plugin/hls-vod/)
-  red5pro_round_trip_auth_enable                = false                                      # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
+  red5pro_hls_enable                            = false                                      # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5.net/docs/protocols/hls-plugin/hls-vod/)
+  red5pro_round_trip_auth_enable                = false                                      # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5.net/docs/special/round-trip-auth/overview/)
   red5pro_round_trip_auth_host                  = "round-trip-auth.example.com"              # Round trip authentication server host
   red5pro_round_trip_auth_port                  = 3000                                       # Round trip authentication server port
   red5pro_round_trip_auth_protocol              = "http"                                     # Round trip authentication server protocol
@@ -131,7 +131,7 @@ output "module_output" {
 * Edge node image create or not (it is optional)
 * Transcoder node image create or not (it is optional)
 * Relay node image create or not (it is optional)
-* Autoscaling node group using API to Stream Manager (optional) - (https://www.red5pro.com/docs/special/concepts/nodegroup/)
+* Autoscaling node group using API to Stream Manager (optional) - (https://www.red5.net/docs/special/concepts/nodegroup/)
 
 ## Usage (cluster)
 
@@ -188,21 +188,21 @@ module "red5pro" {
   stream_manager_api_key        = "examplekey"                                # API key for Stream Manager
 
   # Red5 Pro general configuration
-  red5pro_license_key           = "1111-2222-3333-4444"                       # Red5 Pro license key (https://account.red5pro.com/login)
+  red5pro_license_key           = "1111-2222-3333-4444"                       # Red5 Pro license key (https://account.red5.net/login)
   red5pro_cluster_key           = "examplekey"                                # Red5 Pro cluster key
-  red5pro_api_enable            = true                                        # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5pro.com/docs/development/api/overview/)
-  red5pro_api_key               = "examplekey"                                # Red5 Pro server API key (https://www.red5pro.com/docs/development/api/overview/)
+  red5pro_api_enable            = true                                        # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
+  red5pro_api_key               = "examplekey"                                # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
   # Red5 Pro autoscaling Origin node image configuration
   origin_image_create                                       = true                          # Default: true for Autoscaling and Cluster, true - create new Origin node image, false - not create new Origin node image
   origin_image_instance_type                                = "t3.medium"                   # Instance type for Origin node image
   origin_image_volume_size                                  = 8                             # Volume size for Origin node image
-  origin_image_red5pro_inspector_enable                     = false                         # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)
-  origin_image_red5pro_restreamer_enable                    = false                         # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5pro.com/docs/special/restreamer/overview/)
-  origin_image_red5pro_socialpusher_enable                  = false                         # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5pro.com/docs/special/social-media-plugin/overview/)
+  origin_image_red5pro_inspector_enable                     = false                         # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5.net/docs/troubleshooting/inspector/overview/)
+  origin_image_red5pro_restreamer_enable                    = false                         # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5.net/docs/special/restreamer/overview/)
+  origin_image_red5pro_socialpusher_enable                  = false                         # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5.net/docs/special/social-media-plugin/overview/)
   origin_image_red5pro_suppressor_enable                    = false                         # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
-  origin_image_red5pro_hls_enable                           = false                         # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5pro.com/docs/protocols/hls-plugin/hls-vod/)
-  origin_image_red5pro_round_trip_auth_enable               = false                         # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
+  origin_image_red5pro_hls_enable                           = false                         # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5.net/docs/protocols/hls-plugin/hls-vod/)
+  origin_image_red5pro_round_trip_auth_enable               = false                         # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5.net/docs/special/round-trip-auth/overview/)
   origin_image_red5pro_round_trip_auth_host                 = "round-trip-auth.example.com" # Round trip authentication server host
   origin_image_red5pro_round_trip_auth_port                 = 3000                          # Round trip authentication server port
   origin_image_red5pro_round_trip_auth_protocol             = "http"                        # Round trip authentication server protocol
@@ -268,7 +268,7 @@ output "module_output" {
 * Edge node image create or not (it is optional)
 * Transcoder node image create or not (it is optional)
 * Relay node image create or not (it is optional)
-* Autoscaling node group using API to Stream Manager (optional) - (https://www.red5pro.com/docs/special/concepts/nodegroup/)
+* Autoscaling node group using API to Stream Manager (optional) - (https://www.red5.net/docs/special/concepts/nodegroup/)
 
 ## Usage (autoscaling)
 
@@ -321,21 +321,21 @@ module "red5pro" {
   stream_manager_autoscaling_maximum_capacity = 1                             # Maximum capacity for Stream Manager autoscaling group
 
   # Red5 Pro general configuration
-  red5pro_license_key           = "1111-2222-3333-4444"                       # Red5 Pro license key (https://account.red5pro.com/login)
+  red5pro_license_key           = "1111-2222-3333-4444"                       # Red5 Pro license key (https://account.red5.net/login)
   red5pro_cluster_key           = "examplekey"                                # Red5 Pro cluster key
-  red5pro_api_enable            = true                                        # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5pro.com/docs/development/api/overview/)
-  red5pro_api_key               = "examplekey"                                # Red5 Pro server API key (https://www.red5pro.com/docs/development/api/overview/)
+  red5pro_api_enable            = true                                        # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
+  red5pro_api_key               = "examplekey"                                # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
   # Red5 Pro autoscaling Origin node image configuration
   origin_image_create                                       = true                          # Default: true for Autoscaling and Cluster, true - create new Origin node image, false - not create new Origin node image
   origin_image_instance_type                                = "t3.medium"                   # Instance type for Origin node image
   origin_image_volume_size                                  = 8                             # Volume size for Origin node image
-  origin_image_red5pro_inspector_enable                     = false                         # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)
-  origin_image_red5pro_restreamer_enable                    = false                         # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5pro.com/docs/special/restreamer/overview/)
-  origin_image_red5pro_socialpusher_enable                  = false                         # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5pro.com/docs/special/social-media-plugin/overview/)
+  origin_image_red5pro_inspector_enable                     = false                         # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5.net/docs/troubleshooting/inspector/overview/)
+  origin_image_red5pro_restreamer_enable                    = false                         # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5.net/docs/special/restreamer/overview/)
+  origin_image_red5pro_socialpusher_enable                  = false                         # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5.net/docs/special/social-media-plugin/overview/)
   origin_image_red5pro_suppressor_enable                    = false                         # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
-  origin_image_red5pro_hls_enable                           = false                         # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5pro.com/docs/protocols/hls-plugin/hls-vod/)
-  origin_image_red5pro_round_trip_auth_enable               = false                         # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5pro.com/docs/special/round-trip-auth/overview/)
+  origin_image_red5pro_hls_enable                           = false                         # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5.net/docs/protocols/hls-plugin/hls-vod/)
+  origin_image_red5pro_round_trip_auth_enable               = false                         # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5.net/docs/special/round-trip-auth/overview/)
   origin_image_red5pro_round_trip_auth_host                 = "round-trip-auth.example.com" # Round trip authentication server host
   origin_image_red5pro_round_trip_auth_port                 = 3000                          # Round trip authentication server port
   origin_image_red5pro_round_trip_auth_protocol             = "http"                        # Round trip authentication server protocol

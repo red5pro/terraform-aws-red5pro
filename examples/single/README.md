@@ -9,13 +9,13 @@ This example illustrates how to create a simple Red5 Pro deployment in AWS with 
 * EC2 Instance with installed and configured Red5 Pro server
 * SSL certificate install Let's encrypt or use Red5Pro server without SSL certificate (HTTP only)
 
-Red5 Pro documentation for Single server deployemnt: https://www.red5pro.com/docs/installation/installation/awsinstall/
+Red5 Pro documentation for Single server deployemnt: https://www.red5.net/docs/installation/installation/awsinstall/
 
 ## Preparation
 
 * Install **terraform** https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
-* Download Red5 Pro server build: (Example: red5pro-server-0.0.0.b0-release.zip) https://account.red5pro.com/downloads
-* Get Red5 Pro License key: (Example: 1111-2222-3333-4444) https://account.red5pro.com
+* Download Red5 Pro server build: (Example: red5pro-server-0.0.0.b0-release.zip) https://account.red5.net/downloads
+* Get Red5 Pro License key: (Example: 1111-2222-3333-4444) https://account.red5.net
 * Get AWS Access key and AWS Secret key or use existing (AWS IAM - EC2 full access, VPC full access)
 * Copy Red5 Pro server build to the root folder of your project
 

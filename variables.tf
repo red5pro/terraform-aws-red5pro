@@ -17,7 +17,7 @@ variable "type" {
   }
 }
 variable "path_to_red5pro_build" {
-  description = "Path to the Red5 Pro build zip file, absolute path or relative path. https://account.red5pro.com/downloads. Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-0.0.0.b0-release.zip"
+  description = "Path to the Red5 Pro build zip file, absolute path or relative path. https://account.red5.net/downloads. Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-0.0.0.b0-release.zip"
   type        = string
   default     = ""
   validation {
@@ -26,7 +26,7 @@ variable "path_to_red5pro_build" {
   }
 }
 variable "path_to_aws_cloud_controller" {
-  description = "Path to the AWS Cloud Controller jar file, absolute path or relative path. https://account.red5pro.com/downloads. Example: /home/ubuntu/terraform-aws-red5pro/aws-cloud-controller-0.0.0.jar"
+  description = "Path to the AWS Cloud Controller jar file, absolute path or relative path. https://account.red5.net/downloads. Example: /home/ubuntu/terraform-aws-red5pro/aws-cloud-controller-0.0.0.jar"
   type        = string
   default     = ""
 }
@@ -118,17 +118,17 @@ variable "single_volume_size" {
   default     = 8
 }
 variable "red5pro_inspector_enable" {
-  description = "Red5 Pro Single server Inspector enable/disable (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)"
+  description = "Red5 Pro Single server Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
   type        = bool
   default     = false
 }
 variable "red5pro_restreamer_enable" {
-  description = "Red5 Pro Single server Restreamer enable/disable (https://www.red5pro.com/docs/special/restreamer/overview/)"
+  description = "Red5 Pro Single server Restreamer enable/disable (https://www.red5.net/docs/special/restreamer/overview/)"
   type        = bool
   default     = false
 }
 variable "red5pro_socialpusher_enable" {
-  description = "Red5 Pro Single server SocialPusher enable/disable (https://www.red5pro.com/docs/special/social-media-plugin/rest-api/)"
+  description = "Red5 Pro Single server SocialPusher enable/disable (https://www.red5.net/docs/special/social-media-plugin/rest-api/)"
   type        = bool
   default     = false
 }
@@ -138,12 +138,12 @@ variable "red5pro_suppressor_enable" {
   default     = false
 }
 variable "red5pro_hls_enable" {
-  description = "Red5 Pro Single server HLS enable/disable (https://www.red5pro.com/docs/protocols/hls-plugin/overview/)"
+  description = "Red5 Pro Single server HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
 }
 variable "red5pro_round_trip_auth_enable" {
-  description = "Round trip authentication on the red5pro server enable/disable - Auth server should be deployed separately (https://www.red5pro.com/docs/special/round-trip-auth/overview/)"
+  description = "Round trip authentication on the red5pro server enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
   type        = bool
   default     = false
 }
@@ -236,7 +236,7 @@ variable "mysql_port" {
 }
 # HTTPS/SSL variables for single/cluster
 variable "https_letsencrypt_enable" {
-  description = "Enable HTTPS and get SSL certificate using Let's Encrypt automaticaly (single/cluster) (https://www.red5pro.com/docs/installation/ssl/overview/)"
+  description = "Enable HTTPS and get SSL certificate using Let's Encrypt automaticaly (single/cluster) (https://www.red5.net/docs/installation/ssl/overview/)"
   type        = bool
   default     = false
 }
@@ -298,7 +298,7 @@ variable "stream_manager_autoscaling_maximum_capacity" {
   default     = 1
 }
 variable "red5pro_license_key" {
-  description = "Red5 Pro license key (https://www.red5pro.com/docs/installation/installation/license-key/)"
+  description = "Red5 Pro license key (https://www.red5.net/docs/installation/installation/license-key/)"
   type        = string
   default     = ""
 }
@@ -308,7 +308,7 @@ variable "red5pro_cluster_key" {
   default     = ""
 }
 variable "red5pro_api_enable" {
-  description = "Red5 Pro Server API enable/disable (https://www.red5pro.com/docs/development/api/overview/)"
+  description = "Red5 Pro Server API enable/disable (https://www.red5.net/docs/development/api/overview/)"
   type        = bool
   default     = true
 }
@@ -320,7 +320,7 @@ variable "red5pro_api_key" {
 
 # Red5 Pro Origin node image configuration
 variable "origin_image_create" {
-  description = "Create new Origin node image true/false. (Default:true) (https://www.red5pro.com/docs/special/relays/overview/#origin-and-edge-nodes)"
+  description = "Create new Origin node image true/false. (Default:true) (https://www.red5.net/docs/special/relays/overview/#origin-and-edge-nodes)"
   type        = bool
   default     = false
 }
@@ -335,17 +335,17 @@ variable "origin_image_volume_size" {
   default     = 8
 }
 variable "origin_image_red5pro_inspector_enable" {
-  description = "Origin node image - Inspector enable/disable (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)"
+  description = "Origin node image - Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
   type        = bool
   default     = false
 }
 variable "origin_image_red5pro_restreamer_enable" {
-  description = "Origin node image - Restreamer enable/disable (https://www.red5pro.com/docs/special/restreamer/overview/)"
+  description = "Origin node image - Restreamer enable/disable (https://www.red5.net/docs/special/restreamer/overview/)"
   type        = bool
   default     = false
 }
 variable "origin_image_red5pro_socialpusher_enable" {
-  description = "Origin node image - SocialPusher enable/disable (https://www.red5pro.com/docs/special/social-media-plugin/rest-api/)"
+  description = "Origin node image - SocialPusher enable/disable (https://www.red5.net/docs/special/social-media-plugin/rest-api/)"
   type        = bool
   default     = false
 }
@@ -355,12 +355,12 @@ variable "origin_image_red5pro_suppressor_enable" {
   default     = false
 }
 variable "origin_image_red5pro_hls_enable" {
-  description = "Origin node image - HLS enable/disable (https://www.red5pro.com/docs/protocols/hls-plugin/overview/)"
+  description = "Origin node image - HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
 }
 variable "origin_image_red5pro_round_trip_auth_enable" {
-  description = "Origin node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5pro.com/docs/special/round-trip-auth/overview/)"
+  description = "Origin node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
   type        = bool
   default     = false
 }
@@ -427,7 +427,7 @@ variable "origin_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
 
 # Red5 Pro Edge node image configuration
 variable "edge_image_create" {
-  description = "Create new Edge node image true/false. (Default:true) (https://www.red5pro.com/docs/special/relays/overview/#origin-and-edge-nodes)"
+  description = "Create new Edge node image true/false. (Default:true) (https://www.red5.net/docs/special/relays/overview/#origin-and-edge-nodes)"
   type        = bool
   default     = false
 }
@@ -442,17 +442,17 @@ variable "edge_image_volume_size" {
   default     = 8
 }
 variable "edge_image_red5pro_inspector_enable" {
-  description = "Edge node image - Inspector enable/disable (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)"
+  description = "Edge node image - Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
   type        = bool
   default     = false
 }
 variable "edge_image_red5pro_restreamer_enable" {
-  description = "Edge node image - Restreamer enable/disable (https://www.red5pro.com/docs/special/restreamer/overview/)"
+  description = "Edge node image - Restreamer enable/disable (https://www.red5.net/docs/special/restreamer/overview/)"
   type        = bool
   default     = false
 }
 variable "edge_image_red5pro_socialpusher_enable" {
-  description = "Edge node image - SocialPusher enable/disable (https://www.red5pro.com/docs/special/social-media-plugin/rest-api/)"
+  description = "Edge node image - SocialPusher enable/disable (https://www.red5.net/docs/special/social-media-plugin/rest-api/)"
   type        = bool
   default     = false
 }
@@ -462,12 +462,12 @@ variable "edge_image_red5pro_suppressor_enable" {
   default     = false
 }
 variable "edge_image_red5pro_hls_enable" {
-  description = "Edge node image - HLS enable/disable (https://www.red5pro.com/docs/protocols/hls-plugin/overview/)"
+  description = "Edge node image - HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
 }
 variable "edge_image_red5pro_round_trip_auth_enable" {
-  description = "Edge node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5pro.com/docs/special/round-trip-auth/overview/)"
+  description = "Edge node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
   type        = bool
   default     = false
 }
@@ -499,7 +499,7 @@ variable "edge_image_red5pro_round_trip_auth_endpoint_invalidate" {
 
 # Red5 Pro Transcoder node image configuration
 variable "transcoder_image_create" {
-  description = "Create new Transcoder node image true/false. (Default:true) (https://www.red5pro.com/docs/special/relays/overview/#origin-and-edge-nodes)"
+  description = "Create new Transcoder node image true/false. (Default:true) (https://www.red5.net/docs/special/relays/overview/#origin-and-edge-nodes)"
   type        = bool
   default     = false
 }
@@ -514,17 +514,17 @@ variable "transcoder_image_volume_size" {
   default     = 8
 }
 variable "transcoder_image_red5pro_inspector_enable" {
-  description = "Transcoder node image - Inspector enable/disable (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)"
+  description = "Transcoder node image - Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
   type        = bool
   default     = false
 }
 variable "transcoder_image_red5pro_restreamer_enable" {
-  description = "Transcoder node image - Restreamer enable/disable (https://www.red5pro.com/docs/special/restreamer/overview/)"
+  description = "Transcoder node image - Restreamer enable/disable (https://www.red5.net/docs/special/restreamer/overview/)"
   type        = bool
   default     = false
 }
 variable "transcoder_image_red5pro_socialpusher_enable" {
-  description = "Transcoder node image - SocialPusher enable/disable (https://www.red5pro.com/docs/special/social-media-plugin/rest-api/)"
+  description = "Transcoder node image - SocialPusher enable/disable (https://www.red5.net/docs/special/social-media-plugin/rest-api/)"
   type        = bool
   default     = false
 }
@@ -534,12 +534,12 @@ variable "transcoder_image_red5pro_suppressor_enable" {
   default     = false
 }
 variable "transcoder_image_red5pro_hls_enable" {
-  description = "Transcoder node image - HLS enable/disable (https://www.red5pro.com/docs/protocols/hls-plugin/overview/)"
+  description = "Transcoder node image - HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
 }
 variable "transcoder_image_red5pro_round_trip_auth_enable" {
-  description = "Transcoder node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5pro.com/docs/special/round-trip-auth/overview/)"
+  description = "Transcoder node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
   type        = bool
   default     = false
 }
@@ -606,7 +606,7 @@ variable "transcoder_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
 
 # Red5 Pro Relay node image configuration
 variable "relay_image_create" {
-  description = "Create new Relay node image true/false. (Default:true) (https://www.red5pro.com/docs/special/relays/overview/#origin-and-edge-nodes)"
+  description = "Create new Relay node image true/false. (Default:true) (https://www.red5.net/docs/special/relays/overview/#origin-and-edge-nodes)"
   type        = bool
   default     = false
 }
@@ -621,17 +621,17 @@ variable "relay_image_volume_size" {
   default     = 8
 }
 variable "relay_image_red5pro_inspector_enable" {
-  description = "Relay node image - Inspector enable/disable (https://www.red5pro.com/docs/troubleshooting/inspector/overview/)"
+  description = "Relay node image - Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
   type        = bool
   default     = false
 }
 variable "relay_image_red5pro_restreamer_enable" {
-  description = "Relay node image - Restreamer enable/disable (https://www.red5pro.com/docs/special/restreamer/overview/)"
+  description = "Relay node image - Restreamer enable/disable (https://www.red5.net/docs/special/restreamer/overview/)"
   type        = bool
   default     = false
 }
 variable "relay_image_red5pro_socialpusher_enable" {
-  description = "Relay node image - SocialPusher enable/disable (https://www.red5pro.com/docs/special/social-media-plugin/rest-api/)"
+  description = "Relay node image - SocialPusher enable/disable (https://www.red5.net/docs/special/social-media-plugin/rest-api/)"
   type        = bool
   default     = false
 }
@@ -641,12 +641,12 @@ variable "relay_image_red5pro_suppressor_enable" {
   default     = false
 }
 variable "relay_image_red5pro_hls_enable" {
-  description = "Relay node image - HLS enable/disable (https://www.red5pro.com/docs/protocols/hls-plugin/overview/)"
+  description = "Relay node image - HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
 }
 variable "relay_image_red5pro_round_trip_auth_enable" {
-  description = "Relay node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5pro.com/docs/special/round-trip-auth/overview/)"
+  description = "Relay node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
   type        = bool
   default     = false
 }
