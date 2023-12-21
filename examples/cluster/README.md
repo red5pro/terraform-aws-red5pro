@@ -13,18 +13,18 @@ This example illustrates how to create Red5 Pro deployment in AWS with Stream Ma
 * Edge node image create or not (it is optional)
 * Transcoder node image create or not (it is optional)
 * Relay node image create or not (it is optional)
-* Autoscaling node group using API to Stream Manager (optional) - (https://www.red5pro.com/docs/special/concepts/nodegroup/)
+* Autoscaling node group using API to Stream Manager (optional) - (https://www.red5.net/docs/special/concepts/nodegroup/)
 
-Red5 Pro documentation for AWS deployemnt: https://www.red5pro.com/docs/installation/auto-aws/overview/  
+Red5 Pro documentation for AWS deployemnt: https://www.red5.net/docs/installation/auto-aws/overview/  
 
 ## Preparation
 
 * Install **terraform** https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
 * Install **AWS CLI** https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 * Install **jq** Linux or Mac OS only - `apt install jq` or `brew install jq` (It is using in bash scripts to create/delete Stream Manager node group using API)
-* Download Red5 Pro server build: (Example: red5pro-server-0.0.0.b0-release.zip) https://account.red5pro.com/downloads
-* Download Red5 Pro Autoscale controller for AWS: (Example: aws-cloud-controller-0.0.0.jar) https://account.red5pro.com/downloads
-* Get Red5 Pro License key: (Example: 1111-2222-3333-4444) https://account.red5pro.com
+* Download Red5 Pro server build: (Example: red5pro-server-0.0.0.b0-release.zip) https://account.red5.net/downloads
+* Download Red5 Pro Autoscale controller for AWS: (Example: aws-cloud-controller-0.0.0.jar) https://account.red5.net/downloads
+* Get Red5 Pro License key: (Example: 1111-2222-3333-4444) https://account.red5.net
 * Get AWS Access key and AWS Secret key or use existing (AWS IAM - EC2 full access, RDS full access, VPC full access, Certificate manager read only)
 * Copy Red5 Pro server build and Red5 Pro Autoscale controller for AWS to the root folder of your project
 
