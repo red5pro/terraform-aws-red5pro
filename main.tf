@@ -544,8 +544,8 @@ resource "aws_autoscaling_group" "red5pro_sm_ag" {
   count               = local.autoscaling ? 1 : 0
   name                = "${var.name}-stream-manager-ag"
   desired_capacity    = var.stream_manager_autoscaling_desired_capacity
-  max_size            = var.stream_manager_autoscaling_minimum_capacity
-  min_size            = var.stream_manager_autoscaling_maximum_capacity
+  max_size            = var.stream_manager_autoscaling_maximum_capacity
+  min_size            = var.stream_manager_autoscaling_minimum_capacity
   placement_group     = aws_placement_group.red5pro_sm_pg[0].id
   vpc_zone_identifier = local.subnet_ids
 
