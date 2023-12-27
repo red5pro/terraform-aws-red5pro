@@ -14,6 +14,7 @@ module "red5pro" {
   type    = "single"                                                              # Deployment type: single, cluster, autoscaling
   name    = "red5pro-single"                                                      # Name to be used on all the resources as identifier
 
+  ubuntu_version            = "22.04"                                             # Ubuntu version for Red5 Pro servers
   path_to_red5pro_build     = "./red5pro-server-0.0.0.b0-release.zip"             # Absolute path or relative path to Red5 Pro server ZIP file
 
     # SSH key configuration
@@ -63,9 +64,10 @@ module "red5pro" {
   red5pro_cloudstorage_aws_secret_key           = ""                                         # AWS secret key for Red5 Pro cloud storage (S3 Bucket)
   red5pro_cloudstorage_aws_bucket_name          = "s3-bucket-example-name"                   # AWS bucket name for Red5 Pro cloud storage (S3 Bucket)
   red5pro_cloudstorage_aws_region               = "us-west-1"                                # AWS region for Red5 Pro cloud storage  (S3 Bucket)
-  red5pro_cloudstorage_postprocessor_enable     = true                                       # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
+  red5pro_cloudstorage_postprocessor_enable     = false                                      # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
   red5pro_cloudstorage_aws_bucket_acl_policy    = "public-read"                              # AWS bucket ACL policy for Red5 Pro cloud storage (S3 Bucket) Example: none, public-read, authenticated-read, private, public-read-write
-
+  red5pro_coturn_enable                         = false                                      # true - enable customized Coturn configuration for Red5Pro server, false - disable customized Coturn configuration for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
+  red5pro_coturn_address                        = "stun:1.2.3.4:3478"                        # Customized coturn address for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {
