@@ -40,7 +40,7 @@ config_red5pro_coturn(){
 
         log_i "Config Coturn address: $RED5_HOME/conf/network.properties"
         stun_address='stun.address=.*'
-        stun_address_new="stun.address=${NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY}"
+        stun_address_new="stun.address=${COTURN_ADDRESS}"
 
         sed -i -e "s|$stun_address|$stun_address_new|" "$RED5_HOME/conf/network.properties"
 
