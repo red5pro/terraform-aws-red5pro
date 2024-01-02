@@ -14,6 +14,7 @@ module "red5pro" {
   type    = "autoscaling"                                                        # Deployment type: single, cluster, autoscaling
   name    = "red5pro-auto"                                                       # Name to be used on all the resources as identifier
 
+  ubuntu_version               = "22.04"                                      # Ubuntu version for Red5 Pro servers
   path_to_red5pro_build        = "./red5pro-server-0.0.0.b0-release.zip"      # Absolute path or relative path to Red5 Pro server ZIP file
   path_to_aws_cloud_controller = "./aws-cloud-controller-0.0.0.jar"           # Absolute path or relative path to AWS Cloud Controller JAR file
 
@@ -48,6 +49,8 @@ module "red5pro" {
   stream_manager_autoscaling_desired_capacity = 1                             # Desired capacity for Stream Manager autoscaling group
   stream_manager_autoscaling_minimum_capacity = 1                             # Minimum capacity for Stream Manager autoscaling group
   stream_manager_autoscaling_maximum_capacity = 1                             # Maximum capacity for Stream Manager autoscaling group
+  stream_manager_coturn_enable                = false                         # true - enable customized Coturn configuration for Stream Manager, false - disable customized Coturn configuration for Stream Manager (https://www.red5.net/docs/installation/turn-stun/turnstun/)
+  stream_manager_coturn_address               = "stun:1.2.3.4:3478"           # Customized coturn address for Stream Manager (https://www.red5.net/docs/installation/turn-stun/turnstun/)
 
   # Red5 Pro general configuration
   red5pro_license_key           = "1111-2222-3333-4444"                       # Red5 Pro license key (https://account.red5.net/login)
@@ -75,7 +78,7 @@ module "red5pro" {
   origin_image_red5pro_cloudstorage_aws_secret_key          = ""                            # AWS secret key for Red5 Pro cloud storage (S3 Bucket)
   origin_image_red5pro_cloudstorage_aws_bucket_name         = "s3-bucket-example-name"      # AWS bucket name for Red5 Pro cloud storage (S3 Bucket)
   origin_image_red5pro_cloudstorage_aws_region              = "us-west-1"                   # AWS region for Red5 Pro cloud storage  (S3 Bucket)
-  origin_image_red5pro_cloudstorage_postprocessor_enable    = true                          # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
+  origin_image_red5pro_cloudstorage_postprocessor_enable    = false                         # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
   origin_image_red5pro_cloudstorage_aws_bucket_acl_policy   = "public-read"                 # AWS bucket ACL policy for Red5 Pro cloud storage (S3 Bucket) Example: none, public-read, authenticated-read, private, public-read-write
 
   # Red5 Pro autoscaling Node group - (Optional)
@@ -84,19 +87,19 @@ module "red5pro" {
   # Origin node configuration
   node_group_origins                              = 1                         # Number of Origins
   node_group_origins_instance_type                = "t3.medium"               # Instance type for Origins
-  node_group_origins_capacity                     = 30                        # Connections capacity for Origins
+  node_group_origins_capacity                     = 20                        # Connections capacity for Origins
   # Edge node configuration
   node_group_edges                                = 1                         # Number of Edges
   node_group_edges_instance_type                  = "t3.medium"               # Instance type for Edges
-  node_group_edges_capacity                       = 300                       # Connections capacity for Edges
+  node_group_edges_capacity                       = 200                       # Connections capacity for Edges
   # Transcoder node configuration
   node_group_transcoders                          = 0                         # Number of Transcoders
   node_group_transcoders_instance_type            = "t3.medium"               # Instance type for Transcoders
-  node_group_transcoders_capacity                 = 30                        # Connections capacity for Transcoders
+  node_group_transcoders_capacity                 = 20                        # Connections capacity for Transcoders
   # Relay node configuration
   node_group_relays                               = 0                         # Number of Relays
   node_group_relays_instance_type                 = "t3.medium"               # Instance type for Relays
-  node_group_relays_capacity                      = 30                        # Connections capacity for Relays
+  node_group_relays_capacity                      = 20                        # Connections capacity for Relays
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {
@@ -106,6 +109,3 @@ module "red5pro" {
   }
 }
 
-output "module_output" {
-  value = module.red5pro
-}

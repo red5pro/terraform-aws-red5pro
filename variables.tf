@@ -207,6 +207,16 @@ variable "red5pro_cloudstorage_aws_bucket_acl_policy" {
   type        = string
   default     = "public-read"
 }
+variable "red5pro_coturn_enable" {
+  description = "Red5Pro server customized Coturn configuration"
+  type        = bool
+  default     = false
+}
+variable "red5pro_coturn_address" {
+  description = "Red5Pro server customized Coturn address. Example: stun:1.2.3.4:3478"
+  type        = string
+  default     = ""
+}
 
 # MySQL configuration
 variable "mysql_rds_create" {
@@ -296,6 +306,16 @@ variable "stream_manager_autoscaling_maximum_capacity" {
   description = "value to set the maximum capacity for stream manager autoscaling"
   type        = number
   default     = 1
+}
+variable "stream_manager_coturn_enable" {
+  description = "Red5Pro Stream Manager customized Coturn configuration"
+  type        = bool
+  default     = false
+}
+variable "stream_manager_coturn_address" {
+  description = "Red5Pro Stream Manager customized Coturn address. Example: stun:1.2.3.4:3478"
+  type        = string
+  default     = ""
 }
 variable "red5pro_license_key" {
   description = "Red5 Pro license key (https://www.red5.net/docs/installation/installation/license-key/)"
@@ -962,5 +982,5 @@ variable "ubuntu_version_aws_image" {
 variable "ubuntu_version" {
   description = "Ubuntu version"
   type        = string
-  default     = "20.04"
+  default     = "22.04"
 }

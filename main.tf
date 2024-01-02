@@ -462,11 +462,14 @@ resource "aws_instance" "red5pro_sm" {
       "export SSL_DOMAIN='${var.https_letsencrypt_certificate_domain_name}'",
       "export SSL_MAIL='${var.https_letsencrypt_certificate_email}'",
       "export SSL_PASSWORD='${var.https_letsencrypt_certificate_password}'",
+      "export COTURN_ENABLE='${var.stream_manager_coturn_enable}'",
+      "export COTURN_ADDRESS='${var.stream_manager_coturn_address}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_mysql_local.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_stream_manager.sh",
+      "sudo -E /home/ubuntu/red5pro-installer/r5p_config_coturn.sh",
       #"sudo rm -R /home/ubuntu/red5pro-installer",
       "sudo systemctl daemon-reload && sudo systemctl start red5pro",
       "nohup sudo -E /home/ubuntu/red5pro-installer/r5p_ssl_check_install.sh >> /home/ubuntu/red5pro-installer/r5p_ssl_check_install.log &",
@@ -541,8 +544,8 @@ resource "aws_autoscaling_group" "red5pro_sm_ag" {
   count               = local.autoscaling ? 1 : 0
   name                = "${var.name}-stream-manager-ag"
   desired_capacity    = var.stream_manager_autoscaling_desired_capacity
-  max_size            = var.stream_manager_autoscaling_minimum_capacity
-  min_size            = var.stream_manager_autoscaling_maximum_capacity
+  max_size            = var.stream_manager_autoscaling_maximum_capacity
+  min_size            = var.stream_manager_autoscaling_minimum_capacity
   placement_group     = aws_placement_group.red5pro_sm_pg[0].id
   vpc_zone_identifier = local.subnet_ids
 
@@ -1014,10 +1017,13 @@ resource "aws_instance" "red5pro_single" {
       "export SSL_DOMAIN='${var.https_letsencrypt_certificate_domain_name}'",
       "export SSL_MAIL='${var.https_letsencrypt_certificate_email}'",
       "export SSL_PASSWORD='${var.https_letsencrypt_certificate_password}'",
+      "export COTURN_ENABLE='${var.red5pro_coturn_enable}'",
+      "export COTURN_ADDRESS='${var.red5pro_coturn_address}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_node_apps_plugins.sh",
+      "sudo -E /home/ubuntu/red5pro-installer/r5p_config_coturn.sh",
       #"sudo rm -R /home/ubuntu/red5pro-installer",
       "sudo systemctl daemon-reload && sudo systemctl start red5pro",
       "nohup sudo -E /home/ubuntu/red5pro-installer/r5p_ssl_check_install.sh >> /home/ubuntu/red5pro-installer/r5p_ssl_check_install.log &",
