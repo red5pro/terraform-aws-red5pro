@@ -30,7 +30,7 @@ output "load_balancer_https_url" {
   description = "Load Balancer HTTPS URL"
   value = module.red5pro.load_balancer_https_url
 }
-output "node_origin_image" {
+output "node_origin_image_name" {
   description = "AMI image name of the Red5 Pro Node Origin image"
-  value = module.red5pro.node_origin_image
+  value = module.red5pro.node_origin_image_name
 }

@@ -230,6 +230,7 @@ config_node_apps_plugins(){
 
         log_i "Configuration Live App red5-web.properties with MOCK Round trip server ..."
         {
+            echo ""
             echo "server.validateCredentialsEndPoint=${NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE}"
             echo "server.invalidateCredentialsEndPoint=${NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE}"
             echo "server.host=${NODE_ROUND_TRIP_AUTH_HOST}"
