@@ -218,7 +218,7 @@ variable "red5pro_coturn_address" {
   default     = ""
 }
 variable "red5pro_efs_enable" {
-  description = "Red5 Pro server EFS enable/disable"
+  description = "Red5 Pro server enable/disable EFS mount to record streams"
   type        = bool
   default     = false
 }
@@ -460,7 +460,7 @@ variable "origin_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
   default     = "public-read"
 }
 variable "origin_image_red5pro_efs_enable" {
-  description = "Origin node image - enable/disable Red5 Pro server EFS"
+  description = "Origin node image enable/disable EFS mount to record streams"
   type        = bool
   default     = false
 }
@@ -654,17 +654,17 @@ variable "transcoder_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
   default     = "public-read"
 }
 variable "transcoder_image_red5pro_efs_enable" {
-  description = "Origin node image - enable/disable Red5 Pro server EFS"
+  description = "Transcoder node image enable/disable EFS mount to record streams"
   type        = bool
   default     = false
 }
 variable "transcoder_image_red5pro_efs_dns_name" {
-  description = "Origin node image - EFS DNS name"
+  description = "Transcoder node image - EFS DNS name"
   type        = string
   default     = ""
 }
 variable "transcoder_image_red5pro_efs_mount_point" {
-  description = "Origin node image - EFS mount point"
+  description = "Transcoder node image - EFS mount point"
   type        = string
   default     = "/usr/local/red5pro/webapps/live/streams"
 }
