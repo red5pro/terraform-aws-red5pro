@@ -30,7 +30,7 @@ output "stream_manager_https_url" {
   description = "Stream Manager HTTPS URL"
   value = module.red5pro.stream_manager_https_url
 }
-output "node_origin_image" {
+output "node_origin_image_name" {
   description = "AMI image name of the Red5 Pro Node Origin image"
-  value = module.red5pro.node_origin_image
+  value = module.red5pro.node_origin_image_name
 }

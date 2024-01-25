@@ -3,21 +3,37 @@
 # OUTPUTS
 ################################################################################
 
-output "node_origin_image" {
+output "node_origin_image_name" {
   description = "AMI image name of the Red5 Pro Node Origin image"
   value = try(aws_ami_from_instance.red5pro_node_origin_image[0].name, null)
 }
-output "node_edge_image" {
+output "node_origin_image_id" {
+  description = "AMI image ID of the Red5 Pro Node Origin image"
+  value = try(aws_ami_from_instance.red5pro_node_origin_image[0].id, null)
+}
+output "node_edge_image_name" {
   description = "AMI image name of the Red5 Pro Node Edge image"
   value = try(aws_ami_from_instance.red5pro_node_edge_image[0].name, null)
 }
-output "node_transcoder_image" {
+output "node_edge_image_id" {
+  description = "AMI image ID of the Red5 Pro Node Edge image"
+  value = try(aws_ami_from_instance.red5pro_node_edge_image[0].id, null)
+}
+output "node_transcoder_image_name" {
   description = "AMI image name of the Red5 Pro Node Transcoder image"
   value = try(aws_ami_from_instance.red5pro_node_transcoder_image[0].name, null)
 }
-output "node_relay_image" {
+output "node_transcoder_image_id" {
+  description = "AMI image ID of the Red5 Pro Node Transcoder image"
+  value = try(aws_ami_from_instance.red5pro_node_transcoder_image[0].id, null)
+}
+output "node_relay_image_name" {
   description = "AMI image name of the Red5 Pro Node Relay image"
   value = try(aws_ami_from_instance.red5pro_node_relay_image[0].name , null)
+}
+output "node_relay_image_id" {
+  description = "AMI image ID of the Red5 Pro Node Relay image"
+  value = try(aws_ami_from_instance.red5pro_node_relay_image[0].id, null)
 }
 output "ssh_key_name" {
   description = "SSH key name"
