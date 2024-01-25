@@ -700,11 +700,15 @@ resource "aws_instance" "red5pro_node_origin" {
       "export NODE_CLOUDSTORAGE_AWS_REGION='${var.origin_image_red5pro_cloudstorage_aws_region}'",
       "export NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE='${var.origin_image_red5pro_cloudstorage_postprocessor_enable}'",
       "export NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY='${var.origin_image_red5pro_cloudstorage_aws_bucket_acl_policy}'",
+      "export NODE_EFS_ENABLE='${var.origin_image_red5pro_efs_enable}'",
+      "export NODE_EFS_DNS_NAME='${var.origin_image_red5pro_efs_dns_name}'",
+      "export NODE_EFS_MOUNT_POINT='${var.origin_image_red5pro_efs_mount_point}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_node.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_node_apps_plugins.sh",
+      "sudo -E /home/ubuntu/red5pro-installer/r5p_config_efs.sh",
       "sudo rm -R /home/ubuntu/red5pro-installer"
     ]
     connection {
@@ -855,11 +859,15 @@ resource "aws_instance" "red5pro_node_transcoder" {
       "export NODE_CLOUDSTORAGE_AWS_REGION='${var.transcoder_image_red5pro_cloudstorage_aws_region}'",
       "export NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE='${var.transcoder_image_red5pro_cloudstorage_postprocessor_enable}'",
       "export NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY='${var.transcoder_image_red5pro_cloudstorage_aws_bucket_acl_policy}'",
+      "export NODE_EFS_ENABLE='${var.transcoder_image_red5pro_efs_enable}'",
+      "export NODE_EFS_DNS_NAME='${var.transcoder_image_red5pro_efs_dns_name}'",
+      "export NODE_EFS_MOUNT_POINT='${var.transcoder_image_red5pro_efs_mount_point}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_node.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_node_apps_plugins.sh",
+      "sudo -E /home/ubuntu/red5pro-installer/r5p_config_efs.sh",
       "sudo rm -R /home/ubuntu/red5pro-installer"
     ]
     connection {
@@ -1013,6 +1021,9 @@ resource "aws_instance" "red5pro_single" {
       "export NODE_CLOUDSTORAGE_AWS_REGION='${var.red5pro_cloudstorage_aws_region}'",
       "export NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE='${var.red5pro_cloudstorage_postprocessor_enable}'",
       "export NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY='${var.red5pro_cloudstorage_aws_bucket_acl_policy}'",
+      "export NODE_EFS_ENABLE='${var.red5pro_efs_enable}'",
+      "export NODE_EFS_DNS_NAME='${var.red5pro_efs_dns_name}'",
+      "export NODE_EFS_MOUNT_POINT='${var.red5pro_efs_mount_point}'",
       "export SSL_ENABLE='${var.https_letsencrypt_enable}'",
       "export SSL_DOMAIN='${var.https_letsencrypt_certificate_domain_name}'",
       "export SSL_MAIL='${var.https_letsencrypt_certificate_email}'",

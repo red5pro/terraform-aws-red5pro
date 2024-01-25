@@ -217,6 +217,21 @@ variable "red5pro_coturn_address" {
   type        = string
   default     = ""
 }
+variable "red5pro_efs_enable" {
+  description = "Red5 Pro server enable/disable EFS mount to record streams"
+  type        = bool
+  default     = false
+}
+variable "red5pro_efs_dns_name" {
+  description = "Red5 Pro server EFS DNS name"
+  type        = string
+  default     = ""
+}
+variable "red5pro_efs_mount_point" {
+  description = "Red5 Pro server EFS mount point"
+  type        = string
+  default     = "/usr/local/red5pro/webapps/live/streams"
+}
 
 # MySQL configuration
 variable "mysql_rds_create" {
@@ -444,6 +459,21 @@ variable "origin_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
   type        = string
   default     = "public-read"
 }
+variable "origin_image_red5pro_efs_enable" {
+  description = "Origin node image enable/disable EFS mount to record streams"
+  type        = bool
+  default     = false
+}
+variable "origin_image_red5pro_efs_dns_name" {
+  description = "Origin node image - EFS DNS name"
+  type        = string
+  default     = ""
+}
+variable "origin_image_red5pro_efs_mount_point" {
+  description = "Origin node image - EFS mount point"
+  type        = string
+  default     = "/usr/local/red5pro/webapps/live/streams"
+}
 
 # Red5 Pro Edge node image configuration
 variable "edge_image_create" {
@@ -622,6 +652,21 @@ variable "transcoder_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
   description = "Transcoder node image - AWS bucket ACL policy for cloud storage (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
   type        = string
   default     = "public-read"
+}
+variable "transcoder_image_red5pro_efs_enable" {
+  description = "Transcoder node image enable/disable EFS mount to record streams"
+  type        = bool
+  default     = false
+}
+variable "transcoder_image_red5pro_efs_dns_name" {
+  description = "Transcoder node image - EFS DNS name"
+  type        = string
+  default     = ""
+}
+variable "transcoder_image_red5pro_efs_mount_point" {
+  description = "Transcoder node image - EFS mount point"
+  type        = string
+  default     = "/usr/local/red5pro/webapps/live/streams"
 }
 
 # Red5 Pro Relay node image configuration
