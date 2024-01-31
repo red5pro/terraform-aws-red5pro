@@ -168,7 +168,15 @@ config_node_apps_plugins(){
     ### Red5Pro Restreamer
     if [[ "$NODE_RESTREAMER_ENABLE" == "true" ]]; then
         log_i "Red5Pro Restreamer - enable"
-        log_i "HERE need to add Restreamer configuration!!!"
+        
+        log_i "Enable Restreamer Servlet in $RED5_HOME/webapps/live/WEB-INF/web.xml"
+        restreamer_servlet="<servlet>\n<servlet-name>RestreamerServlet</servlet-name>\n<servlet-class>com.red5pro.restreamer.servlet.RestreamerServlet</servlet-class>\n</servlet>\n<servlet-mapping>\n<servlet-name>RestreamerServlet</servlet-name>\n<url-pattern>/restream</url-pattern>\n</servlet-mapping>"
+        sed -i "/<\/web-app>/i $restreamer_servlet"  "$RED5_HOME/webapps/live/WEB-INF/web.xml"
+
+        log_i "Set enable.srtingest=true in $RED5_HOME/conf/restreamer-plugin.properties"
+        enable_srtingest="enable.srtingest=.*"
+        enable_srtingest_new="enable.srtingest=true"
+        sed -i -e "s|$enable_srtingest|$enable_srtingest_new|" "$RED5_HOME/conf/restreamer-plugin.properties"
     else
         log_d "Red5Pro Restreamer - disable"
         if ls $RED5_HOME/plugins/red5pro-restreamer-plugin* >/dev/null 2>&1; then
