@@ -536,6 +536,16 @@ variable "edge_image_red5pro_hls_enable" {
   type        = bool
   default     = false
 }
+variable "edge_image_red5pro_hls_enable" {
+  description = "Edge node image - HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
+  type        = bool
+  default     = false
+}
+variable "edge_image_red5pro_webhooks_enable" {
+  description = "Edge node image - Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
+  type        = bool
+  default     = false
+}
 variable "edge_image_red5pro_round_trip_auth_enable" {
   description = "Edge node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
   type        = bool
