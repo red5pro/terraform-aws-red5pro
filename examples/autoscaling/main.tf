@@ -85,18 +85,6 @@ module "red5pro" {
   origin_image_red5pro_efs_enable                           = false                               # enable/disable EFS mount to record streams
   origin_image_red5pro_efs_dns_name                         = "example.efs.region.amazonaws.com"  # EFS DNS name
 
-variable "origin_image_red5pro_webhooks_enable" {
-  description = "Origin node image - Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
-  type        = bool
-  default     = false
-}
-variable "origin_image_red5pro_webhooks_endpoint" {
-  description = "Origin node image - Webhooks endpoint"
-  type        = string
-  default     = ""
-}
-
-
   # Red5 Pro autoscaling Node group - (Optional)
   node_group_create                               = true                      # Linux or Mac OS only. true - create new Node group, false - not create new Node group
   node_group_name                                 = "terraform-node-group"    # Node group name
