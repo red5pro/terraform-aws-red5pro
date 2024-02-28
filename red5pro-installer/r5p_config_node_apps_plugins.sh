@@ -210,6 +210,7 @@ config_node_apps_plugins(){
             log_e "Parameter NODE_WEBHOOKS_ENDPOINT is empty. EXIT."
             exit 1
         fi
+        echo "" >> $RED5_HOME/webapps/live/WEB-INF/red5-web.properties
         echo "webhooks.endpoint=$NODE_WEBHOOKS_ENDPOINT" >> $RED5_HOME/webapps/live/WEB-INF/red5-web.properties
     fi
     ### Red5Pro Round-trip-auth
