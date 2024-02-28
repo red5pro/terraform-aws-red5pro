@@ -142,6 +142,16 @@ variable "red5pro_hls_enable" {
   type        = bool
   default     = false
 }
+variable "red5pro_webhooks_enable" {
+  description = "Red5 Pro Single server Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
+  type        = bool
+  default     = false
+}
+variable "red5pro_webhooks_endpoint" {
+  description = "Red5 Pro Single server Webhooks endpoint"
+  type        = string
+  default     = ""
+}
 variable "red5pro_round_trip_auth_enable" {
   description = "Round trip authentication on the red5pro server enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
   type        = bool
@@ -394,6 +404,16 @@ variable "origin_image_red5pro_hls_enable" {
   type        = bool
   default     = false
 }
+variable "origin_image_red5pro_webhooks_enable" {
+  description = "Origin node image - Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
+  type        = bool
+  default     = false
+}
+variable "origin_image_red5pro_webhooks_endpoint" {
+  description = "Origin node image - Webhooks endpoint"
+  type        = string
+  default     = ""
+}
 variable "origin_image_red5pro_round_trip_auth_enable" {
   description = "Origin node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
   type        = bool
@@ -587,6 +607,16 @@ variable "transcoder_image_red5pro_hls_enable" {
   description = "Transcoder node image - HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
+}
+variable "transcoder_image_red5pro_webhooks_enable" {
+  description = "Transcoder node image - Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
+  type        = bool
+  default     = false
+}
+variable "transcoder_image_red5pro_webhooks_endpoint" {
+  description = "Transcoder node image - Webhooks endpoint"
+  type        = string
+  default     = ""
 }
 variable "transcoder_image_red5pro_round_trip_auth_enable" {
   description = "Transcoder node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
