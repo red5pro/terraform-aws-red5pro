@@ -10,6 +10,8 @@
 # NODE_SOCIALPUSHER_ENABLE=true
 # NODE_SUPPRESSOR_ENABLE=true
 # NODE_HLS_ENABLE=true
+# NODE_HLS_OUTPUT_FORMAT=TS     #(TS,FMP4,SMP4)
+# NODE_HLS_DVR_PLAYLIST=true
 # NODE_CLOUDSTORAGE_ENABLE=true
 # NODE_CLOUDSTORAGE_AWS_ACCESS_KEY
 # NODE_CLOUDSTORAGE_AWS_SECRET_KEY
@@ -98,9 +100,17 @@ config_node_apps_plugins(){
             rm $RED5_HOME/plugins/inspector.jar
         fi
     fi
+    
     ### Red5Pro HLS
     if [[ "$NODE_HLS_ENABLE" == "true" ]]; then
-        log_i "Red5Pro HLS - enable"
+        log_i "Red5Pro HLS - enable. Output format: $NODE_HLS_OUTPUT_FORMAT, DVR playlist: $NODE_HLS_DVR_PLAYLIST"
+
+        hls_output_format='<property name="outputFormat" value="TS"/>'
+        hls_output_format_new='<property name="outputFormat" value="'$NODE_HLS_OUTPUT_FORMAT'"/>'
+
+        hls_dvr_playlist='<property name="dvrPlaylist" value="false"/>'
+        hls_dvr_playlist_new='<property name="dvrPlaylist" value="'$NODE_HLS_DVR_PLAYLIST'"/>'
+        sed -i -e "s|$hls_output_format|$hls_output_format_new|" -e "s|$hls_dvr_playlist|$hls_dvr_playlist_new|" "$RED5_HOME/conf/hlsconfig.xml"
     else
         log_d "Red5Pro HLS - disable"
         if ls $RED5_HOME/plugins/red5pro-mpegts-plugin* >/dev/null 2>&1; then

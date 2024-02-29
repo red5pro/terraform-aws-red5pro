@@ -142,6 +142,16 @@ variable "red5pro_hls_enable" {
   type        = bool
   default     = false
 }
+variable "red5pro_hls_output_format" {
+  description = "Red5 Pro Single server - HLS output format. Options: TS, FMP4, SMP4"
+  type        = string
+  default     = "TS"
+}
+variable "red5pro_hls_dvr_playlist" {
+  description = "Red5 Pro Single server - HLS DVR playlist"
+  type        = string
+  default     = "false"
+}
 variable "red5pro_webhooks_enable" {
   description = "Red5 Pro Single server Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
   type        = bool
@@ -409,6 +419,16 @@ variable "origin_image_red5pro_webhooks_enable" {
   type        = bool
   default     = false
 }
+variable "origin_image_red5pro_hls_output_format" {
+  description = "Origin node image - HLS output format. Options: TS, FMP4, SMP4"
+  type        = string
+  default     = "TS"
+}
+variable "origin_image_red5pro_hls_dvr_playlist" {
+  description = "Origin node image - HLS DVR playlist"
+  type        = string
+  default     = "false"
+}
 variable "origin_image_red5pro_webhooks_endpoint" {
   description = "Origin node image - Webhooks endpoint"
   type        = string
@@ -617,6 +637,16 @@ variable "transcoder_image_red5pro_hls_enable" {
   description = "Transcoder node image - HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
+}
+variable "transcoder_image_red5pro_hls_output_format" {
+  description = "Transcoder node image - HLS output format. Options: TS, FMP4, SMP4"
+  type        = string
+  default     = "TS"
+}
+variable "transcoder_image_red5pro_hls_dvr_playlist" {
+  description = "Transcoder node image - HLS DVR playlist"
+  type        = string
+  default     = "false"
 }
 variable "transcoder_image_red5pro_webhooks_enable" {
   description = "Transcoder node image - Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
