@@ -67,6 +67,8 @@ module "red5pro" {
   origin_image_red5pro_socialpusher_enable                  = false                               # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5.net/docs/special/social-media-plugin/overview/)
   origin_image_red5pro_suppressor_enable                    = false                               # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
   origin_image_red5pro_hls_enable                           = false                               # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5.net/docs/protocols/hls-plugin/hls-vod/)
+  origin_image_red5pro_webhooks_enable                      = false                               # true - enable Red5 Pro server webhooks, false - disable Red5 Pro server webhooks (https://www.red5.net/docs/special/webhooks/overview/)
+  origin_image_red5pro_webhooks_endpoint                    = "https://example.com/red5/status"   # Red5 Pro server webhooks endpoint
   origin_image_red5pro_round_trip_auth_enable               = false                               # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5.net/docs/special/round-trip-auth/overview/)
   origin_image_red5pro_round_trip_auth_host                 = "round-trip-auth.example.com"       # Round trip authentication server host
   origin_image_red5pro_round_trip_auth_port                 = 3000                                # Round trip authentication server port
