@@ -7,15 +7,20 @@
 
 # NODE_GROUP_NAME="terra-node-group"
 
-# ORIGINS=1
-# EDGES=1
-# TRANSCODERS=1
-# RELAYS=1
+# ORIGINS_MIN=1
+# EDGES_MIN=1
+# TRANSCODERS_MIN=1
+# RELAYS_MIN=1
 
-# ORIGIN_INSTANCE_TYPE="c5.large"
-# EDGE_INSTANCE_TYPE="c5.large"
-# TRANSCODER_INSTANCE_TYPE="c5.large"
-# RELAY_INSTANCE_TYPE="c5.large"
+# ORIGINS_MAX=1
+# EDGES_MAX=1
+# TRANSCODERS_MAX=1
+# RELAYS_MAX=1
+
+# ORIGIN_INSTANCE_TYPE="c-4"
+# EDGE_INSTANCE_TYPE="c-4"
+# TRANSCODER_INSTANCE_TYPE="c-4"
+# RELAY_INSTANCE_TYPE="c-4"
 
 # ORIGIN_CAPACITY="30"
 # EDGE_CAPACITY="300"
@@ -81,11 +86,11 @@ prepare_json_templates(){
     launch_config_oet='{"launchconfig":{"name":"'${launch_config_name}'","description":"Launch config Origin,Edge,Transcoder","image":"'$ORIGIN_IMAGE_NAME'","version":"0.0.3","targets":{"target":[{"role":"origin","instanceType":"'$ORIGIN_INSTANCE_TYPE'","connectionCapacity":"'$ORIGIN_CAPACITY'"},{"role":"edge","instanceType":"'$EDGE_INSTANCE_TYPE'","connectionCapacity":"'$EDGE_CAPACITY'","image":"'$EDGE_IMAGE_NAME'"},{"role":"transcoder","instanceType":"'$TRANSCODER_INSTANCE_TYPE'","connectionCapacity":"'$TRANSCODER_CAPACITY'","image":"'$TRANSCODER_IMAGE_NAME'"}]},"properties":{"property":[{"name":"property-name","value":"property-value"}]},"metadata":{"meta":[{"key":"Name","value":"'${nodes_name}'"}]}}}'
     launch_config_oetr='{"launchconfig":{"name":"'${launch_config_name}'","description":"Launch config Origin,Edge,Transcoder,Relay","image":"'$ORIGIN_IMAGE_NAME'","version":"0.0.3","targets":{"target":[{"role":"origin","instanceType":"'$ORIGIN_INSTANCE_TYPE'","connectionCapacity":"'$ORIGIN_CAPACITY'"},{"role":"edge","instanceType":"'$EDGE_INSTANCE_TYPE'","connectionCapacity":"'$EDGE_CAPACITY'","image":"'$EDGE_IMAGE_NAME'"},{"role":"relay","instanceType":"'$RELAY_INSTANCE_TYPE'","connectionCapacity":"'$RELAY_CAPACITY'","image":"'$RELAY_IMAGE_NAME'"},{"role":"transcoder","instanceType":"'$TRANSCODER_INSTANCE_TYPE'","connectionCapacity":"'$TRANSCODER_CAPACITY'","image":"'$TRANSCODER_IMAGE_NAME'"}]},"properties":{"property":[{"name":"property-name","value":"property-value"}]},"metadata":{"meta":[{"key":"Name","value":"'${nodes_name}'"}]}}}'
 
-    scale_policy_o='{"policy":{"name":"'${scale_policy_name}'","description":"Terraform Scale policy Origin","type":"com.red5pro.services.autoscaling.model.ScalePolicyMaster","version": "0.0.3","targets":{"region":[{"name":"default","target":[{"role":"origin","maxLimit":40.0,"scaleAdjustment":1.0,"minLimit":'$ORIGINS'.0}]}]}}}'
-    scale_policy_oe='{"policy":{"name":"'${scale_policy_name}'","description":"Terraform Scale policy Origin, Edge","type":"com.red5pro.services.autoscaling.model.ScalePolicyMaster","version": "0.0.3","targets":{"region":[{"name":"default","target":[{"role":"edge","maxLimit":80.0,"scaleAdjustment":1.0,"minLimit":'$EDGES'.0},{"role":"origin","maxLimit":40.0,"scaleAdjustment":1.0,"minLimit":'$ORIGINS'.0}]}]}}}'
-    scale_policy_oer='{"policy":{"name":"'${scale_policy_name}'","description":"Terraform Scale policy Origin, Edge, Relay","type":"com.red5pro.services.autoscaling.model.ScalePolicyMaster","version": "0.0.3","targets":{"region":[{"name":"default","target":[{"role":"edge","maxLimit":80.0,"scaleAdjustment":1.0,"minLimit":'$EDGES'.0},{"role":"origin","maxLimit":40.0,"scaleAdjustment":1.0,"minLimit":'$ORIGINS'.0},{"role":"relay","maxLimit":40.0,"scaleAdjustment":1.0,"minLimit":'$RELAYS'.0}]}]}}}'
-    scale_policy_oet='{"policy":{"name":"'${scale_policy_name}'","description":"Terraform Scale policy Origin, Edge, Transcoder","type":"com.red5pro.services.autoscaling.model.ScalePolicyMaster","version": "0.0.3","targets":{"region":[{"name":"default","target":[{"role":"edge","maxLimit":80.0,"scaleAdjustment":1.0,"minLimit":'$EDGES'.0},{"role":"origin","maxLimit":40.0,"scaleAdjustment":1.0,"minLimit":'$ORIGINS'.0},{"role":"transcoder","maxLimit":40.0,"scaleAdjustment":1.0,"minLimit":'$TRANSCODERS'.0}]}]}}}'
-    scale_policy_oetr='{"policy":{"name":"'${scale_policy_name}'","description":"Terraform Scale policy Origin, Edge, Transcoder, Relay","type":"com.red5pro.services.autoscaling.model.ScalePolicyMaster","version": "0.0.3","targets":{"region":[{"name":"default","target":[{"role":"edge","maxLimit":80.0,"scaleAdjustment":1.0,"minLimit":'$EDGES'.0},{"role":"origin","maxLimit":40.0,"scaleAdjustment":1.0,"minLimit":'$ORIGINS'.0},{"role":"transcoder","maxLimit":40.0,"scaleAdjustment":1.0,"minLimit":'$TRANSCODERS'.0},{"role":"relay","maxLimit":40.0,"scaleAdjustment":1.0,"minLimit":'$RELAYS'.0}]}]}}}'
+    scale_policy_o='{"policy":{"name":"'${scale_policy_name}'","description":"Terraform Scale policy Origin","type":"com.red5pro.services.autoscaling.model.ScalePolicyMaster","version": "0.0.3","targets":{"region":[{"name":"default","target":[{"role":"origin","maxLimit":'$ORIGINS_MAX',"scaleAdjustment":1.0,"minLimit":'$ORIGINS_MIN'.0}]}]}}}'
+    scale_policy_oe='{"policy":{"name":"'${scale_policy_name}'","description":"Terraform Scale policy Origin, Edge","type":"com.red5pro.services.autoscaling.model.ScalePolicyMaster","version": "0.0.3","targets":{"region":[{"name":"default","target":[{"role":"edge","maxLimit":'$EDGES_MAX',"scaleAdjustment":1.0,"minLimit":'$EDGES_MIN'.0},{"role":"origin","maxLimit":'$ORIGINS_MAX',"scaleAdjustment":1.0,"minLimit":'$ORIGINS_MIN'.0}]}]}}}'
+    scale_policy_oer='{"policy":{"name":"'${scale_policy_name}'","description":"Terraform Scale policy Origin, Edge, Relay","type":"com.red5pro.services.autoscaling.model.ScalePolicyMaster","version": "0.0.3","targets":{"region":[{"name":"default","target":[{"role":"edge","maxLimit":'$EDGES_MAX',"scaleAdjustment":1.0,"minLimit":'$EDGES_MIN'.0},{"role":"origin","maxLimit":'$ORIGINS_MAX',"scaleAdjustment":1.0,"minLimit":'$ORIGINS_MIN'.0},{"role":"relay","maxLimit":'$RELAYS_MAX',"scaleAdjustment":1.0,"minLimit":'$RELAYS_MIN'.0}]}]}}}'
+    scale_policy_oet='{"policy":{"name":"'${scale_policy_name}'","description":"Terraform Scale policy Origin, Edge, Transcoder","type":"com.red5pro.services.autoscaling.model.ScalePolicyMaster","version": "0.0.3","targets":{"region":[{"name":"default","target":[{"role":"edge","maxLimit":'$EDGES_MAX',"scaleAdjustment":1.0,"minLimit":'$EDGES_MIN'.0},{"role":"origin","maxLimit":'$ORIGINS_MAX',"scaleAdjustment":1.0,"minLimit":'$ORIGINS_MIN'.0},{"role":"transcoder","maxLimit":'$TRANSCODERS_MAX',"scaleAdjustment":1.0,"minLimit":'$TRANSCODERS_MIN'.0}]}]}}}'
+    scale_policy_oetr='{"policy":{"name":"'${scale_policy_name}'","description":"Terraform Scale policy Origin, Edge, Transcoder, Relay","type":"com.red5pro.services.autoscaling.model.ScalePolicyMaster","version": "0.0.3","targets":{"region":[{"name":"default","target":[{"role":"edge","maxLimit":'$EDGES_MAX',"scaleAdjustment":1.0,"minLimit":'$EDGES_MIN'.0},{"role":"origin","maxLimit":'$ORIGINS_MAX',"scaleAdjustment":1.0,"minLimit":'$ORIGINS_MIN'.0},{"role":"transcoder","maxLimit":'$TRANSCODERS_MAX',"scaleAdjustment":1.0,"minLimit":'$TRANSCODERS_MIN'.0},{"role":"relay","maxLimit":'$RELAYS_MAX',"scaleAdjustment":1.0,"minLimit":'$RELAYS_MIN'.0}]}]}}}'
 }
 
 check_stream_manager(){
@@ -94,12 +99,17 @@ check_stream_manager(){
     SM_STATUS_URL="http://$SM_IP:5080/streammanager/api/4.0/admin/debug/cloudcontroller?accessToken=$SM_API_KEY"
 
     for i in {1..20}; do
-        code_resp=$(curl -s -m 5 -o /dev/null -w "%{http_code}" "$SM_STATUS_URL")
-        if [ "$code_resp" -eq 200 ]; then
-            log_i "Stream Manager is running. Status code: $code_resp"
-            break
+        curl -s -m 5 -o /dev/null -w "%{http_code}" "$SM_STATUS_URL" > /dev/null
+        if [ $? -eq 0 ]; then
+            code_resp=$(curl -s -o /dev/null -w "%{http_code}" "$SM_STATUS_URL")
+            if [ "$code_resp" -eq 200 ]; then
+                log_i "Stream Manager is running. Status code: $code_resp"
+                break
+            else
+                log_i "Stream Manager is not running. Status code: $code_resp"
+            fi
         else
-            log_w "Test $i - Stream Manager is not running. Status code: $code_resp"
+            log_w "Cycle $i - Stream Manager is not running!"
         fi
         
         if [ "$i" -eq 20 ]; then
@@ -174,8 +184,9 @@ add_origin_to_node_group(){
 }
 
 check_node_group(){
+    
     log_i "Checking states of nodes in new node group."
-
+    sleep 30
     NODES_URL="http://$SM_IP:5080/streammanager/api/4.0/admin/nodegroup/$NODE_GROUP_NAME/node?accessToken=$SM_API_KEY"
     
     for i in {1..10};
@@ -184,12 +195,6 @@ check_node_group(){
         echo "$resp" |jq -r '.[] | [.identifier, .role, .state] | join(" ")' > temp.txt
         
         nodes=$(awk '{print $1}' < temp.txt)
-
-        if [[ -z "$nodes" ]]; then
-            log_w "Nodes list is empty. Node group was not created."
-            log_e "Something wrong with Stream Manager in this build. EXIT..."
-        fi
-
         node_bad_state=0
         
         for index in $nodes
@@ -206,7 +211,9 @@ check_node_group(){
         
         if [[ $node_bad_state -ne 1 ]]; then
             log_i "All nodes are ready to go! :)"
-            rm temp.txt
+            if [ -f temp.txt ]; then
+                rm temp.txt
+            fi
             break
         fi
         if [[ $i -eq 10 ]]; then
@@ -216,28 +223,28 @@ check_node_group(){
     done
 }
 
-if [ -z "$ORIGINS" ]; then
-    ORIGINS=0
+if [ -z "$ORIGINS_MIN" ]; then
+    ORIGINS_MIN=0
 fi
-if [ -z "$EDGES" ]; then
-    EDGES=0
+if [ -z "$EDGES_MIN" ]; then
+    EDGES_MIN=0
 fi
-if [ -z "$RELAYS" ]; then
-    RELAYS=0
+if [ -z "$RELAYS_MIN" ]; then
+    RELAYS_MIN=0
 fi
-if [ -z "$TRANSCODERS" ]; then
-    TRANSCODERS=0
+if [ -z "$TRANSCODERS_MIN" ]; then
+    TRANSCODERS_MIN=0
 fi
 
-if [ "$ORIGINS" -gt 0 ] && [ "$EDGES" -gt 0 ] && [ "$RELAYS" -gt 0 ] && [ "$TRANSCODERS" -gt 0 ]; then
+if [ "$ORIGINS_MIN" -gt 0 ] && [ "$EDGES_MIN" -gt 0 ] && [ "$RELAYS_MIN" -gt 0 ] && [ "$TRANSCODERS_MIN" -gt 0 ]; then
     NODE_GROUP_TYPE="oetr"
-elif [ "$ORIGINS" -gt 0 ] && [ "$EDGES" -gt 0 ] && [ "$RELAYS" -gt 0 ]; then
+elif [ "$ORIGINS_MIN" -gt 0 ] && [ "$EDGES_MIN" -gt 0 ] && [ "$RELAYS_MIN" -gt 0 ]; then
     NODE_GROUP_TYPE="oer"
-elif [ "$ORIGINS" -gt 0 ] && [ "$EDGES" -gt 0 ] && [ "$TRANSCODERS" -gt 0 ]; then
+elif [ "$ORIGINS_MIN" -gt 0 ] && [ "$EDGES_MIN" -gt 0 ] && [ "$TRANSCODERS_MIN" -gt 0 ]; then
     NODE_GROUP_TYPE="oet"
-elif [ "$ORIGINS" -gt 0 ] && [ "$EDGES" -gt 0 ]; then
+elif [ "$ORIGINS_MIN" -gt 0 ] && [ "$EDGES_MIN" -gt 0 ]; then
     NODE_GROUP_TYPE="oe"
-elif [ "$ORIGINS" -gt 0 ]; then
+elif [ "$ORIGINS_MIN" -gt 0 ]; then
     NODE_GROUP_TYPE="o"
 else
     log_e "Node group type was not found: $NODE_GROUP_TYPE, EXIT...";
@@ -247,35 +254,35 @@ log_i "NODE_GROUP_TYPE: $NODE_GROUP_TYPE"
 
 case $NODE_GROUP_TYPE in
     o) 
-        scale_policy_name="${NAME}-scale-policy-${ORIGINS}o-${timestamp}"
+        scale_policy_name="${NAME}-scale-policy-${ORIGINS_MIN}o-${timestamp}"
         launch_config_name="${NAME}-launch-config-o-${timestamp}"
         prepare_json_templates
         scale_policy=$scale_policy_o
         launch_config=$launch_config_o
     ;;
     oe) 
-        scale_policy_name="${NAME}-scale-policy-${ORIGINS}o-${EDGES}e-${timestamp}"
+        scale_policy_name="${NAME}-scale-policy-${ORIGINS_MIN}o-${EDGES_MIN}e-${timestamp}"
         launch_config_name="${NAME}-launch-config-oe-${timestamp}"
         prepare_json_templates
         scale_policy=$scale_policy_oe
         launch_config=$launch_config_oe
     ;;
     oer) 
-        scale_policy_name="${NAME}-scale-policy-${ORIGINS}o-${EDGES}e-${RELAYS}r-${timestamp}"
+        scale_policy_name="${NAME}-scale-policy-${ORIGINS_MIN}o-${EDGES_MIN}e-${RELAYS_MIN}r-${timestamp}"
         launch_config_name="${NAME}-launch-config-oer-${timestamp}"
         prepare_json_templates
         scale_policy=$scale_policy_oer
         launch_config=$launch_config_oer
     ;;
     oet) 
-        scale_policy_name="${NAME}-scale-policy-${ORIGINS}o-${EDGES}e-${TRANSCODERS}t-${timestamp}"
+        scale_policy_name="${NAME}-scale-policy-${ORIGINS_MIN}o-${EDGES_MIN}e-${TRANSCODERS_MIN}t-${timestamp}"
         launch_config_name="${NAME}-launch-config-oet-${timestamp}"
         prepare_json_templates
         scale_policy=$scale_policy_oet
         launch_config=$launch_config_oet
     ;;
     oetr) 
-        scale_policy_name="${NAME}-scale-policy-${ORIGINS}o-${EDGES}e-${TRANSCODERS}t-${RELAYS}r-${timestamp}"
+        scale_policy_name="${NAME}-scale-policy-${ORIGINS_MIN}o-${EDGES_MIN}e-${TRANSCODERS_MIN}t-${RELAYS_MIN}r-${timestamp}"
         launch_config_name="${NAME}-launch-config-oetr-${timestamp}"
         prepare_json_templates
         scale_policy=$scale_policy_oetr
