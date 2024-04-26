@@ -20,10 +20,6 @@ variable "path_to_red5pro_build" {
   description = "Path to the Red5 Pro build zip file, absolute path or relative path. https://account.red5.net/downloads. Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-0.0.0.b0-release.zip"
   type        = string
   default     = ""
-  validation {
-    condition     = fileexists(var.path_to_red5pro_build) == true
-    error_message = "The path_to_red5pro_build value must be a valid! Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-0.0.0.b0-release.zip"
-  }
 }
 variable "path_to_aws_cloud_controller" {
   description = "Path to the AWS Cloud Controller jar file, absolute path or relative path. https://account.red5.net/downloads. Example: /home/ubuntu/terraform-aws-red5pro/aws-cloud-controller-0.0.0.jar"
@@ -100,7 +96,7 @@ variable "elastic_ip_create" {
   type        = bool
   default     = true
 }
-variable "elastic_ip_existing" { 
+variable "elastic_ip_existing" {
   description = "Elastic IP Existing"
   type        = string
   default     = "1.2.3.4"
@@ -1015,7 +1011,7 @@ variable "security_group_single_egress" {
   ]
 }
 
- # Red5 Pro autoscaling Node group - (Optional) 
+# Red5 Pro autoscaling Node group - (Optional) 
 variable "node_group_create" {
   description = "Create new node group. Linux or Mac OS only."
   type        = bool

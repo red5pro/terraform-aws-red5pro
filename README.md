@@ -2,11 +2,12 @@
 
 Terraform Red5 Pro AWS module which create Red5 Pro resources on AWS.
 
-## This module has 3 variants of Red5 Pro deployments
+## This module has 4 variants of Red5 Pro deployments
 
 * **single** - Single EC2 instance with installed and configured Red5 Pro server
 * **cluster** - Stream Manager cluster (MySQL DB + Stream Manager instance + Autoscaling Node group with Origin, Edge, Transcoder, Relay instances)
 * **autoscaling** - Autoscaling Stream Managers (MySQL RDS + Load Balancer + Autoscaling Stream Managers + Autoscaling Node group with Origin, Edge, Transcoder, Relay instances)
+* **vpc** - VPC only (VPC, Sunbets, Route table, Internet Gateway) - this option is useful if you need to create VPC separately and after that use this VPC to deploy Red5 Pro resources
 
 ---
 
@@ -402,6 +403,37 @@ module "red5pro" {
 }
 ```
 
+## AWS VPC create only (vpc) - [Example](https://github.com/red5pro/terraform-aws-red5pro/tree/master/examples/vpc)
+
+* VPC create
+
+## Usage (vpc)
+```
+provider "aws" {
+  region     = "us-west-1" # AWS region
+  access_key = ""          # AWS IAM Access key
+  secret_key = ""          # AWS IAM Secret key
+}
+
+module "red5pro_vpc" {
+  source = "red5pro/red5pro/aws"
+
+  type = "vpc"         # Deployment type: single, cluster, autoscaling, vpc
+  name = "red5pro-vpc" # Name to be used on all the resources as identifier
+
+  # VPC configuration
+  vpc_create         = true # true - create new VPC, false - use existing VPC
+  vpc_cidr_block     = "10.105.0.0/16"
+  vpc_public_subnets = ["10.105.0.0/24", "10.105.1.0/24", "10.105.2.0/24", "10.105.3.0/24"] # Public subnets for Stream Manager and Red5 Pro server instances
+
+  # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
+  tags = {
+    Terraform   = "true"
+    Environment = "dev"
+    Project     = "red5pro"
+  }
+}
+```
 ---
 
 **NOTES**
