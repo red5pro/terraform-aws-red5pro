@@ -1,12 +1,13 @@
 locals {
-  single        = var.type == "single" ? true : false
-  cluster       = var.type == "cluster" ? true : false
-  autoscaling   = var.type == "autoscaling" ? true : false
+  single      = var.type == "single" ? true : false
+  cluster     = var.type == "cluster" ? true : false
+  autoscaling = var.type == "autoscaling" ? true : false
+  vpc         = var.type == "vpc" ? true : false
 
-  ssh_key_name    = var.ssh_key_create ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
-  ssh_private_key = var.ssh_key_create ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_private_key_path)
-  ssh_private_key_path = var.ssh_key_create ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_private_key_path
-  
+  ssh_key_name         = local.vpc ? null : var.ssh_key_create ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
+  ssh_private_key      = local.vpc ? null : var.ssh_key_create ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_private_key_path)
+  ssh_private_key_path = local.vpc ? null : var.ssh_key_create ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_private_key_path
+
   vpc_id     = var.vpc_create ? aws_vpc.red5pro_vpc[0].id : var.vpc_id_existing
   vpc_name   = var.vpc_create ? aws_vpc.red5pro_vpc[0].tags.Name : data.aws_vpc.selected[0].tags.Name
   subnet_ids = var.vpc_create ? tolist(aws_subnet.red5pro_subnets[*].id) : data.aws_subnets.all[0].ids
@@ -15,23 +16,22 @@ locals {
   mysql_host         = local.autoscaling ? aws_db_instance.red5pro_mysql[0].address : var.mysql_rds_create ? aws_db_instance.red5pro_mysql[0].address : "localhost"
   mysql_local_enable = local.autoscaling ? false : var.mysql_rds_create ? false : true
 
-  elastic_ip = local.autoscaling ? null : var.elastic_ip_create ? aws_eip.elastic_ip[0].public_ip : data.aws_eip.elastic_ip[0].public_ip
+  elastic_ip        = local.vpc || local.autoscaling ? null : var.elastic_ip_create ? aws_eip.elastic_ip[0].public_ip : data.aws_eip.elastic_ip[0].public_ip
   stream_manager_ip = local.autoscaling ? aws_lb.red5pro_sm_lb[0].dns_name : local.elastic_ip
 }
-
 
 ################################################################################
 # Elastic IP
 ################################################################################
 
 resource "aws_eip" "elastic_ip" {
-  count = local.autoscaling ? 0 : var.elastic_ip_create ? 1 : 0
+  count = local.vpc || local.autoscaling ? 0 : var.elastic_ip_create ? 1 : 0
 }
 
 data "aws_eip" "elastic_ip" {
-  count     = local.autoscaling ? 0 : var.elastic_ip_create ? 0 : 1
+  count     = local.vpc || local.autoscaling ? 0 : var.elastic_ip_create ? 0 : 1
   public_ip = var.elastic_ip_existing
-  
+
 }
 
 resource "aws_eip_association" "elastic_ip_association" {
@@ -40,41 +40,40 @@ resource "aws_eip_association" "elastic_ip_association" {
   allocation_id = var.elastic_ip_create ? aws_eip.elastic_ip[0].id : data.aws_eip.elastic_ip[0].id
 }
 
-
 ################################################################################
 # SSH_KEY
 ################################################################################
 
 # SSH key pair generation
 resource "tls_private_key" "red5pro_ssh_key" {
-  count     = var.ssh_key_create ? 1 : 0
+  count     = local.vpc ? 0 : var.ssh_key_create ? 1 : 0
   algorithm = "RSA"
   rsa_bits  = 2048
 }
 
 # Import SSH key pair to AWS
 resource "aws_key_pair" "red5pro_ssh_key" {
-  count      = var.ssh_key_create ? 1 : 0
+  count      = local.vpc ? 0 : var.ssh_key_create ? 1 : 0
   key_name   = var.ssh_key_name
   public_key = tls_private_key.red5pro_ssh_key[0].public_key_openssh
 }
 
 # Save SSH key pair files to local folder
 resource "local_file" "red5pro_ssh_key_pem" {
-  count           = var.ssh_key_create ? 1 : 0
+  count           = local.vpc ? 0 : var.ssh_key_create ? 1 : 0
   filename        = "./${var.ssh_key_name}.pem"
   content         = tls_private_key.red5pro_ssh_key[0].private_key_pem
   file_permission = "0400"
 }
 resource "local_file" "red5pro_ssh_key_pub" {
-  count    = var.ssh_key_create ? 1 : 0
+  count    = local.vpc ? 0 : var.ssh_key_create ? 1 : 0
   filename = "./${var.ssh_key_name}.pub"
   content  = tls_private_key.red5pro_ssh_key[0].public_key_openssh
 }
 
 # Check current SSH key pair on the AWS
 data "aws_key_pair" "ssh_key_pair" {
-  count    = var.ssh_key_create ? 0 : 1
+  count    = local.vpc ? 0 : var.ssh_key_create ? 0 : 1
   key_name = var.ssh_key_name
 }
 
@@ -133,7 +132,7 @@ data "aws_availability_zones" "available" {
     name   = "zone-type"
     values = ["availability-zone"]
   }
-  
+
   lifecycle {
     postcondition {
       condition     = length(self.names) >= 2
@@ -189,7 +188,7 @@ resource "aws_route_table_association" "red5pro_subnets_association" {
 
 # Security group for Red5Pro Stream Manager (AWS VPC)
 resource "aws_security_group" "red5pro_sm_sg" {
-  count      = local.cluster || local.autoscaling ? 1 : 0
+  count       = local.cluster || local.autoscaling ? 1 : 0
   name        = "${var.name}-sm-sg"
   description = "Allow inbound/outbound traffic for Stream Manager"
   vpc_id      = local.vpc_id
@@ -219,7 +218,7 @@ resource "aws_security_group" "red5pro_sm_sg" {
 
 # Security group for Red5Pro Nodes (AWS VPC)
 resource "aws_security_group" "red5pro_node_sg" {
-  count      = local.cluster || local.autoscaling ? 1 : 0
+  count       = local.cluster || local.autoscaling ? 1 : 0
   name        = "${var.name}-node-sg"
   description = "Allow inbound/outbound traffic for Nodes"
   vpc_id      = local.vpc_id
@@ -249,18 +248,18 @@ resource "aws_security_group" "red5pro_node_sg" {
 
 # Security group for MySQL database (AWS RDS)
 resource "aws_security_group" "red5pro_mysql_sg" {
-  count      = local.mysql_rds_create ? 1 : 0
+  count       = local.mysql_rds_create ? 1 : 0
   name        = "${var.name}-mysql-sg"
   description = "Allow inbound/outbound traffic for MySQL"
   vpc_id      = local.vpc_id
 
   ingress {
-    description      = "Access to MySQL from Stream Manager security group"
-    from_port        = 3306
-    to_port          = 3306
-    protocol         = "tcp"
-    security_groups  = [aws_security_group.red5pro_sm_sg[0].id, aws_security_group.red5pro_images_sg[0].id]
-    }
+    description     = "Access to MySQL from Stream Manager security group"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.red5pro_sm_sg[0].id, aws_security_group.red5pro_images_sg[0].id]
+  }
   egress {
     description      = "Access from MySQL to 0.0.0.0/0"
     from_port        = 0
@@ -275,17 +274,17 @@ resource "aws_security_group" "red5pro_mysql_sg" {
 
 # Security group for StreamManager and Node images (AWS RDS)
 resource "aws_security_group" "red5pro_images_sg" {
-  count      = local.cluster || local.autoscaling ? 1 : 0
+  count       = local.cluster || local.autoscaling ? 1 : 0
   name        = "${var.name}-images-sg"
   description = "Allow inbound/outbound traffic for SM and Node images"
   vpc_id      = local.vpc_id
 
   ingress {
-    description      = "Access to SSH from 0.0.0.0/0"
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
+    description = "Access to SSH from 0.0.0.0/0"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
   egress {
     from_port   = 0
@@ -404,8 +403,8 @@ resource "aws_instance" "red5pro_sm" {
   }
 
   provisioner "file" {
-    source        = "${abspath(path.module)}/red5pro-installer"
-    destination   = "/home/ubuntu"
+    source      = "${abspath(path.module)}/red5pro-installer"
+    destination = "/home/ubuntu"
 
     connection {
       host        = self.public_ip
@@ -416,8 +415,8 @@ resource "aws_instance" "red5pro_sm" {
   }
 
   provisioner "file" {
-    source        = var.path_to_red5pro_build
-    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+    source      = var.path_to_red5pro_build
+    destination = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
 
     connection {
       host        = self.public_ip
@@ -428,8 +427,8 @@ resource "aws_instance" "red5pro_sm" {
   }
 
   provisioner "file" {
-    source        = var.path_to_aws_cloud_controller
-    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_aws_cloud_controller)}"
+    source      = var.path_to_aws_cloud_controller
+    destination = "/home/ubuntu/red5pro-installer/${basename(var.path_to_aws_cloud_controller)}"
 
     connection {
       host        = self.public_ip
@@ -480,6 +479,13 @@ resource "aws_instance" "red5pro_sm" {
       type        = "ssh"
       user        = "ubuntu"
       private_key = local.ssh_private_key
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition     = fileexists(var.path_to_red5pro_build) && fileexists(var.path_to_aws_cloud_controller)
+      error_message = "ERROR! Red5Pro build or AWS Cloud Controller not found. Please check the path to the files. Please check path_to_red5pro_build and path_to_aws_cloud_controller variables."
     }
   }
 
@@ -627,7 +633,7 @@ resource "aws_lb_listener" "red5pro_sm_https" {
 
 # AWS Stream Manager autoscaling - Autoscaling attachment
 resource "aws_autoscaling_attachment" "red5pro_sm_aa" {
-  count             = local.autoscaling ? 1 : 0
+  count                  = local.autoscaling ? 1 : 0
   autoscaling_group_name = aws_autoscaling_group.red5pro_sm_ag[0].id
   lb_target_group_arn    = aws_lb_target_group.red5pro_sm_tg[0].arn
 }
@@ -651,8 +657,8 @@ resource "aws_instance" "red5pro_node_origin" {
   }
 
   provisioner "file" {
-    source        = "${abspath(path.module)}/red5pro-installer"
-    destination   = "/home/ubuntu"
+    source      = "${abspath(path.module)}/red5pro-installer"
+    destination = "/home/ubuntu"
 
     connection {
       host        = self.public_ip
@@ -663,8 +669,8 @@ resource "aws_instance" "red5pro_node_origin" {
   }
 
   provisioner "file" {
-    source        = var.path_to_red5pro_build
-    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+    source      = var.path_to_red5pro_build
+    destination = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
 
     connection {
       host        = self.public_ip
@@ -740,8 +746,8 @@ resource "aws_instance" "red5pro_node_edge" {
   }
 
   provisioner "file" {
-    source        = "${abspath(path.module)}/red5pro-installer"
-    destination   = "/home/ubuntu"
+    source      = "${abspath(path.module)}/red5pro-installer"
+    destination = "/home/ubuntu"
 
     connection {
       host        = self.public_ip
@@ -752,8 +758,8 @@ resource "aws_instance" "red5pro_node_edge" {
   }
 
   provisioner "file" {
-    source        = var.path_to_red5pro_build
-    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+    source      = var.path_to_red5pro_build
+    destination = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
 
     connection {
       host        = self.public_ip
@@ -816,8 +822,8 @@ resource "aws_instance" "red5pro_node_transcoder" {
   }
 
   provisioner "file" {
-    source        = "${abspath(path.module)}/red5pro-installer"
-    destination   = "/home/ubuntu"
+    source      = "${abspath(path.module)}/red5pro-installer"
+    destination = "/home/ubuntu"
 
     connection {
       host        = self.public_ip
@@ -828,8 +834,8 @@ resource "aws_instance" "red5pro_node_transcoder" {
   }
 
   provisioner "file" {
-    source        = var.path_to_red5pro_build
-    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+    source      = var.path_to_red5pro_build
+    destination = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
 
     connection {
       host        = self.public_ip
@@ -905,8 +911,8 @@ resource "aws_instance" "red5pro_node_relay" {
   }
 
   provisioner "file" {
-    source        = "${abspath(path.module)}/red5pro-installer"
-    destination   = "/home/ubuntu"
+    source      = "${abspath(path.module)}/red5pro-installer"
+    destination = "/home/ubuntu"
 
     connection {
       host        = self.public_ip
@@ -917,8 +923,8 @@ resource "aws_instance" "red5pro_node_relay" {
   }
 
   provisioner "file" {
-    source        = var.path_to_red5pro_build
-    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+    source      = var.path_to_red5pro_build
+    destination = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
 
     connection {
       host        = self.public_ip
@@ -977,15 +983,15 @@ resource "aws_instance" "red5pro_single" {
   instance_type          = var.single_instance_type
   key_name               = local.ssh_key_name
   subnet_id              = element(local.subnet_ids, 0)
-  vpc_security_group_ids = [ var.security_group_create ? aws_security_group.red5pro_single_sg[0].id : var.security_group_id_existing ]
+  vpc_security_group_ids = [var.security_group_create ? aws_security_group.red5pro_single_sg[0].id : var.security_group_id_existing]
 
   root_block_device {
     volume_size = var.single_volume_size
   }
 
   provisioner "file" {
-    source        = "${abspath(path.module)}/red5pro-installer"
-    destination   = "/home/ubuntu"
+    source      = "${abspath(path.module)}/red5pro-installer"
+    destination = "/home/ubuntu"
 
     connection {
       host        = self.public_ip
@@ -996,8 +1002,8 @@ resource "aws_instance" "red5pro_single" {
   }
 
   provisioner "file" {
-    source        = var.path_to_red5pro_build
-    destination   = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+    source      = var.path_to_red5pro_build
+    destination = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
 
     connection {
       host        = self.public_ip
@@ -1059,6 +1065,13 @@ resource "aws_instance" "red5pro_single" {
       type        = "ssh"
       user        = "ubuntu"
       private_key = local.ssh_private_key
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition     = fileexists(var.path_to_red5pro_build)
+      error_message = "ERROR! Red5Pro build not found. Please check the path to the files. Please check path_to_red5pro_build variable."
     }
   }
 
@@ -1126,11 +1139,11 @@ resource "aws_ami_from_instance" "red5pro_node_relay_image" {
 
 # AWS Stream Manager autoscaling - Stop Stream Manager instance using aws cli
 resource "null_resource" "stop_stream_manager" {
-  count              = local.autoscaling ? 1 : 0
+  count = local.autoscaling ? 1 : 0
   provisioner "local-exec" {
     command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_sm[0].id} --region ${var.aws_region}"
     environment = {
-      AWS_ACCESS_KEY_ID = "${var.aws_access_key}"
+      AWS_ACCESS_KEY_ID     = "${var.aws_access_key}"
       AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
     }
   }
@@ -1139,11 +1152,11 @@ resource "null_resource" "stop_stream_manager" {
 
 # Stop Origin Node instance using aws cli
 resource "null_resource" "stop_node_origin" {
-  count              = var.origin_image_create ? 1 : 0
+  count = var.origin_image_create ? 1 : 0
   provisioner "local-exec" {
     command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_origin[0].id} --region ${var.aws_region}"
     environment = {
-      AWS_ACCESS_KEY_ID = "${var.aws_access_key}"
+      AWS_ACCESS_KEY_ID     = "${var.aws_access_key}"
       AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
     }
   }
@@ -1151,11 +1164,11 @@ resource "null_resource" "stop_node_origin" {
 }
 # Stop Edge Node instance using aws cli
 resource "null_resource" "stop_node_edge" {
-  count              = var.edge_image_create ? 1 : 0
+  count = var.edge_image_create ? 1 : 0
   provisioner "local-exec" {
     command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_edge[0].id} --region ${var.aws_region}"
     environment = {
-      AWS_ACCESS_KEY_ID = "${var.aws_access_key}"
+      AWS_ACCESS_KEY_ID     = "${var.aws_access_key}"
       AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
     }
   }
@@ -1163,11 +1176,11 @@ resource "null_resource" "stop_node_edge" {
 }
 # Stop Transcoder Node instance using aws cli
 resource "null_resource" "stop_node_transcoder" {
-  count              = var.transcoder_image_create ? 1 : 0
+  count = var.transcoder_image_create ? 1 : 0
   provisioner "local-exec" {
     command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_transcoder[0].id} --region ${var.aws_region}"
     environment = {
-      AWS_ACCESS_KEY_ID = "${var.aws_access_key}"
+      AWS_ACCESS_KEY_ID     = "${var.aws_access_key}"
       AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
     }
   }
@@ -1175,11 +1188,11 @@ resource "null_resource" "stop_node_transcoder" {
 }
 # Stop Relay Node instance using aws cli
 resource "null_resource" "stop_node_relay" {
-  count              = var.relay_image_create ? 1 : 0
+  count = var.relay_image_create ? 1 : 0
   provisioner "local-exec" {
     command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node_relay[0].id} --region ${var.aws_region}"
     environment = {
-      AWS_ACCESS_KEY_ID = "${var.aws_access_key}"
+      AWS_ACCESS_KEY_ID     = "${var.aws_access_key}"
       AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
     }
   }
@@ -1193,42 +1206,42 @@ resource "null_resource" "stop_node_relay" {
 resource "null_resource" "node_group" {
   count = var.node_group_create ? 1 : 0
   triggers = {
-    trigger_name  = "node-group-trigger"
-    SM_IP = "${local.stream_manager_ip}"
-    SM_API_KEY = "${var.stream_manager_api_key}"
+    trigger_name = "node-group-trigger"
+    SM_IP        = "${local.stream_manager_ip}"
+    SM_API_KEY   = "${var.stream_manager_api_key}"
   }
   provisioner "local-exec" {
     when    = create
     command = "bash ${abspath(path.module)}/red5pro-installer/r5p_create_node_group.sh"
     environment = {
-      NAME                       = "${var.name}"
-      SM_IP                      = "${local.stream_manager_ip}"
-      SM_API_KEY                 = "${var.stream_manager_api_key}"
-      NODE_GROUP_REGION          ="${var.aws_region}"
-      NODE_GROUP_NAME            = "${var.node_group_name}"
-      ORIGINS_MIN                = "${var.node_group_origins_min}"
-      EDGES_MIN                  = "${var.node_group_edges_min}"
-      TRANSCODERS_MIN            = "${var.node_group_transcoders_min}"
-      RELAYS_MIN                 = "${var.node_group_relays_min}"
-      ORIGINS_MAX                = "${var.node_group_origins_max}"
-      EDGES_MAX                  = "${var.node_group_edges_max}"
-      TRANSCODERS_MAX            = "${var.node_group_transcoders_max}"
-      RELAYS_MAX                 = "${var.node_group_relays_max}"
-      ORIGIN_INSTANCE_TYPE       = "${var.node_group_origins_instance_type}"
-      EDGE_INSTANCE_TYPE         = "${var.node_group_edges_instance_type}"
-      TRANSCODER_INSTANCE_TYPE   = "${var.node_group_transcoders_instance_type}"
-      RELAY_INSTANCE_TYPE        = "${var.node_group_relays_instance_type}"
-      ORIGIN_CAPACITY            = "${var.node_group_origins_capacity}"
-      EDGE_CAPACITY              = "${var.node_group_edges_capacity}"
-      TRANSCODER_CAPACITY        = "${var.node_group_transcoders_capacity}"
-      RELAY_CAPACITY             = "${var.node_group_relays_capacity}"
-      ORIGIN_IMAGE_NAME          = "${try(aws_ami_from_instance.red5pro_node_origin_image[0].name, null)}"
-      EDGE_IMAGE_NAME            = "${try(aws_ami_from_instance.red5pro_node_edge_image[0].name, null)}"
-      TRANSCODER_IMAGE_NAME      = "${try(aws_ami_from_instance.red5pro_node_transcoder_image[0].name, null)}"
-      RELAY_IMAGE_NAME           = "${try(aws_ami_from_instance.red5pro_node_relay_image[0].name, null)}"
+      NAME                     = "${var.name}"
+      SM_IP                    = "${local.stream_manager_ip}"
+      SM_API_KEY               = "${var.stream_manager_api_key}"
+      NODE_GROUP_REGION        = "${var.aws_region}"
+      NODE_GROUP_NAME          = "${var.node_group_name}"
+      ORIGINS_MIN              = "${var.node_group_origins_min}"
+      EDGES_MIN                = "${var.node_group_edges_min}"
+      TRANSCODERS_MIN          = "${var.node_group_transcoders_min}"
+      RELAYS_MIN               = "${var.node_group_relays_min}"
+      ORIGINS_MAX              = "${var.node_group_origins_max}"
+      EDGES_MAX                = "${var.node_group_edges_max}"
+      TRANSCODERS_MAX          = "${var.node_group_transcoders_max}"
+      RELAYS_MAX               = "${var.node_group_relays_max}"
+      ORIGIN_INSTANCE_TYPE     = "${var.node_group_origins_instance_type}"
+      EDGE_INSTANCE_TYPE       = "${var.node_group_edges_instance_type}"
+      TRANSCODER_INSTANCE_TYPE = "${var.node_group_transcoders_instance_type}"
+      RELAY_INSTANCE_TYPE      = "${var.node_group_relays_instance_type}"
+      ORIGIN_CAPACITY          = "${var.node_group_origins_capacity}"
+      EDGE_CAPACITY            = "${var.node_group_edges_capacity}"
+      TRANSCODER_CAPACITY      = "${var.node_group_transcoders_capacity}"
+      RELAY_CAPACITY           = "${var.node_group_relays_capacity}"
+      ORIGIN_IMAGE_NAME        = "${try(aws_ami_from_instance.red5pro_node_origin_image[0].name, null)}"
+      EDGE_IMAGE_NAME          = "${try(aws_ami_from_instance.red5pro_node_edge_image[0].name, null)}"
+      TRANSCODER_IMAGE_NAME    = "${try(aws_ami_from_instance.red5pro_node_transcoder_image[0].name, null)}"
+      RELAY_IMAGE_NAME         = "${try(aws_ami_from_instance.red5pro_node_relay_image[0].name, null)}"
     }
   }
-    provisioner "local-exec" {
+  provisioner "local-exec" {
     when    = destroy
     command = "bash ${abspath(path.module)}/red5pro-installer/r5p_delete_node_group.sh '${self.triggers.SM_IP}' '${self.triggers.SM_API_KEY}'"
   }
