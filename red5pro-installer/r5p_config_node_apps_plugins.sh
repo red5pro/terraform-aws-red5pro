@@ -144,6 +144,10 @@ config_node_apps_plugins(){
         log_i "Config AWS Cloudstorage plugin: $RED5_HOME/conf/cloudstorage-plugin.properties"
         s3_service="#services=com.red5pro.media.storage.s3.S3Uploader,com.red5pro.media.storage.s3.S3BucketLister"
         s3_service_new="services=com.red5pro.media.storage.s3.S3Uploader,com.red5pro.media.storage.s3.S3BucketLister"
+
+        stream_dir="streams.dir=.*"
+        stream_dir_new="streams.dir=$RED5_HOME/webapps/"
+
         max_transcode_min="max.transcode.minutes=.*"
         max_transcode_min_new="max.transcode.minutes=30"
 
@@ -158,7 +162,7 @@ config_node_apps_plugins(){
         aws_bucket_acl_policy="aws.acl.policy=.*"
         aws_bucket_acl_policy_new="aws.acl.policy=${NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY}"
 
-        sed -i -e "s|$s3_service|$s3_service_new|" -e "s|$max_transcode_min|$max_transcode_min_new|" -e "s|$aws_access_key|$aws_access_key_new|" -e "s|$aws_secret_access_key|$aws_secret_access_key_new|" -e "s|$aws_bucket_name|$aws_bucket_name_new|" -e "s|$aws_bucket_location|$aws_bucket_location_new|" -e "s|$aws_bucket_acl_policy|$aws_bucket_acl_policy_new|" "$RED5_HOME/conf/cloudstorage-plugin.properties"
+        sed -i -e "s|$s3_service|$s3_service_new|" -e "s|$stream_dir|$stream_dir_new|" -e "s|$max_transcode_min|$max_transcode_min_new|" -e "s|$aws_access_key|$aws_access_key_new|" -e "s|$aws_secret_access_key|$aws_secret_access_key_new|" -e "s|$aws_bucket_name|$aws_bucket_name_new|" -e "s|$aws_bucket_location|$aws_bucket_location_new|" -e "s|$aws_bucket_acl_policy|$aws_bucket_acl_policy_new|" "$RED5_HOME/conf/cloudstorage-plugin.properties"
 
         if [[ "$NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE" == "true" ]]; then
             log_i "Config AWS Cloudstorage plugin - PostProcessor to FLV: $RED5_HOME/conf/red5-common.xml"
