@@ -19,6 +19,7 @@
 # NODE_CLOUDSTORAGE_AWS_REGION=us-east-1
 # NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE=true
 # NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY=public-read # none, public-read, authenticated-read, private, public-read-write
+# NODE_STREAM_AUTO_RECORD_ENABLE=true
 
 # NODE_WEBHOOKS_ENABLE=true
 # NODE_WEBHOOKS_ENDPOINT="https://test.webhook.app/api/v1/broadcast/webhook"
@@ -178,6 +179,16 @@ config_node_apps_plugins(){
         sed -i -e "s|$filenamegenerator|$filenamegenerator_new|" "$RED5_HOME/webapps/live/WEB-INF/red5-web.xml"
     else
         log_d "Red5Pro AWS Cloudstorage plugin (S3) - disable"
+    fi
+    ### Red5Pro Stream Auto Record
+    if [[ "$NODE_STREAM_AUTO_RECORD_ENABLE" == "true" ]]; then
+        log_i "Red5Pro Broadcas Stream Auto Record - enable"
+
+        stream_auto_record="broadcaststream.auto.record=.*"
+        stream_auto_record_new="broadcaststream.auto.record=true"
+        sed -i -e "s|$stream_auto_record|$stream_auto_record_new|" "$RED5_HOME/conf/red5.properties"
+    else
+        log_d "Red5Pro Broadcas Stream Auto Record - disable"
     fi
     ### Red5Pro Restreamer
     if [[ "$NODE_RESTREAMER_ENABLE" == "true" ]]; then

@@ -68,6 +68,7 @@ module "red5pro" {
   red5pro_cloudstorage_aws_region             = "us-west-1"                        # AWS region for Red5 Pro cloud storage  (S3 Bucket)
   red5pro_cloudstorage_postprocessor_enable   = false                              # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
   red5pro_cloudstorage_aws_bucket_acl_policy  = "public-read"                      # AWS bucket ACL policy for Red5 Pro cloud storage (S3 Bucket) Example: none, public-read, authenticated-read, private, public-read-write
+  red5pro_stream_auto_record_enable           = false                              # true - enable Red5 Pro server broadcast stream auto record, false - disable Red5 Pro server broadcast stream auto record
   red5pro_coturn_enable                       = false                              # true - enable customized Coturn configuration for Red5Pro server, false - disable customized Coturn configuration for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
   red5pro_coturn_address                      = "stun:1.2.3.4:3478"                # Customized coturn address for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
   red5pro_efs_enable                          = false                              # enable/disable EFS mount to record streams
