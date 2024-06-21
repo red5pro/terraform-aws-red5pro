@@ -86,6 +86,7 @@ module "red5pro" {
   origin_image_red5pro_cloudstorage_aws_region             = "us-west-1"                        # AWS region for Red5 Pro cloud storage  (S3 Bucket)
   origin_image_red5pro_cloudstorage_postprocessor_enable   = false                              # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
   origin_image_red5pro_cloudstorage_aws_bucket_acl_policy  = "public-read"                      # AWS bucket ACL policy for Red5 Pro cloud storage (S3 Bucket) Example: none, public-read, authenticated-read, private, public-read-write
+  origin_image_red5pro_stream_auto_record_enable           = false                              # true - enable Red5 Pro server broadcast stream auto record, false - disable Red5 Pro server broadcast stream auto record
   origin_image_red5pro_efs_enable                          = false                              # enable/disable EFS mount to record streams
   origin_image_red5pro_efs_dns_name                        = "example.efs.region.amazonaws.com" # EFS DNS name
 

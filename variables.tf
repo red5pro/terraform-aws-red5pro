@@ -223,6 +223,11 @@ variable "red5pro_cloudstorage_aws_bucket_acl_policy" {
   type        = string
   default     = "public-read"
 }
+variable "red5pro_stream_auto_record_enable" {
+  description = "Red5 Pro server - enable/disable broadcast stream auto record"
+  type        = bool
+  default     = false
+}
 variable "red5pro_coturn_enable" {
   description = "Red5Pro server customized Coturn configuration"
   type        = bool
@@ -495,6 +500,11 @@ variable "origin_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
   type        = string
   default     = "public-read"
 }
+variable "origin_image_red5pro_stream_auto_record_enable" {
+  description = "Origin node image - enable/disable Red5 Pro server broadcast stream auto record"
+  type        = bool
+  default     = false
+}
 variable "origin_image_red5pro_efs_enable" {
   description = "Origin node image enable/disable EFS mount to record streams"
   type        = bool
@@ -718,6 +728,11 @@ variable "transcoder_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
   description = "Transcoder node image - AWS bucket ACL policy for cloud storage (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
   type        = string
   default     = "public-read"
+}
+variable "transcoder_image_red5pro_stream_auto_record_enable" {
+  description = "Transcoder node image - enable/disable Red5 Pro server broadcast stream auto record"
+  type        = bool
+  default     = false
 }
 variable "transcoder_image_red5pro_efs_enable" {
   description = "Transcoder node image enable/disable EFS mount to record streams"
