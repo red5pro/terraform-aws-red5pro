@@ -1053,12 +1053,13 @@ resource "aws_instance" "red5pro_single" {
       "export SSL_PASSWORD='${var.https_letsencrypt_certificate_password}'",
       "export COTURN_ENABLE='${var.red5pro_coturn_enable}'",
       "export COTURN_ADDRESS='${var.red5pro_coturn_address}'",
+      "export BREW_MIXER_ENABLE='${var.red5pro_brew_mixer_enable}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_node_apps_plugins.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_coturn.sh",
-      #"sudo rm -R /home/ubuntu/red5pro-installer",
+      "[ $BREW_MIXER_ENABLE = true ] && echo 'Start Brew Mixer configuration...' && cd /usr/local/red5pro/extras/brewmixer/ && sudo bash ./node-mixer-standalone-deploy.sh",
       "sudo systemctl daemon-reload && sudo systemctl start red5pro",
       "nohup sudo -E /home/ubuntu/red5pro-installer/r5p_ssl_check_install.sh >> /home/ubuntu/red5pro-installer/r5p_ssl_check_install.log &",
       "sleep 2"
@@ -1075,6 +1076,10 @@ resource "aws_instance" "red5pro_single" {
     precondition {
       condition     = fileexists(var.path_to_red5pro_build)
       error_message = "ERROR! Red5Pro build not found. Please check the path to the files. Please check path_to_red5pro_build variable."
+    }
+    precondition {
+      condition     = var.red5pro_brew_mixer_enable ? var.single_instance_type == "c5.4xlarge" || var.single_instance_type == "c5.9xlarge" || var.single_instance_type == "c5.18xlarge" || var.single_instance_type == "c5.24xlarge" : true
+      error_message = "ERROR! Brew Mixer can be enabled only for c5.4xlarge, c5.9xlarge, c5.18xlarge, c5.24xlarge instance types."
     }
   }
 

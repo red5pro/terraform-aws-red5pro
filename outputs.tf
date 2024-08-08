@@ -99,3 +99,7 @@ output "ssh_private_key_path" {
   description = "SSH private key path"
   value = local.ssh_private_key_path
 }
+output "single_red5pro_server_brew_mixer_controller_page_url" {
+  description = "Single Red5 Pro Server Brew Mixer Controller Page URL"
+  value = local.single && var.red5pro_brew_mixer_enable ? "https://${var.https_letsencrypt_certificate_domain_name}/brewmixer/rtController.html" : null
+}
