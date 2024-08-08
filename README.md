@@ -40,10 +40,6 @@ cp ~/Downloads/aws-cloud-controller-0.0.0.jar ./
 ## Usage (single)
 
 ```hcl
-#################################################
-# Example for single Red5 Pro server deployment #
-#################################################
-
 provider "aws" {
   region     = "us-west-1" # AWS region
   access_key = ""          # AWS IAM Access key
