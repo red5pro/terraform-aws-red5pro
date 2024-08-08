@@ -253,6 +253,11 @@ variable "red5pro_efs_mount_point" {
   type        = string
   default     = "/usr/local/red5pro/webapps/live/streams"
 }
+variable "red5pro_brew_mixer_enable" {
+  description = "Red5 Pro server enable/disable brew mixer"
+  type        = bool
+  default     = false
+}
 
 # MySQL configuration
 variable "mysql_rds_create" {

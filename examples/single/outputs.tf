@@ -26,3 +26,7 @@ output "red5pro_server_https_url" {
     description = "Red5 Pro Server HTTPS URL"
     value = module.red5pro.single_red5pro_server_https_url
 }
+output "red5pro_server_brew_mixer_controller_page_url" {
+  description = "Red5 Pro Server Brew Mixer Controller Page URL"
+  value = module.red5pro.single_red5pro_server_brew_mixer_controller_page_url
+}

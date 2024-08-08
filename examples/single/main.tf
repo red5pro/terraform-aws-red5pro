@@ -41,7 +41,7 @@ module "red5pro" {
   https_letsencrypt_certificate_password    = "examplepass"         # Password for Let's Encrypt SSL certificate
 
   # Single Red5 Pro server EC2 instance configuration
-  single_instance_type = "t3.medium" # Instance type for Red5 Pro server
+  single_instance_type = "t3.medium" # Instance type for Red5 Pro server. Example: t3.medium, c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge
   single_volume_size   = 8           # Volume size for Red5 Pro server
 
   # Red5Pro server configuration
@@ -73,6 +73,7 @@ module "red5pro" {
   red5pro_coturn_address                      = "stun:1.2.3.4:3478"                # Customized coturn address for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
   red5pro_efs_enable                          = false                              # enable/disable EFS mount to record streams
   red5pro_efs_dns_name                        = "example.efs.region.amazonaws.com" # EFS DNS name
+  red5pro_brew_mixer_enable                   = false                              # true - enable Red5 Pro server brew mixer, false - disable Red5 Pro server brew mixer
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {
