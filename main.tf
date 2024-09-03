@@ -1058,6 +1058,7 @@ resource "aws_instance" "red5pro_single" {
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_node_apps_plugins.sh",
+      "sudo -E /home/ubuntu/red5pro-installer/r5p_config_efs.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_coturn.sh",
       "[ $BREW_MIXER_ENABLE = true ] && echo 'Start Brew Mixer configuration...' && cd /usr/local/red5pro/extras/brewmixer/ && sudo bash ./node-mixer-standalone-deploy.sh",
       "sudo systemctl daemon-reload && sudo systemctl start red5pro",

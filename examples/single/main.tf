@@ -53,6 +53,8 @@ module "red5pro" {
   red5pro_socialpusher_enable                 = false                              # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5.net/docs/special/social-media-plugin/overview/)
   red5pro_suppressor_enable                   = false                              # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
   red5pro_hls_enable                          = false                              # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5.net/docs/protocols/hls-plugin/hls-vod/)
+  red5pro_hls_output_format                   = "TS"                               # HLS output format for Red5 Pro server (TS, FMP4)
+  red5pro_hls_dvr_playlist                    = false                              # true - enable Red5 Pro server HLS DVR playlist, false - disable Red5 Pro server HLS DVR playlist
   red5pro_webhooks_enable                     = false                              # true - enable Red5 Pro server webhooks, false - disable Red5 Pro server webhooks (https://www.red5.net/docs/special/webhooks/overview/)
   red5pro_webhooks_endpoint                   = "https://example.com/red5/status"  # Red5 Pro server webhooks endpoint
   red5pro_round_trip_auth_enable              = false                              # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5.net/docs/special/round-trip-auth/overview/)
@@ -73,9 +75,7 @@ module "red5pro" {
   red5pro_coturn_address                      = "stun:1.2.3.4:3478"                # Customized coturn address for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
   red5pro_efs_enable                          = false                              # enable/disable EFS mount to record streams
   red5pro_efs_dns_name                        = "example.efs.region.amazonaws.com" # EFS DNS name
-  red5pro_brew_mixer_enable                   = false                              # true - enable Red5 Pro server brew mixer, false - disable Red5 Pro server brew mixer
-
-  # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
+  red5pro_brew_mixer_enable                   = false                              # true - enable Red5 Pro server brew mixer, false - disable Red5 Pro server brew m# Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {
     Terraform   = "true"
     Environment = "dev"
