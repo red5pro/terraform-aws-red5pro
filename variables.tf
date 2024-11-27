@@ -311,7 +311,7 @@ variable "https_ssl_certificate" {
   type        = string
   default     = "none"
   validation {
-    condition     = var.https_ssl_certificate == "false" || var.https_ssl_certificate == "letsencrypt" || var.https_ssl_certificate == "imported"
+    condition     = var.https_ssl_certificate == "none" || var.https_ssl_certificate == "letsencrypt" || var.https_ssl_certificate == "imported"
     error_message = "The https_ssl_certificate value must be a valid! Example: none, letsencrypt, imported"
   }
 }
