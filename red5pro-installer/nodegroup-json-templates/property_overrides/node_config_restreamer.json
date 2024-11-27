@@ -1,0 +1,11 @@
+[
+    {
+        "fileName": "conf/restreamer-plugin.properties",
+        "properties": {
+            "enable.tsingest": "NODE_RESTREAMER_TSINGEST",
+            "enable.ipcam": "NODE_RESTREAMER_IPCAM",
+            "enable.whip": "NODE_RESTREAMER_WHIP",
+            "enable.srtingest": "NODE_RESTREAMER_SRTINGEST"
+        }
+    }
+]

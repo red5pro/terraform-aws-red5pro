@@ -1,0 +1,45 @@
+{
+    "name": "nodegroup-o",
+    "description": "Stream Manager 2.0 OCI Node group with Origin only",
+    "cloudProperties": "environment=NODE_ENVIRONMENT;subnet=NODE_SUBNET_NAME;security_group=NODE_SECURITY_GROUP_NAME",
+    "cloudPlatform": "OCI",
+    "isScalingPaused": false,
+    "images": {
+        "origin_image": {
+            "name": "origin_image",
+            "image": "NODE_IMAGE_NAME",
+            "cloudProperties": "instance_type=ORIGIN_INSTANCE_TYPE;volume_size=ORIGIN_VOLUME_SIZE"
+        }
+    },
+    "roles": {
+        "origin": {
+            "name": "origin",
+            "imageName": "origin_image",
+            "capabilities": ["PUBLISH", "SUBSCRIBE", "TRANSCODE"],
+            "propertyOverrides": []
+        }
+    },
+    "groups": {
+        "default": {
+            "subGroupName": "default",
+            "nodeGroupName": "nodegroup-o",
+            "groupType": "main",
+            "rulesByRole": {
+                "origin": {
+                    "nodeGroupName": "nodegroup-o",
+                    "subGroupName": "default",
+                    "nodeRoleName": "origin",
+                    "min": "ORIGINS_MIN",
+                    "max": "ORIGINS_MAX",
+                    "increment": 1,
+                    "outExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) > 1.0",
+                    "inExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) < 0.2",
+                    "capacityRankingExpression": "cpu.loadavg.1min / cpu.processors",
+                    "capacityLimitExpression": "2.0"
+                }
+            },
+            "cloudProperties": "region=NODE_GROUP_REGION"
+        }
+    },
+    "internalVersionCount": 0
+}

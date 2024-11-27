@@ -1,0 +1,93 @@
+{
+    "name": "nodegroup-oet",
+    "description": "Stream Manager 2.0 OCI Node group with Origin, Edge and Transcoder",
+    "cloudProperties": "environment=NODE_ENVIRONMENT;subnet=NODE_SUBNET_NAME;security_group=NODE_SECURITY_GROUP_NAME",
+    "cloudPlatform": "OCI",
+    "isScalingPaused": false,
+    "images": {
+        "origin_image": {
+            "name": "origin_image",
+            "image": "NODE_IMAGE_NAME",
+            "cloudProperties": "instance_type=ORIGIN_INSTANCE_TYPE;volume_size=ORIGIN_VOLUME_SIZE"
+        },
+        "edge_image": {
+            "name": "edge_image",
+            "image": "NODE_IMAGE_NAME",
+            "cloudProperties": "instance_type=EDGE_INSTANCE_TYPE;volume_size=EDGE_VOLUME_SIZE"
+        },
+        "transcoder_image": {
+            "name": "transcoder_image",
+            "image": "NODE_IMAGE_NAME",
+            "cloudProperties": "instance_type=TRANSCODER_INSTANCE_TYPE;volume_size=TRANSCODER_VOLUME_SIZE"
+        }
+    },
+    "roles": {
+        "origin": {
+            "name": "origin",
+            "imageName": "origin_image",
+            "capabilities": ["PUBLISH"],
+            "propertyOverrides": []
+        },
+        "edge": {
+            "name": "edge",
+            "imageName": "edge_image",
+            "parentRoleName": "origin",
+            "parentCardinality": "GLOBAL",
+            "capabilities": ["SUBSCRIBE"],
+            "propertyOverrides": []
+        },
+        "transcoder": {
+            "name": "transcoder",
+            "imageName": "transcoder_image",
+            "capabilities": ["TRANSCODE"],
+            "propertyOverrides": []
+        }
+    },
+    "groups": {
+        "default": {
+            "subGroupName": "default",
+            "nodeGroupName": "nodegroup-oet",
+            "groupType": "main",
+            "rulesByRole": {
+                "origin": {
+                    "nodeGroupName": "nodegroup-oet",
+                    "subGroupName": "default",
+                    "nodeRoleName": "origin",
+                    "min": "ORIGINS_MIN",
+                    "max": "ORIGINS_MAX",
+                    "increment": 1,
+                    "outExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) > 1.0",
+                    "inExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) < 0.2",
+                    "capacityRankingExpression": "cpu.loadavg.1min / cpu.processors",
+                    "capacityLimitExpression": "2.0"
+                },
+                "edge": {
+                    "nodeGroupName": "nodegroup-oet",
+                    "subGroupName": "default",
+                    "nodeRoleName": "edge",
+                    "min": "EDGES_MIN",
+                    "max": "EDGES_MAX",
+                    "increment": 1,
+                    "outExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) > 1.0",
+                    "inExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) < 0.2",
+                    "capacityRankingExpression": "cpu.loadavg.1min / cpu.processors",
+                    "capacityLimitExpression": "2.0"
+                },
+                "transcoder": {
+                    "nodeGroupName": "nodegroup-oet",
+                    "subGroupName": "default",
+                    "nodeRoleName": "transcoder",
+                    "min": "TRANSCODERS_MIN",
+                    "max": "TRANSCODERS_MAX",
+                    "increment": 1,
+                    "outExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) > 1.0",
+                    "inExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) < 0.2",
+                    "capacityRankingExpression": "cpu.loadavg.1min / cpu.processors",
+                    "capacityLimitExpression": "2.0"
+                }
+            },
+            "cloudProperties": "region=NODE_GROUP_REGION"
+        }
+    },
+    "internalVersionCount": 0
+}

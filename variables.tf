@@ -8,12 +8,12 @@ variable "name" {
   }
 }
 variable "type" {
-  description = "Type of deployment: single, cluster, autoscaling"
+  description = "Type of deployment: standalone, cluster, autoscaling"
   type        = string
   default     = ""
   validation {
-    condition     = var.type == "single" || var.type == "cluster" || var.type == "autoscaling" || var.type == "vpc"
-    error_message = "The type value must be a valid! Example: single, cluster, autoscaling"
+    condition     = var.type == "standalone" || var.type == "cluster" || var.type == "autoscale" || var.type == "vpc"
+    error_message = "The type value must be a valid! Example: standalone, cluster, autoscaling"
   }
 }
 variable "path_to_red5pro_build" {
@@ -39,8 +39,33 @@ variable "aws_secret_key" {
   description = "AWS secret key"
   default     = ""
 }
+variable "aws_ssh_key_pair" {
+  description = "AWS ssh key pair"
+  default     = ""
+}
 
 # SSH key configuration
+variable "ssh_key_use_existing" {
+  description = "SSH key pair configuration, true = use existing, false = create new"
+  type        = bool
+  default     = false
+}
+# variable "ssh_key_name" {
+#   description = "SSH key pair name new/existing"
+#   type        = string
+#   default     = ""
+# }
+
+# variable "ssh_key_existing_private_key_path" {
+#   description = "SSH private key path existing"
+#   type        = string
+#   default     = ""
+# }
+variable "ssh_key_existing_public_key_path" {
+  description = "SSH public key path existing"
+  type        = string
+  default     = ""
+}
 variable "ssh_key_create" {
   description = "Create a new SSH key pair or use an existing one. true = create new, false = use existing"
   type        = bool
@@ -57,7 +82,6 @@ variable "ssh_private_key_path" {
   type        = string
   default     = ""
 }
-
 # VPC configuration
 variable "vpc_create" {
   description = "Create a new VPC or use an existing one. true = create new, false = use existing"
@@ -102,88 +126,88 @@ variable "elastic_ip_existing" {
   default     = "1.2.3.4"
 }
 
-# Red5 Pro single server configuration
-variable "single_instance_type" {
-  description = "Red5 Pro Single server instance type"
+# Red5 Pro standalone server configuration
+variable "standalone_instance_type" {
+  description = "Red5 Pro standalone server instance type"
   type        = string
   default     = "t3.medium"
 }
-variable "single_volume_size" {
-  description = "Red5 Pro Single server volume size"
+variable "standalone_volume_size" {
+  description = "Red5 Pro standalone server volume size"
   type        = number
   default     = 8
 }
-variable "red5pro_inspector_enable" {
-  description = "Red5 Pro Single server Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
+variable "standalone_red5pro_inspector_enable" {
+  description = "Red5 Pro standalone server Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
   type        = bool
   default     = false
 }
-variable "red5pro_restreamer_enable" {
-  description = "Red5 Pro Single server Restreamer enable/disable (https://www.red5.net/docs/special/restreamer/overview/)"
+variable "standalone_red5pro_restreamer_enable" {
+  description = "Red5 Pro standalone server Restreamer enable/disable (https://www.red5.net/docs/special/restreamer/overview/)"
   type        = bool
   default     = false
 }
-variable "red5pro_socialpusher_enable" {
-  description = "Red5 Pro Single server SocialPusher enable/disable (https://www.red5.net/docs/special/social-media-plugin/rest-api/)"
+variable "standalone_red5pro_socialpusher_enable" {
+  description = "Red5 Pro standalone server SocialPusher enable/disable (https://www.red5.net/docs/special/social-media-plugin/rest-api/)"
   type        = bool
   default     = false
 }
-variable "red5pro_suppressor_enable" {
-  description = "Red5 Pro Single server Suppressor enable"
+variable "standalone_red5pro_suppressor_enable" {
+  description = "Red5 Pro standalone server Suppressor enable"
   type        = bool
   default     = false
 }
-variable "red5pro_hls_enable" {
-  description = "Red5 Pro Single server HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
+variable "standalone_red5pro_hls_enable" {
+  description = "Red5 Pro standalone server HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
 }
-variable "red5pro_hls_output_format" {
-  description = "Red5 Pro Single server - HLS output format. Options: TS, FMP4, SMP4"
+variable "standalone_red5pro_hls_output_format" {
+  description = "Red5 Pro standalone server - HLS output format. Options: TS, FMP4, SMP4"
   type        = string
   default     = "TS"
 }
-variable "red5pro_hls_dvr_playlist" {
-  description = "Red5 Pro Single server - HLS DVR playlist"
+variable "standalone_red5pro_hls_dvr_playlist" {
+  description = "Red5 Pro standalone server - HLS DVR playlist"
   type        = string
   default     = "false"
 }
-variable "red5pro_webhooks_enable" {
-  description = "Red5 Pro Single server Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
+variable "standalone_red5pro_webhooks_enable" {
+  description = "Red5 Pro standalone server Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
   type        = bool
   default     = false
 }
-variable "red5pro_webhooks_endpoint" {
-  description = "Red5 Pro Single server Webhooks endpoint"
+variable "standalone_red5pro_webhooks_endpoint" {
+  description = "Red5 Pro standalone server Webhooks endpoint"
   type        = string
   default     = ""
 }
-variable "red5pro_round_trip_auth_enable" {
+variable "standalone_red5pro_round_trip_auth_enable" {
   description = "Round trip authentication on the red5pro server enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
   type        = bool
   default     = false
 }
-variable "red5pro_round_trip_auth_host" {
+variable "standalone_red5pro_round_trip_auth_host" {
   description = "Round trip authentication server host"
   type        = string
   default     = ""
 }
-variable "red5pro_round_trip_auth_port" {
+variable "standalone_red5pro_round_trip_auth_port" {
   description = "Round trip authentication server port"
   type        = number
   default     = 3000
 }
-variable "red5pro_round_trip_auth_protocol" {
+variable "standalone_red5pro_round_trip_auth_protocol" {
   description = "Round trip authentication server protocol"
   type        = string
   default     = "http"
 }
-variable "red5pro_round_trip_auth_endpoint_validate" {
+variable "standalone_red5pro_round_trip_auth_endpoint_validate" {
   description = "Round trip authentication server endpoint for validate"
   type        = string
   default     = "/validateCredentials"
 }
-variable "red5pro_round_trip_auth_endpoint_invalidate" {
+variable "standalone_red5pro_round_trip_auth_endpoint_invalidate" {
   description = "Round trip authentication server endpoint for invalidate"
   type        = string
   default     = "/invalidateCredentials"
@@ -259,50 +283,75 @@ variable "red5pro_brew_mixer_enable" {
   default     = false
 }
 
-# MySQL configuration
-variable "mysql_rds_create" {
-  description = "Create a new RDS MySQL instance"
+# kafka configuration
+variable "kafka_standalone_instance_create" {
+  description = "Create a new Kafka standalone instance true/false"
   type        = bool
   default     = false
 }
-variable "mysql_rds_instance_type" {
-  description = "MySQL instance type"
+variable "kafka_standalone_instance_type" {
+  description = "kafka instance type"
   type        = string
-  default     = "db.t2.micro"
+  default     = "t2.medium"
 }
-variable "mysql_user_name" {
-  description = "MySQL user name"
-  type        = string
-  default     = ""
-}
-variable "mysql_password" {
-  description = "MySQL password"
-  type        = string
-  default     = ""
-}
-variable "mysql_port" {
-  description = "MySQL port"
+variable "kafka_standalone_volume_size" {
+  description = "value to set the volume size for kafka"
   type        = number
-  default     = 3306
+  default     = 16
 }
-# HTTPS/SSL variables for single/cluster
+variable "kafka_standalone_instance_arhive_url" {
+  description = "Kafka standalone instance - archive URL"
+  type        = string
+  default     = "https://downloads.apache.org/kafka/3.8.0/kafka_2.13-3.8.0.tgz"
+}
+
+# HTTPS/SSL variables for standalone/cluster
+variable "https_ssl_certificate" {
+  description = "Enable SSL (HTTPS) on the Standalone Red5 Pro server,  Stream Manager 2.0 server or Stream Manager 2.0 Load Balancer"
+  type        = string
+  default     = "none"
+  validation {
+    condition     = var.https_ssl_certificate == "false" || var.https_ssl_certificate == "letsencrypt" || var.https_ssl_certificate == "imported"
+    error_message = "The https_ssl_certificate value must be a valid! Example: none, letsencrypt, imported"
+  }
+}
 variable "https_letsencrypt_enable" {
-  description = "Enable HTTPS and get SSL certificate using Let's Encrypt automaticaly (single/cluster) (https://www.red5.net/docs/installation/ssl/overview/)"
+  description = "Enable HTTPS and get SSL certificate using Let's Encrypt automaticaly (standalone/cluster) (https://www.red5.net/docs/installation/ssl/overview/)"
   type        = bool
   default     = false
 }
 variable "https_letsencrypt_certificate_domain_name" {
-  description = "Domain name for Let's Encrypt ssl certificate (single/cluster)"
+  description = "Domain name for Let's Encrypt ssl certificate (standalone/cluster)"
   type        = string
   default     = ""
 }
 variable "https_letsencrypt_certificate_email" {
-  description = "Email for Let's Encrypt ssl certificate (single/cluster)"
+  description = "Email for Let's Encrypt ssl certificate (standalone/cluster)"
   type        = string
   default     = "email@example.com"
 }
 variable "https_letsencrypt_certificate_password" {
-  description = "Password for Let's Encrypt ssl certificate (single/cluster)"
+  description = "Password for Let's Encrypt ssl certificate (standalone/cluster)"
+  type        = string
+  default     = ""
+}
+variable "https_ssl_certificate_domain_name" {
+  description = "Domain name for SSL certificate (letsencrypt/imported)"
+  type        = string
+  default     = ""
+}
+variable "https_ssl_certificate_email" {
+  description = "Email for SSL certificate (letsencrypt)"
+  type        = string
+  default     = ""
+}
+variable "https_ssl_certificate_cert_path" {
+  description = "Path to SSL certificate (imported)"
+  type        = string
+  default     = ""
+}
+variable "https_ssl_certificate_key_path" {
+  description = "Path to SSL key (imported)"
   type        = string
   default     = ""
 }
@@ -358,6 +407,16 @@ variable "stream_manager_coturn_address" {
   type        = string
   default     = ""
 }
+variable "stream_manager_auth_user" {
+  description = "value to set the user name for Stream Manager 2.0 authentication"
+  type        = string
+  default     = ""
+}
+variable "stream_manager_auth_password" {
+  description = "value to set the user password for Stream Manager 2.0 authentication"
+  type        = string
+  default     = ""
+}
 variable "red5pro_license_key" {
   description = "Red5 Pro license key (https://www.red5.net/docs/installation/installation/license-key/)"
   type        = string
@@ -374,24 +433,24 @@ variable "red5pro_api_enable" {
   default     = true
 }
 variable "red5pro_api_key" {
-  description = "Red5 Pro Single server API key"
+  description = "Red5 Pro standalone server API key"
   type        = string
   default     = ""
 }
 
 # Red5 Pro Origin node image configuration
-variable "origin_image_create" {
+variable "node_image_create" {
   description = "Create new Origin node image true/false. (Default:true) (https://www.red5.net/docs/special/relays/overview/#origin-and-edge-nodes)"
   type        = bool
   default     = false
 }
-variable "origin_image_instance_type" {
+variable "node_image_instance_type" {
   description = "Origin node image - instance type"
   type        = string
   default     = "t3.medium"
 }
-variable "origin_image_volume_size" {
-  description = "Origin node image - volume size"
+variable "node_image_volume_size" {
+  description = "node image - volume size"
   type        = number
   default     = 8
 }
@@ -954,8 +1013,8 @@ variable "security_group_node_egress" {
   ]
 }
 
-variable "security_group_single_ingress" {
-  description = "Security group for Single Red5Pro server  - ingress"
+variable "security_group_standalone_ingress" {
+  description = "Security group for standalone Red5Pro server  - ingress"
   type        = list(map(string))
   default = [
     {
@@ -987,6 +1046,31 @@ variable "security_group_single_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      from_port       = 1936
+      to_port         = 1936
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+      description     = "Red5 Pro Standalone server - RTMPS (TCP)"
+    },
+    {
+      from_port       = 8554
+      to_port         = 8554
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+      description     = "Red5 Pro Standalone server - RTSP (TCP)"
+    },
+    {
+      from_port       = 8000
+      to_port         = 8100
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+      description     = "Red5 Pro Standalone server - Restreamer, SRT (TCP)"
+    },
+
+    {
       from_port       = 1935
       to_port         = 1935
       protocol        = "tcp"
@@ -1017,8 +1101,8 @@ variable "security_group_single_ingress" {
   ]
 }
 
-variable "security_group_single_egress" {
-  description = "Security group for Single Red5Pro server - egress"
+variable "security_group_standalone_egress" {
+  description = "Security group for standalone Red5Pro server - egress"
   type        = list(map(string))
   default = [
     {
@@ -1057,6 +1141,15 @@ variable "node_group_origins_instance_type" {
   type        = string
   default     = "t3.medium"
 }
+variable "node_group_origins_volume_size" {
+  description = "Volume size in GB for Origins. Minimum 50GB"
+  type        = number
+  default     = 50
+  validation {
+    condition     = var.node_group_origins_volume_size >= 50
+    error_message = "The node_group_origins_volume_size value must be a valid! Minimum 50"
+  }
+}
 variable "node_group_origins_capacity" {
   description = "Connections capacity for Origins"
   type        = number
@@ -1082,6 +1175,15 @@ variable "node_group_edges_capacity" {
   type        = number
   default     = 300
 }
+variable "node_group_edges_volume_size" {
+  description = "Volume size in GB for Edges. Minimum 50GB"
+  type        = number
+  default     = 50
+  validation {
+    condition     = var.node_group_edges_volume_size >= 50
+    error_message = "The node_group_edges_volume_size value must be a valid! Minimum 50"
+  }
+}
 variable "node_group_transcoders_min" {
   description = "Number of minimum Transcoders"
   type        = number
@@ -1101,6 +1203,15 @@ variable "node_group_transcoders_capacity" {
   description = "Connections capacity for Transcoders"
   type        = number
   default     = 30
+}
+variable "node_group_transcoders_volume_size" {
+  description = "Volume size in GB for Transcoders. Minimum 50GB"
+  type        = number
+  default     = 50
+  validation {
+    condition     = var.node_group_transcoders_volume_size >= 50
+    error_message = "The node_group_transcoders_volume_size value must be a valid! Minimum 50"
+  }
 }
 variable "node_group_relays_min" {
   description = "Number of minimum Relays"
@@ -1122,6 +1233,15 @@ variable "node_group_relays_capacity" {
   type        = number
   default     = 30
 }
+variable "node_group_relays_volume_size" {
+  description = "Volume size in GB for Relays. Minimum 50GB"
+  type        = number
+  default     = 50
+  validation {
+    condition     = var.node_group_relays_volume_size >= 50
+    error_message = "The node_group_relays_volume_size value must be a valid! Minimum 50"
+  }
+}
 variable "ubuntu_version_aws_image" {
   type = map(string)
   default = {
@@ -1134,4 +1254,69 @@ variable "ubuntu_version" {
   description = "Ubuntu version"
   type        = string
   default     = "22.04"
+}
+# Extra configuration for Red5 Pro autoscaling nodes
+variable "node_config_webhooks" {
+  description = "Webhooks configuration - (Optional) https://www.red5.net/docs/special/webhooks/overview/"
+  type = object({
+    enable           = bool
+    target_nodes     = list(string)
+    webhook_endpoint = string
+  })
+  default = {
+    enable           = false
+    target_nodes     = []
+    webhook_endpoint = ""
+  }
+}
+variable "node_config_round_trip_auth" {
+  description = "Round trip authentication configuration - (Optional) https://www.red5.net/docs/special/authplugin/simple-auth/"
+  type = object({
+    enable                   = bool
+    target_nodes             = list(string)
+    auth_host                = string
+    auth_port                = number
+    auth_protocol            = string
+    auth_endpoint_validate   = string
+    auth_endpoint_invalidate = string
+  })
+  default = {
+    enable                   = false
+    target_nodes             = []
+    auth_host                = ""
+    auth_port                = 443
+    auth_protocol            = "https://"
+    auth_endpoint_validate   = "/validateCredentials"
+    auth_endpoint_invalidate = "/invalidateCredentials"
+  }
+}
+variable "node_config_social_pusher" {
+  description = "Social Pusher configuration - (Optional) https://www.red5.net/docs/development/social-media-plugin/rest-api/"
+  type = object({
+    enable       = bool
+    target_nodes = list(string)
+  })
+  default = {
+    enable       = false
+    target_nodes = []
+  }
+}
+variable "node_config_restreamer" {
+  description = "Restreamer configuration - (Optional) https://www.red5.net/docs/special/restreamer/overview/"
+  type = object({
+    enable               = bool
+    target_nodes         = list(string)
+    restreamer_tsingest  = bool
+    restreamer_ipcam     = bool
+    restreamer_whip      = bool
+    restreamer_srtingest = bool
+  })
+  default = {
+    enable               = false
+    target_nodes         = []
+    restreamer_tsingest  = false
+    restreamer_ipcam     = false
+    restreamer_whip      = false
+    restreamer_srtingest = false
+  }
 }

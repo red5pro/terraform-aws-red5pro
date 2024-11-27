@@ -7,7 +7,7 @@ RED5_HOME="/usr/local/red5pro"
 CURRENT_DIRECTORY=$(pwd)
 TEMP_FOLDER="$CURRENT_DIRECTORY/tmp"
 
-PACKAGES_DEFAULT=(jsvc ntp git unzip libvdpau1 mysql-client)
+PACKAGES_DEFAULT=(jsvc ntp git unzip libvdpau1 ffmpeg)
 PACKAGES_1604=(default-jre libva1 libva-drm1 libva-x11-1)
 PACKAGES_1804=(libva2 libva-drm2 libva-x11-2)
 PACKAGES_2004=(libva2 libva-drm2 libva-x11-2)
@@ -88,7 +88,7 @@ check_linux_and_java_versions(){
 }
 
 install_pkg(){
-    for i in {1..5};
+    for i in {1..20};
     do
         
         local install_issuse=0;
@@ -104,7 +104,7 @@ install_pkg(){
         do
             PKG_OK=$(dpkg-query -W --showformat='${Status}\n' ${PACKAGES[$index]}|grep "install ok installed")
             if [ -z "$PKG_OK" ]; then
-                log_i "${PACKAGES[$index]} utility didn't install, didn't find MIRROR !!! "
+                log_i "${PACKAGES[$index]} utility didn't install. Will try again"
                 install_issuse=$(($install_issuse+1));
             else
                 log_i "${PACKAGES[$index]} utility installed"
@@ -114,22 +114,17 @@ install_pkg(){
         if [ $install_issuse -eq 0 ]; then
             break
         fi
-        if [ $i -ge 5 ]; then
+        if [ $i -ge 20 ]; then
             log_e "Something wrong with packages installation!!! Exit."
             exit 1
         fi
-        sleep 20
+        sleep 30
     done
 }
 
 install_red5pro(){
     log_i "Install RED5PRO"
-    
-    if [ -z "$LICENSE_KEY" ]; then
-        log_w "Variable LICENSE_KEY is empty."
-        exit 1
-    fi
-    
+        
     RED5ARCHIVE=$(ls $CURRENT_DIRECTORY/red5pro-server-*.zip | xargs -n 1 basename);
     
     if ! unzip -q $RED5ARCHIVE -d $TEMP_FOLDER/; then
@@ -154,55 +149,21 @@ install_red5pro(){
         mv $TEMP_FOLDER/red5pro* $RED5_HOME
     fi
     
-    if [ -f "$RED5_HOME/LICENSE.KEY" ]; then
-        rm $RED5_HOME/LICENSE.KEY
-        echo "$LICENSE_KEY" > $RED5_HOME/LICENSE.KEY
-    else
-        echo "$LICENSE_KEY" > $RED5_HOME/LICENSE.KEY
+    if [ -n "$LICENSE_KEY" ]; then
+        if [ -f "$RED5_HOME/LICENSE.KEY" ]; then
+            rm $RED5_HOME/LICENSE.KEY
+            echo "$LICENSE_KEY" > $RED5_HOME/LICENSE.KEY
+        else
+            echo "$LICENSE_KEY" > $RED5_HOME/LICENSE.KEY
+        fi
     fi
-}
-
-test_set_mem(){
-    total_memory_mb=$(free -m|awk '/^Mem:/{print $2}') # Value in Mb
-    total_memory=$((total_memory_mb/1024)); # Value in Gb
-
-    available_memory_mb=$(free -m|awk '/^Mem:/{print $7}') # Value in Mb
-    available_memory=$((available_memory_mb/1024)); # Value in Gb
-
-    if [[ "$available_memory" -le 1 ]]; then
-        log_e "Minimum 2 GB server memory!!! Exit."
-        exit 1
-    elif [[ "$available_memory" -eq 2 ]]; then
-        JVM_MEMORY=1;
-    elif [[ "$available_memory" -gt 2 && "$available_memory" -le 4 ]]; then
-        JVM_MEMORY=2;
-    elif [[ "$available_memory" -gt 4 && "$available_memory" -le 8 ]]; then
-        JVM_MEMORY=$((available_memory-2));
-    elif [[ "$available_memory" -gt 8 && "$available_memory" -le 12 ]]; then
-        JVM_MEMORY=$((available_memory-3));
-    elif [[ "$available_memory" -gt 12 && "$available_memory" -le 20 ]]; then
-        JVM_MEMORY=$((available_memory-4));
-    elif [[ "$available_memory" -gt 20 && "$available_memory" -le 30 ]]; then
-        JVM_MEMORY=$((available_memory-5));
-    elif [[ "$available_memory" -gt 30 && "$available_memory" -le 40 ]]; then
-        JVM_MEMORY=$((total_memory-6));
-    else
-        JVM_MEMORY=$((total_memory-8));
-    fi
-    log_i "Memory setting: TOTAL: ${total_memory_mb}Mb, EVALIABLE: ${available_memory_mb}Mb, JVM: ${JVM_MEMORY}Gb"
 }
 
 install_red5pro_service(){
     log_i "Install Red5Pro service file"
-    
-    test_set_mem
-    
+       
     cp "$RED5_HOME/red5pro.service" /lib/systemd/system/red5pro.service
-    
-    local service_memory_pattern='-Xms2g -Xmx2g'
-    local service_memory_new="-Xms${JVM_MEMORY}g -Xmx${JVM_MEMORY}g"
-    sudo sed -i -e "s|$service_memory_pattern|$service_memory_new|" "/lib/systemd/system/red5pro.service"
-    
+        
     systemctl daemon-reload
     systemctl enable red5pro.service
 }
@@ -220,16 +181,37 @@ linux_optimization(){
     echo 'ubuntu hard nofile 1000000' | sudo tee -a /etc/security/limits.conf
     echo 'session required pam_limits.so' | sudo tee -a /etc/pam.d/common-session
     ulimit -n 1000000
-    sysctl -p
-
-    local service_limitnofile_pattern='LimitNOFILE=65536'
-    local service_limitnofile_new="LimitNOFILE=1000000"
-
-    sudo sed -i -e "s|$service_limitnofile_pattern|$service_limitnofile_new|" "/lib/systemd/system/red5pro.service"
 }
 
-export LC_ALL="en_US.UTF-8"
-export LC_CTYPE="en_US.UTF-8"
+config_red5pro_api(){
+    if [[ "$NODE_API_ENABLE" == "true" ]]; then
+        log_i "Red5Pro WEBAPP API - enable"
+
+        if [ -z "$NODE_API_KEY" ]; then
+            log_e "Parameter NODE_API_KEY is empty. EXIT."
+            exit 1
+        fi
+        local token_pattern='security.accessToken=.*'
+        local token_new="security.accessToken=${NODE_API_KEY}"
+        
+        sed -i -e "s|$token_pattern|$token_new|" "$RED5_HOME/webapps/api/WEB-INF/red5-web.properties"
+        echo " " >> $RED5_HOME/webapps/api/WEB-INF/security/hosts.txt
+        echo "*" >> $RED5_HOME/webapps/api/WEB-INF/security/hosts.txt
+    else
+        log_d "Red5Pro WEBAPP API - disable"
+        if [ -d "$RED5_HOME/webapps/api" ]; then
+            rm -r $RED5_HOME/webapps/api
+        fi
+    fi
+}
+
+if command -v flock &> /dev/null; then
+    log_i "Check if apt is locked"
+    while ! flock -n /var/lib/apt/lists/lock true; do 
+        echo "apt is locked, wait 5 sec"
+        sleep 5
+    done
+fi
 
 PACKAGES=("${PACKAGES_DEFAULT[@]}")
 install_pkg
@@ -238,3 +220,4 @@ check_linux_and_java_versions
 install_pkg
 install_red5pro_service
 linux_optimization
+config_red5pro_api
