@@ -379,7 +379,7 @@ resource "aws_instance" "red5pro_standalone" {
 
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
-    destination = "/home/ubuntu"
+    destination = "/usr/local/stream-manager"
 
     connection {
       host        = self.public_ip
@@ -391,7 +391,7 @@ resource "aws_instance" "red5pro_standalone" {
 
   provisioner "file" {
     source      = var.path_to_red5pro_build
-    destination = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+    destination = "/usr/local/stream-manager/red5pro-installer/${basename(var.path_to_red5pro_build)}"
 
     connection {
       host        = self.public_ip
@@ -420,10 +420,10 @@ resource "aws_instance" "red5pro_standalone" {
       "export NODE_ROUND_TRIP_AUTH_PROTOCOL='${var.standalone_red5pro_round_trip_auth_protocol}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE='${var.standalone_red5pro_round_trip_auth_endpoint_validate}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE='${var.standalone_red5pro_round_trip_auth_endpoint_invalidate}'",
-      "cd /home/ubuntu/red5pro-installer/",
-      "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
-      "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
-      "sudo -E /home/ubuntu/red5pro-installer/r5p_config_node_apps_plugins.sh",
+      "cd /usr/local/stream-manager/red5pro-installer/",
+      "sudo chmod +x /usr/local/stream-manager/red5pro-installer/*.sh",
+      "sudo -E /usr/local/stream-manager/red5pro-installer/r5p_install_server_basic.sh",
+      "sudo -E /usr/local/stream-manager/red5pro-installer/r5p_config_node_apps_plugins.sh",
       "sudo systemctl daemon-reload && sudo systemctl start red5pro",
       "sudo mkdir -p /usr/local/red5pro/certs",
       "echo '${try(file(var.https_ssl_certificate_cert_path), "")}' | sudo tee -a /usr/local/red5pro/certs/fullchain.pem",
@@ -433,7 +433,7 @@ resource "aws_instance" "red5pro_standalone" {
       "export SSL_MAIL='${var.https_ssl_certificate_email}'",
       "export SSL_PASSWORD='${try(nonsensitive(random_password.ssl_password_red5pro_standalone[0].result), "")}'",
       "export SSL_CERT_PATH=/usr/local/red5pro/certs",
-      "nohup sudo -E /home/ubuntu/red5pro-installer/r5p_ssl_check_install.sh >> /home/ubuntu/red5pro-installer/r5p_ssl_check_install.log &",
+      "nohup sudo -E /usr/local/stream-manager/red5pro-installer/r5p_ssl_check_install.sh >> /usr/local/stream-manager/red5pro-installer/r5p_ssl_check_install.log &",
       "sleep 2"
     ]
     connection {
@@ -587,7 +587,7 @@ resource "null_resource" "red5pro_kafka" {
 
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
-    destination = "/home/ubuntu"
+    destination = "/usr/local/stream-manager"
 
     connection {
       host        = aws_instance.red5pro_kafka[0].public_ip
@@ -603,17 +603,17 @@ resource "null_resource" "red5pro_kafka" {
       "sudo iptables -F",
       "sudo netfilter-persistent save",
       "sudo cloud-init status --wait",
-      "echo 'ssl.keystore.key=${local.kafka_ssl_keystore_key}' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties",
-      "echo 'ssl.truststore.certificates=${local.kafka_ssl_truststore_cert}' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties",
-      "echo 'ssl.keystore.certificate.chain=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties",
-      "echo 'listener.name.broker.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties",
-      "echo 'listener.name.controller.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties",
-      "echo 'advertised.listeners=BROKER://${local.kafka_ip}:9092' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties",
+      "echo 'ssl.keystore.key=${local.kafka_ssl_keystore_key}' | sudo tee -a /usr/local/stream-manager/red5pro-installer/server.properties",
+      "echo 'ssl.truststore.certificates=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/red5pro-installer/server.properties",
+      "echo 'ssl.keystore.certificate.chain=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/red5pro-installer/server.properties",
+      "echo 'listener.name.broker.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /usr/local/stream-manager/red5pro-installer/server.properties",
+      "echo 'listener.name.controller.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /usr/local/stream-manager/red5pro-installer/server.properties",
+      "echo 'advertised.listeners=BROKER://${local.kafka_ip}:9092' | sudo tee -a /usr/local/stream-manager/red5pro-installer/server.properties",
       "export KAFKA_ARCHIVE_URL='${var.kafka_standalone_instance_arhive_url}'",
       "export KAFKA_CLUSTER_ID='${random_id.kafka_cluster_id[0].b64_std}'",
-      "cd /home/ubuntu/red5pro-installer/",
-      "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
-      "sudo -E /home/ubuntu/red5pro-installer/r5p_kafka_install.sh",
+      "cd /usr/local/stream-manager/red5pro-installer/",
+      "sudo chmod +x /usr/local/stream-manager/red5pro-installer/*.sh",
+      "sudo -E /usr/local/stream-manager/red5pro-installer/r5p_kafka_install.sh",
     ]
     connection {
       host        = aws_instance.red5pro_kafka[0].public_ip
@@ -651,11 +651,15 @@ resource "aws_instance" "red5pro_sm" {
           #!/bin/bash
           mkdir -p /usr/local/stream-manager/keys
           mkdir -p /usr/local/stream-manager/certs
+          "sudo mkdir -p /usr/local/stream-manager",
+          "sudo mv /tmp/stream-manager/* /usr/local/stream-manager/",
+          "sudo chown -R ubuntu:ubuntu /usr/local/stream-manager",
+          "sudo chmod -R 755 /usr/local/stream-manager",
           echo "${try(file(var.https_ssl_certificate_cert_path), "")}" > /usr/local/stream-manager/certs/cert.pem
           echo "${try(file(var.https_ssl_certificate_key_path), "")}" > /usr/local/stream-manager/certs/privkey.pem
           echo -n "${local.ssh_public_key}" > /usr/local/stream-manager/keys/red5pro_ssh_public_key.pub
-          chmod 400 /usr/local/stream-manager/keys/privkey.pem
-          chmod 400 /usr/local/stream-manager/keys/oracle_private_api_key.pem
+          chmod 400 /usr/local/stream-manager/keys/red5pro_ssh_public_key.pub
+
           ############################ .env file #########################################################
           cat >> /usr/local/stream-manager/.env <<- EOM
           KAFKA_CLUSTER_ID=${random_id.kafka_cluster_id[0].b64_std}
@@ -683,9 +687,8 @@ resource "null_resource" "red5pro_sm" {
 count = local.cluster_or_autoscale ? 1 : 0
 
   provisioner "file" {
-    #source      = "${abspath(path.module)}/red5pro-installer"
-    source      = "/mnt/c/Users/VenkateshV/Desktop/terraform/test/terraform-aws-red5pro/red5pro-installer"
-    destination = "/home/ubuntu"
+    source      = "${abspath(path.module)}/red5pro-installer"
+    destination = "/usr/local/stream-manager"
 
     connection {
       host        = aws_instance.red5pro_sm[0].public_ip
@@ -695,31 +698,7 @@ count = local.cluster_or_autoscale ? 1 : 0
     }
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      "sudo iptables -F",
-      "sudo netfilter-persistent save",
-      "sudo cloud-init status --wait",
-      "echo 'KAFKA_SSL_KEYSTORE_KEY=${local.kafka_ssl_keystore_key}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_SSL_TRUSTSTORE_CERTIFICATES=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_IP=${aws_instance.red5pro_sm[0].public_ip}' | sudo tee -a /usr/local/stream-manager/.env",
-      "export SM_SSL='${local.stream_manager_ssl}'",
-      "export SM_STANDALONE='${local.stream_manager_standalone}'",
-      "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
-      "cd /home/ubuntu/red5pro-installer/",
-      "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
-      "sudo -E /home/ubuntu/red5pro-installer/r5p_install_sm2_aws.sh",
-    ]
-    connection {
-      host        = aws_instance.red5pro_kafka[0].public_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = local.ssh_private_key
-    }
-  }
+
   depends_on = [tls_cert_request.kafka_server_csr, null_resource.red5pro_kafka]
 
 }
@@ -890,7 +869,7 @@ resource "aws_instance" "red5pro_node" {
 
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
-    destination = "/home/ubuntu"
+    destination = "/usr/local/stream-manager"
 
     connection {
       host        = self.public_ip
@@ -902,7 +881,7 @@ resource "aws_instance" "red5pro_node" {
 
   provisioner "file" {
     source      = var.path_to_red5pro_build
-    destination = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
+    destination = "/usr/local/stream-manager/red5pro-installer/${basename(var.path_to_red5pro_build)}"
 
     connection {
       host        = self.public_ip
@@ -914,16 +893,20 @@ resource "aws_instance" "red5pro_node" {
 
   provisioner "remote-exec" {
     inline = [
+      "sudo mkdir -p /usr/local/stream-manager",
+      "sudo chown -R ubuntu:ubuntu /usr/local/stream-manager",
+      "sudo chmod -R 755 /usr/local/stream-manager",
       "sudo cloud-init status --wait",
       "sudo iptables -F",
       "sudo netfilter-persistent save",
       "export LICENSE_KEY='${var.red5pro_license_key}'",
       "export NODE_API_ENABLE='${var.red5pro_api_enable}'",
       "export NODE_API_KEY='${var.red5pro_api_key}'",
-      "cd /home/ubuntu/red5pro-installer/",
-      "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
-      "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
-      "sudo -E /home/ubuntu/red5pro-installer/r5p_config_node.sh",
+      "cd /usr/local/stream-manager/red5pro-installer/",
+      "sudo chown -R ubuntu:ubuntu /usr",
+      "sudo chmod +x /usr/local/stream-manager/red5pro-installer/*.sh",
+      "sudo -E /usr/local/stream-manager/red5pro-installer/r5p_install_server_basic.sh",
+      "sudo -E /usr/local/stream-manager/red5pro-installer/r5p_config_node.sh",
     ]
     connection {
       host        = self.public_ip

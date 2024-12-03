@@ -3,7 +3,7 @@
 #################################################
 
 provider "aws" {
-  region     = "us-west-1"            # AWS region
+  region     = "ap-east-1"            # AWS region
   access_key = ""                     # AWS IAM Access key
   secret_key = ""                     # AWS IAM Secret key
 }
@@ -47,7 +47,7 @@ module "red5pro" {
   standalone_volume_size   = 8           # Volume size for Red5 Pro server
 
   # Red5Pro server configuration
-  red5pro_license_key                                    = "1111-2222-3333-4444"             # Red5 Pro license key (https://account.red5.net/login)
+  red5pro_license_key                                    = "QGZG-2OLJ-7QPE-ELBW"             # Red5 Pro license key (https://account.red5.net/login)
   red5pro_api_enable                                     = true                              # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
   red5pro_api_key                                        = "example_key"                     # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
   standalone_red5pro_inspector_enable                    = false                             # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5.net/docs/troubleshooting/inspector/overview/)

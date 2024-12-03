@@ -3,7 +3,7 @@
 ####################################################################################
 
 provider "aws" {
-  region     = "us-west-1" # AWS region
+  region     = "ap-east-1" # AWS region
   access_key = ""          # AWS IAM Access key
   secret_key = ""          # AWS IAM Secret key
 }
@@ -16,7 +16,7 @@ module "red5pro" {
   ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
 
   # AWS authetification variables it use for Stream Manager autoscaling configuration
-  aws_region     = "us-west-1" # AWS region 
+  aws_region     = "ap-east-1" # AWS region 
   aws_access_key = ""          # AWS IAM Access key
   aws_secret_key = ""          # AWS IAM Secret key
 
@@ -39,20 +39,17 @@ module "red5pro" {
 
 
   # Load Balancer HTTPS/SSL certificate configuration
-  https_certificate_manager_use_existing     = true                  # If you want to use SSL certificate set it to true
+  https_certificate_manager_use_existing     = false                  # If you want to use SSL certificate set it to true
   https_certificate_manager_certificate_name = "red5pro.example.com" # Domain name for your SSL certificate
 
   # Stream Manager configuration 
   stream_manager_instance_type                = "t3.medium"         # Instance type for Stream Manager
   stream_manager_volume_size                  = 20                  # Volume size for Stream Manager
-  stream_manager_api_key                      = "examplekey"        # API key for Stream Manager
   stream_manager_autoscaling_desired_capacity = 1                   # Desired capacity for Stream Manager autoscaling group
   stream_manager_autoscaling_minimum_capacity = 1                   # Minimum capacity for Stream Manager autoscaling group
   stream_manager_autoscaling_maximum_capacity = 1                   # Maximum capacity for Stream Manager autoscaling group
-  stream_manager_coturn_enable                = false               # true - enable customized Coturn configuration for Stream Manager, false - disable customized Coturn configuration for Stream Manager (https://www.red5.net/docs/installation/turn-stun/turnstun/)
-  stream_manager_coturn_address               = "stun:1.2.3.4:3478" # Customized coturn address for Stream Manager (https://www.red5.net/docs/installation/turn-stun/turnstun/)
   stream_manager_auth_user                    = "example_user"      # Stream Manager 2.0 authentication user name
-  stream_manager_auth_password                = "examplepassword"  # Stream Manager 2.0 authentication password
+  stream_manager_auth_password                = "example_password"  # Stream Manager 2.0 authentication password
 
   # Stream Manager 2.0 Load Balancer HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, imported - import existing HTTPS/SSL certificate
@@ -61,7 +58,7 @@ module "red5pro" {
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
   red5pro_cluster_key = "example_key"          # Red5 Pro cluster key
   red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
-  red5pro_api_key     = "examplekey"          # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
+  red5pro_api_key     = "example_key"          # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
   # Red5 Pro autoscaling Origin node image configuration
   node_image_create        = true        # Default: true for Autoscaling and Cluster, true - create new Origin node image, false - not create new Origin node image
