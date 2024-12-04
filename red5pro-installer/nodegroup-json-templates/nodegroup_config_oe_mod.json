@@ -7,12 +7,12 @@
   "images": {
     "origin_image": {
       "name": "origin_image",
-      "image": "red5pro-cluster-node-image-02Dec24-1647",
+      "image": "red5pro-cluster-node-image-04Dec24-1516",
       "cloudProperties": "instance_type=t3.medium;volume_size=50"
     },
     "edge_image": {
       "name": "edge_image",
-      "image": "red5pro-cluster-node-image-02Dec24-1647",
+      "image": "red5pro-cluster-node-image-04Dec24-1516",
       "cloudProperties": "instance_type=t3.medium;volume_size=50"
     }
   },

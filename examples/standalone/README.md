@@ -1,81 +1,83 @@
-# AWS Red5 Pro single server
+# Standalone Red5 Pro Server (standalone)
 
-This example illustrates how to create a simple Red5 Pro deployment in AWS with single Red5 Pro server.
+This module automates the infrastructure provisioning of the [Red5 Pro standalone server](https://www.red5.net/docs/installation/) on AWS using Terraform.
 
-* VPC create or use existing
-* Elastic IP create or use existing
-* Security group create or use existing
-* SSH key create or use existing
-* EC2 Instance with installed and configured Red5 Pro server
-* SSL certificate install Let's encrypt or use Red5Pro server without SSL certificate (HTTP only)
+## Terraform Deployed Resources (standalone)
 
-Red5 Pro documentation for Single server deployemnt: https://www.red5.net/docs/installation/installation/awsinstall/
+- VPC
+- Public Subnet
+- Internet Gateway
+- Route Table
+- Security Groups for Standalone Red5 Pro Server
+- SSH Key Pair (use existing or create a new one)
+- Standalone Red5 Pro Server Instance
+- SSL Certificate for Standalone Red5 Pro Server Instance. Options:
+  - `none`: Red5 Pro server without HTTPS and SSL certificate. Only HTTP on port `5080`
+  - `letsencrypt`: Red5 Pro server with HTTPS and SSL certificate obtained by Let's Encrypt. HTTP on port `5080`, HTTPS on port `443`
+  - `imported`: Red5 Pro server with HTTPS and imported SSL certificate. HTTP on port `5080`, HTTPS on port `443`
 
-## Preparation
+## Example `main.tf` (standalone)
 
-* Install **terraform** https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
-* Download Red5 Pro server build: (Example: red5pro-server-0.0.0.b0-release.zip) https://account.red5.net/downloads
-* Get Red5 Pro License key: (Example: 1111-2222-3333-4444) https://account.red5.net
-* Get AWS Access key and AWS Secret key or use existing (AWS IAM - EC2 full access, VPC full access)
-* Copy Red5 Pro server build to the root folder of your project
+```yaml
 
-Example:  
+# Example: Red5 Pro Standalone Deployment
+##################################################################################################################
+provider "aws" {
+  region     = "us-east-1"
+  access_key = "your_access_key_id"
+  secret_key = "your_secret_access_key"
+}
 
-```bash
-cp ~/Downloads/red5pro-server-0.0.0.b0-release.zip ./
+module "red5pro" {
+  source                = "../../"
+  type                  = "standalone"                            # Deployment type: standalone, cluster, autoscale
+  name                  = "red5pro-standalone"                    # Name to be used on all the resources as identifier
+  path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
+
+  # SSH key configuration
+  ssh_key_use_existing              = false                                              # true - use existing SSH key, false - create new SSH key
+  ssh_key_existing_private_key_path = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem" # Path to existing SSH private key
+  ssh_key_existing_public_key_path  = "/PATH/TO/SSH/PUBLIC/KEY/example_pub_key.pem"      # Path to existing SSH Public key
+
+ # Red5 Pro general configuration
+  red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
+  red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)  
+  red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
+
+  # Standalone Red5 Pro server AWS instance configuration
+  standalone_red5pro_instance_type   = "t3.medium" # Instance type for Red5 Pro server 
+  standalone_red5pro_instance_volume = 50         # Volume size in GB for Red5 Pro server instance
+
+  # Standalone Red5 Pro server configuration
+  standalone_red5pro_inspector_enable                    = false                         # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5.net/docs/troubleshooting/inspector/overview/)
+  standalone_red5pro_restreamer_enable                   = false                         # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5.net/docs/special/restreamer/overview/)
+  standalone_red5pro_socialpusher_enable                 = false                         # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5.net/docs/special/social-media-plugin/overview/)
+  standalone_red5pro_suppressor_enable                   = false 
+# true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
+  standalone_red5pro_hls_enable                          = false                         # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5.net/docs/protocols/hls-plugin/hls-vod/)
+  standalone_red5pro_round_trip_auth_enable              = false                         # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5.net/docs/special/round-trip-auth/overview/)
+  standalone_red5pro_round_trip_auth_host                = "round-trip-auth.example.com" # Round trip authentication server host
+  standalone_red5pro_round_trip_auth_port                = 3000                          # Round trip authentication server port
+  standalone_red5pro_round_trip_auth_protocol            = "http"                        # Round trip authentication server protocol
+  standalone_red5pro_round_trip_auth_endpoint_validate   = "/validateCredentials"        # Round trip authentication server endpoint for validate
+  standalone_red5pro_round_trip_auth_endpoint_invalidate = "/invalidateCredentials"      # Round trip authentication server endpoint for invalidate
+
+  # Standalone Red5 Pro server HTTPS (SSL) certificate configuration
+  https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
+
+  # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
+ # https_ssl_certificate = "letsencrypt"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"
+  # https_ssl_certificate_email = "email@example.com"
+
+  # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
+  # https_ssl_certificate             = "imported"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"
+  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
+  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+}
+
+output "module_output" {
+  value = module.red5pro
+}
 ```
-
-## Usage
-
-To run this example you need to execute:
-
-```bash
-$ terraform init
-$ terraform plan
-$ terraform apply
-```
-
-## Notes
-
-* To activate HTTPS/SSL you need to add DNS A record for Elastic IP of Red5 Pro server
-* Note that this example may create resources which can cost money. Run `terraform destroy` when you don't need these resources.
-
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
-## Requirements
-
-| Name | Version |
-|------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0 |
-
-## Providers
-
-| Name | Version |
-|------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.0 |
-
-## Modules
-
-| Name | Source | Version |
-|------|--------|---------|
-| <a name="module_red5pro"></a> [red5pro](#module\_red5pro) | ../../ | n/a |
-
-## Resources
-
-No resources.
-
-## Inputs
-
-No inputs.
-
-## Outputs
-
-| Name | Description |
-|------|-------------|
-| <a name="output_red5pro_server_http_url"></a> [red5pro\_server\_http\_url](#output\_red5pro\_server\_http\_url) | Red5 Pro Server HTTP URL |
-| <a name="output_red5pro_server_https_url"></a> [red5pro\_server\_https\_url](#output\_red5pro\_server\_https\_url) | Red5 Pro Server HTTPS URL |
-| <a name="output_red5pro_server_ip"></a> [red5pro\_server\_ip](#output\_red5pro\_server\_ip) | Red5 Pro Server IP |
-| <a name="output_ssh_key_name"></a> [ssh\_key\_name](#output\_ssh\_key\_name) | SSH key name |
-| <a name="output_ssh_private_key_path"></a> [ssh\_private\_key\_path](#output\_ssh\_private\_key\_path) | SSH private key path |
-| <a name="output_vpc_id"></a> [vpc\_id](#output\_vpc\_id) | VPC ID |
-| <a name="output_vpc_name"></a> [vpc\_name](#output\_vpc\_name) | VPC Name |

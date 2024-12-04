@@ -27,7 +27,7 @@ module "red5pro" {
   ssh_key_create       = true                                                # true - create new SSH key, false - use existing SSH key
   ssh_key_name         = "example_key"                                       # Name for new SSH key or for existing SSH key
   ssh_private_key_path = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
-  aws_ssh_key_pair     = "example_key"                                       # SSH key pair name
+  aws_ssh_key_pair     = "red5pro_ssh_key"                                       # SSH key pair name
 
   # VPC configuration
   vpc_create      = true        # true - create new VPC, false - use existing VPC
@@ -43,7 +43,7 @@ module "red5pro" {
   https_certificate_manager_certificate_name = "red5pro.example.com" # Domain name for your SSL certificate
 
   # Stream Manager configuration 
-  stream_manager_instance_type                = "t3.medium"         # Instance type for Stream Manager
+  stream_manager_instance_type                = "t3.xlarge"         # Instance type for Stream Manager
   stream_manager_volume_size                  = 20                  # Volume size for Stream Manager
   stream_manager_autoscaling_desired_capacity = 1                   # Desired capacity for Stream Manager autoscaling group
   stream_manager_autoscaling_minimum_capacity = 1                   # Minimum capacity for Stream Manager autoscaling group
