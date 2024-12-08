@@ -1,18 +1,18 @@
 {
   "name": "nodegroup-oe",
   "description": "Stream Manager 2.0 AWS Node group with Origin and Edge",
-  "cloudProperties": "environment=red5pro-cluster;subnet=red5pro-cluster-subnet-0;security_group=red5pro-cluster-node-sg",
+  "cloudProperties": "environment=red5pro-cluster;vpc=red5pro-cluster-vpc;security_group=red5pro-cluster-node-sg",
   "cloudPlatform": "AWS",
   "isScalingPaused": false,
   "images": {
     "origin_image": {
       "name": "origin_image",
-      "image": "red5pro-cluster-node-image-04Dec24-1516",
+      "image": "red5pro-cluster-node-image-06Dec24-1707",
       "cloudProperties": "instance_type=t3.medium;volume_size=50"
     },
     "edge_image": {
       "name": "edge_image",
-      "image": "red5pro-cluster-node-image-04Dec24-1516",
+      "image": "red5pro-cluster-node-image-06Dec24-1707",
       "cloudProperties": "instance_type=t3.medium;volume_size=50"
     }
   },
@@ -49,10 +49,10 @@
           "min": "1",
           "max": "20",
           "increment": 1,
-          "outExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) > 1.0",
-          "inExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) < 0.2",
-          "capacityRankingExpression": "cpu.loadavg.1min / cpu.processors",
-          "capacityLimitExpression": "2.0"
+          "outExpression": "(avg(connections.client) / 200) * 0.5 + (avg(connections.publisher) / 50) * 0.5 > 1.0",
+          "inExpression": "avg(connections.client) < 10",
+          "capacityRankingExpression": "(connections.client / 200) * 10",
+          "capacityLimitExpression": "10"
         },
         "edge": {
           "nodeGroupName": "nodegroup-oe",
@@ -61,10 +61,10 @@
           "min": "1",
           "max": "40",
           "increment": 1,
-          "outExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) > 1.0",
-          "inExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) < 0.2",
-          "capacityRankingExpression": "cpu.loadavg.1min / cpu.processors",
-          "capacityLimitExpression": "2.0"
+          "outExpression": "(avg(connections.client) / 200) * 0.5 + (avg(connections.subscriber) / 50) * 0.5 > 1.0",
+          "inExpression": "avg(connections.client) < 10",
+          "capacityRankingExpression": "(connections.client / 200) * 10",
+          "capacityLimitExpression": "10"
         }
       },
       "cloudProperties": "region=ap-east-1"

@@ -66,7 +66,7 @@ module "red5pro" {
   # Red5 Pro autoscaling Origin node image configuration
   node_image_create        = true        # Default: true for Autoscaling and Cluster, true - create new Origin node image, false - not create new Origin node image
   node_image_instance_type = "t3.medium" # Instance type for Origin node image
-  node_image_volume_size   = 20          # Volume size for Origin node image
+  node_image_volume_size   = 50         # Volume size for Origin node image
   # Extra configuration for Red5 Pro autoscaling nodes
   # Webhooks configuration - (Optional) https://www.red5.net/docs/special/webhooks/overview/
   node_config_webhooks = {
@@ -117,12 +117,12 @@ module "red5pro" {
   node_group_transcoders_min           = 0           # Number of minimum Transcoders
   node_group_transcoders_max           = 20          # Number of maximum Transcoders
   node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
-  node_group_transcoders_capacity      = 20          # Connections capacity for Transcoders
+  node_group_transcoders_capacity      = 30          # Connections capacity for Transcoders
   # Relay node configuration
   node_group_relays_min           = 0           # Number of minimum Relays
   node_group_relays_max           = 20          # Number of maximum Relays
   node_group_relays_instance_type = "t3.medium" # Instance type for Relays
-  node_group_relays_capacity      = 20          # Connections capacity for Relays
+  node_group_relays_capacity      = 30          # Connections capacity for Relays
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
 

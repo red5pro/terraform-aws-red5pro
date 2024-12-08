@@ -97,8 +97,8 @@ prepare_json_templates() {
     local node_env_pattern='NODE_ENVIRONMENT'
     local node_env_new="${NODE_ENVIRONMENT}"
 
-    local node_subnet_pattern='NODE_SUBNET_NAME'
-    local node_subnet_new="${NODE_SUBNET_NAME}"
+    local node_vpc_pattern='NODE_VPC_NAME'
+    local node_vpc_new="${NODE_VPC_NAME}"
 
     local node_security_group_pattern='NODE_SECURITY_GROUP_NAME'
     local node_security_group_new="${NODE_SECURITY_GROUP_NAME}"
@@ -146,7 +146,7 @@ prepare_json_templates() {
     local relays_max_new="${RELAYS_MAX}"
 
     sed -e "s|$node_env_pattern|$node_env_new|" \
-        -e "s|$node_subnet_pattern|$node_subnet_new|" \
+        -e "s|$node_vpc_pattern|$node_vpc_new|" \
         -e "s|$node_security_group_pattern|$node_security_group_new|" \
         -e "s|$node_image_name_pattern|$node_image_name_new|" \
         -e "s|$node_group_region_pattern|$node_group_region_new|" \

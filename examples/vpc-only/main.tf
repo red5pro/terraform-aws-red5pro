@@ -3,7 +3,7 @@
 ####################################################################################
 
 provider "aws" {
-  region     = "us-west-1" # AWS region
+  region     = "ap-east-1" # AWS region
   access_key = ""          # AWS IAM Access key
   secret_key = ""          # AWS IAM Secret key
 }

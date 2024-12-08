@@ -404,8 +404,6 @@ resource "aws_instance" "red5pro_standalone" {
   provisioner "remote-exec" {
     inline = [
       "sudo cloud-init status --wait",
-      "sudo iptables -F",
-      "sudo netfilter-persistent save",
       "export LICENSE_KEY='${var.red5pro_license_key}'",
       "export NODE_API_ENABLE='${var.red5pro_api_enable}'",
       "export NODE_API_KEY='${var.red5pro_api_key}'",
@@ -688,7 +686,7 @@ count = local.cluster_or_autoscale ? 1 : 0
     destination = "/home/ubuntu"
 
     connection {
-      host        = aws_instance.red5pro_sm[0].public_ip
+      host        = local.elastic_ip
       type        = "ssh"
       user        = "ubuntu"
       private_key = local.ssh_private_key
@@ -696,15 +694,13 @@ count = local.cluster_or_autoscale ? 1 : 0
   }
   provisioner "remote-exec" {
     inline = [
-      "sudo iptables -F",
-      "sudo netfilter-persistent save",
       "sudo cloud-init status --wait",
       "echo 'KAFKA_SSL_KEYSTORE_KEY=${local.kafka_ssl_keystore_key}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_SSL_TRUSTSTORE_CERTIFICATES=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_IP=${aws_instance.red5pro_sm[0].public_ip}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TRAEFIK_IP=${local.elastic_ip}' | sudo tee -a /usr/local/stream-manager/.env",
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
@@ -714,7 +710,7 @@ count = local.cluster_or_autoscale ? 1 : 0
     ]
 
     connection {
-      host        = aws_instance.red5pro_sm[0].public_ip
+      host        = local.elastic_ip
       type        = "ssh"
       user        = "ubuntu"
       private_key = local.ssh_private_key
@@ -914,8 +910,6 @@ resource "aws_instance" "red5pro_node" {
   provisioner "remote-exec" {
     inline = [
       "sudo cloud-init status --wait",
-      "sudo iptables -F",
-      "sudo netfilter-persistent save",
       "export LICENSE_KEY='${var.red5pro_license_key}'",
       "export NODE_API_ENABLE='${var.red5pro_api_enable}'",
       "export NODE_API_KEY='${var.red5pro_api_key}'",
@@ -984,11 +978,11 @@ resource "null_resource" "stop_node" {
 }
 
 ################################################################################
-# Create node group (Stream Manager API)
+# Create/Delete node group (Stream Manager API)
 ################################################################################
 
 resource "null_resource" "node_group" {
-  count = var.node_group_create ? 1 : 0
+  count = local.cluster_or_autoscale && var.node_group_create ? 1 : 0
   triggers = {
     trigger_name   = "node-group-trigger"
     SM_URL         = "${local.stream_manager_url}"
@@ -1004,7 +998,7 @@ resource "null_resource" "node_group" {
       R5AS_AUTH_PASS                           = "${var.stream_manager_auth_password}"
       NODE_GROUP_REGION                        = "${var.aws_region}"
       NODE_ENVIRONMENT                         = "${var.name}"
-      NODE_SUBNET_NAME                         = "${local.subnet_name[0]}"
+      NODE_VPC_NAME                            = "${local.vpc_name}"
       NODE_SECURITY_GROUP_NAME                 = "${aws_security_group.red5pro_node_sg[0].name}"
       NODE_IMAGE_NAME                          = "${aws_ami_from_instance.red5pro_node_image[0].name}"
       ORIGINS_MIN                              = "${var.node_group_origins_min}"

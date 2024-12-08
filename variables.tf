@@ -44,6 +44,13 @@ variable "aws_ssh_key_pair" {
   default     = ""
 }
 
+variable "enable_root_volume_block_encryption" {
+  type    = bool
+  default = false
+  description = "Enable root volume encryption for the EC2 instance"
+}
+
+
 # SSH key configuration
 variable "ssh_key_use_existing" {
   description = "SSH key pair configuration, true = use existing, false = create new"
@@ -292,12 +299,12 @@ variable "kafka_standalone_instance_create" {
 variable "kafka_standalone_instance_type" {
   description = "kafka instance type"
   type        = string
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 variable "kafka_standalone_volume_size" {
   description = "value to set the volume size for kafka"
   type        = number
-  default     = 16
+  default     = 50
 }
 variable "kafka_standalone_instance_arhive_url" {
   description = "Kafka standalone instance - archive URL"
@@ -370,12 +377,12 @@ variable "https_certificate_manager_certificate_name" {
 variable "stream_manager_instance_type" {
   description = "value to set the instance type for stream manager"
   type        = string
-  default     = "t3.medium"
+  default     = "t3.xlarge"
 }
 variable "stream_manager_volume_size" {
   description = "value to set the volume size for stream manager"
   type        = number
-  default     = 16
+  default     = 20
 }
 variable "stream_manager_api_key" {
   description = "value to set the api key for stream manager"
@@ -933,6 +940,13 @@ variable "security_group_stream_manager_ingress" {
       cidr_block      = "0.0.0.0/0"
       ipv6_cidr_block = "::/0"
     },
+    {
+      from_port       = 9092
+      to_port         = 9092
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
   ]
 }
 
@@ -976,6 +990,20 @@ variable "security_group_node_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description = "Red5 Pro SM2.0 Nodes - RTMPS (TCP)"
+      protocol    = "6"
+      source      = "0.0.0.0/0"
+      port_min    = 1936
+      port_max    = 1936
+    },
+     {
+      description = "Red5 Pro SM2.0 Nodes - Restreamer, SRT (TCP)"
+      protocol    = "6"
+      source      = "0.0.0.0/0"
+      port_min    = 8000
+      port_max    = 8100
+    },
+    {
       from_port       = 8554
       to_port         = 8554
       protocol        = "tcp"
@@ -984,7 +1012,7 @@ variable "security_group_node_ingress" {
     },
     {
       from_port       = 8000
-      to_port         = 8001
+      to_port         = 8100
       protocol        = "udp"
       cidr_block      = "0.0.0.0/0"
       ipv6_cidr_block = "::/0"
@@ -1173,7 +1201,7 @@ variable "node_group_edges_instance_type" {
 variable "node_group_edges_capacity" {
   description = "Connections capacity for Edges"
   type        = number
-  default     = 300
+  default     = 200
 }
 variable "node_group_edges_volume_size" {
   description = "Volume size in GB for Edges. Minimum 50GB"
@@ -1187,7 +1215,7 @@ variable "node_group_edges_volume_size" {
 variable "node_group_transcoders_min" {
   description = "Number of minimum Transcoders"
   type        = number
-  default     = 1
+  default     = 0
 }
 variable "node_group_transcoders_max" {
   description = "Number of maximum Transcoders"
@@ -1216,7 +1244,7 @@ variable "node_group_transcoders_volume_size" {
 variable "node_group_relays_min" {
   description = "Number of minimum Relays"
   type        = number
-  default     = 1
+  default     = 0
 }
 variable "node_group_relays_max" {
   description = "Number of maximum Relays"

@@ -25,7 +25,7 @@ module "red5pro" {
   # ssh_key_existing_private_key_path = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem" # Path to existing SSH private key
   # ssh_key_existing_public_key_path  = "/PATH/TO/SSH/PUBLIC/KEY/example_pub_key.pem"      # Path to existing SSH Public key
   ssh_key_create       = true                                                # true - create new SSH key, false - use existing SSH key
-  ssh_key_name         = "example_key"                                       # Name for new SSH key or for existing SSH key
+  ssh_key_name         = "venkatesh-key"                                       # Name for new SSH key or for existing SSH key
   ssh_private_key_path = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
   aws_ssh_key_pair     = "red5pro_ssh_key"                                       # SSH key pair name
 

@@ -53,11 +53,11 @@ output "load_balancer_https_url" {
 }
 output "standalone_red5pro_server_ip" {
   description = "standalone Red5 Pro Server IP"
-  value       = local.standalone ? local.elastic_ip : null
+  value       = local.standalone ? aws_instance.red5pro_sm[0].public_ip : null
 }
 output "standalone_red5pro_server_http_url" {
   description = "standalone Red5 Pro Server HTTP URL"
-  value       = local.standalone ? "http://${local.elastic_ip}:5080" : null
+  value       = local.standalone ? "http://${aws_instance.red5pro_sm[0].public_ip}:5080" : null
 }
 output "standalone_red5pro_server_https_url" {
   description = "standalone Red5 Pro Server HTTPS URL"

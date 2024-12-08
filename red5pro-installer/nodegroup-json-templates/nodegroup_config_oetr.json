@@ -1,7 +1,7 @@
 {
     "name": "nodegroup-oetr",
     "description": "Stream Manager 2.0 AWS Node group with Origin, Edge, Transcoder and Relay",
-    "cloudProperties": "environment=NODE_ENVIRONMENT;subnet=NODE_SUBNET_NAME;security_group=NODE_SECURITY_GROUP_NAME",
+    "cloudProperties": "environment=NODE_ENVIRONMENT;vpc=NODE_VPC_NAME;security_group=NODE_SECURITY_GROUP_NAME",
     "cloudPlatform": "AWS",
     "isScalingPaused": false,
     "images": {
