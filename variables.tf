@@ -89,6 +89,13 @@ variable "ssh_private_key_path" {
   type        = string
   default     = ""
 }
+######################
+variable "ssh_key_existing_private_key_path" {
+  description = "SSH private key path existing"
+  type        = string
+  default     = ""
+}
+
 # VPC configuration
 variable "vpc_create" {
   description = "Create a new VPC or use an existing one. true = create new, false = use existing"
@@ -424,6 +431,18 @@ variable "stream_manager_auth_password" {
   type        = string
   default     = ""
 }
+############
+variable "load_balancer_reserved_ip_use_existing" {
+  description = "Use existing Reserved IP for Load Balancer. true = use existing, false = create new"
+  type        = bool
+  default     = false
+}
+variable "load_balancer_reserved_ip_existing" {
+  description = "Existing Reserved IP for Load Balancer"
+  type        = string
+  default     = ""
+}
+#######
 variable "red5pro_license_key" {
   description = "Red5 Pro license key (https://www.red5.net/docs/installation/installation/license-key/)"
   type        = string
@@ -1215,7 +1234,7 @@ variable "node_group_edges_volume_size" {
 variable "node_group_transcoders_min" {
   description = "Number of minimum Transcoders"
   type        = number
-  default     = 0
+  default     = 1
 }
 variable "node_group_transcoders_max" {
   description = "Number of maximum Transcoders"

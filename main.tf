@@ -4,13 +4,7 @@ locals {
   autoscale                         = var.type == "autoscale" ? true : false
   cluster_or_autoscale              = local.cluster || local.autoscale ? true : false
   vpc                               = var.type == "vpc" ? true : false
-  # # ssh_public_key                    = var.ssh_key_use_existing ? file(var.ssh_key_existing_public_key_path) : tls_private_key.red5pro_ssh_key[*].public_key_openssh
-  # ssh_key_name                      = local.vpc ? null : var.ssh_key_use_existing ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
-  # # ssh_private_key                   = local.vpc ? null : var.ssh_key_use_existing ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_key_existing_private_key_path)
-  # ssh_private_key_path              = local.vpc ? null : var.ssh_key_use_existing ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_key_existing_private_key_path
-  ssh_public_key                = var.ssh_key_use_existing ? file(var.ssh_key_existing_public_key_path) : tls_private_key.red5pro_ssh_key[0].public_key_openssh
-  # # ssh_key_name = local.vpc ? null : var.ssh_key_use_existing ? (length(aws_key_pair.red5pro_ssh_key) > 0 ? aws_key_pair.red5pro_ssh_key[0].key_name : null) : (length(data.aws_key_pair.ssh_key_pair) > 0 ? data.aws_key_pair.ssh_key_pair[0].key_name : null)
-  # ssh_private_key = local.vpc ? null : (var.ssh_key_use_existing ? (var.ssh_key_existing_private_key_path != "" ? file(var.ssh_key_existing_private_key_path) : null) : (length(tls_private_key.red5pro_ssh_key) > 0 ? tls_private_key.red5pro_ssh_key[*].private_key_pem[0] : null))
+  ssh_public_key = var.ssh_key_use_existing ? file(var.ssh_key_existing_public_key_path) : (length(tls_private_key.red5pro_ssh_key) > 0 ? tls_private_key.red5pro_ssh_key[0].public_key_openssh : "")
   ssh_key_name         = local.vpc ? null : var.ssh_key_create ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
   ssh_private_key      = local.vpc ? null : var.ssh_key_create ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_private_key_path)
   ssh_private_key_path = local.vpc ? null : var.ssh_key_create ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_private_key_path
@@ -25,8 +19,7 @@ locals {
   kafka_ssl_keystore_key            = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
   kafka_ssl_truststore_cert         = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
   kafka_ssl_keystore_cert_chain     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
-  elastic_ip                        = local.vpc || local.autoscale ? null : var.elastic_ip_create ? aws_eip.elastic_ip[0].public_ip : data.aws_eip.elastic_ip[0].public_ip
-  stream_manager_ip                 = local.autoscale ? aws_lb.red5pro_sm_lb[0].dns_name : local.elastic_ip
+  stream_manager_ip = local.autoscale && length(aws_lb.red5pro_sm_lb) > 0 ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && length(aws_instance.red5pro_sm) > 0 ? aws_instance.red5pro_sm[0].public_ip : "null"
   stream_manager_ssl                = local.autoscale ? "none" : var.https_ssl_certificate
   stream_manager_standalone         = local.autoscale ? false : true
   stream_manager_url                = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
@@ -36,21 +29,20 @@ locals {
 # Elastic IP
 ################################################################################
 
-resource "aws_eip" "elastic_ip" {
-  count = local.vpc || local.autoscale ? 0 : var.elastic_ip_create ? 1 : 0
-}
+# resource "aws_eip" "elastic_ip" {
+#   count = local.cluster || local.autoscale ? 1 : var.elastic_ip_create ? 1 : 0
+# }
 
-data "aws_eip" "elastic_ip" {
-  count     = local.vpc || local.autoscale ? 0 : var.elastic_ip_create ? 0 : 1
-  public_ip = var.elastic_ip_existing
+# data "aws_eip" "elastic_ip" {
+#  count     = local.cluster || local.autoscale ? 1 : var.elastic_ip_create ? 0 : 1
+#   public_ip = var.elastic_ip_existing
+# }
 
-}
-
-resource "aws_eip_association" "elastic_ip_association" {
-  count         = local.standalone || local.cluster ? 1 : 0
-  instance_id   = local.standalone ? aws_instance.red5pro_standalone[0].id : aws_instance.red5pro_sm[0].id
-  allocation_id = var.elastic_ip_create ? aws_eip.elastic_ip[0].id : data.aws_eip.elastic_ip[0].id
-}
+# resource "aws_eip_association" "elastic_ip_association" {
+#   count         = local.autoscale || local.cluster ? 1 : 0
+#   instance_id   = local.autoscale ? aws_instance.red5pro_standalone[0].id : aws_instance.red5pro_sm[0].id
+#   allocation_id = var.elastic_ip_create ? aws_eip.elastic_ip[0].id : data.aws_eip.elastic_ip[0].id
+# }
 
 ################################################################################
 # SSH_KEY
@@ -286,6 +278,23 @@ resource "aws_security_group" "red5pro_kafka_sg" {
     to_port         = 9092
     protocol        = "tcp"
     security_groups = concat(aws_security_group.red5pro_sm_sg[*].id, aws_security_group.red5pro_images_sg[*].id)
+  }
+   # Ingress rule for all ICMP - IPv4
+  ingress {
+    description  = "Allow ICMP (All) - IPv4"
+    from_port    = 0
+    to_port      = 0
+    protocol     = "icmp"
+    cidr_blocks  = ["0.0.0.0/0"]
+  }
+
+  # Ingress rule for TCP port 9092 from all sources (0.0.0.0/0)
+  ingress {
+    description  = "Allow TCP port 9092 from all sources"
+    from_port    = 9092
+    to_port      = 9092
+    protocol     = "tcp"
+    cidr_blocks  = ["0.0.0.0/0"]
   }
   egress {
     description      = "Access from kafka to 0.0.0.0/0"
@@ -679,14 +688,14 @@ resource "aws_instance" "red5pro_sm" {
 
 }
 resource "null_resource" "red5pro_sm" {
-count = local.cluster_or_autoscale ? 1 : 0
+ count = local.cluster_or_autoscale ? 1 : 0
 
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
     destination = "/home/ubuntu"
 
     connection {
-      host        = local.elastic_ip
+      host        = aws_instance.red5pro_sm[0].public_ip
       type        = "ssh"
       user        = "ubuntu"
       private_key = local.ssh_private_key
@@ -694,13 +703,13 @@ count = local.cluster_or_autoscale ? 1 : 0
   }
   provisioner "remote-exec" {
     inline = [
-      "sudo cloud-init status --wait",
+      "until sudo cloud-init status | grep 'done'; do echo 'waiting for cloud-init'; sleep 10; done",
       "echo 'KAFKA_SSL_KEYSTORE_KEY=${local.kafka_ssl_keystore_key}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_SSL_TRUSTSTORE_CERTIFICATES=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_IP=${local.elastic_ip}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TRAEFIK_IP=${aws_instance.red5pro_sm[0].public_ip}' | sudo tee -a /usr/local/stream-manager/.env",
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
@@ -710,7 +719,7 @@ count = local.cluster_or_autoscale ? 1 : 0
     ]
 
     connection {
-      host        = local.elastic_ip
+      host        = aws_instance.red5pro_sm[0].public_ip
       type        = "ssh"
       user        = "ubuntu"
       private_key = local.ssh_private_key
@@ -730,7 +739,7 @@ resource "aws_ami_from_instance" "red5pro_sm_image" {
   count              = local.autoscale ? 1 : 0
   name               = "${var.name}-stream-manager-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
   source_instance_id = aws_instance.red5pro_sm[0].id
-  depends_on         = [aws_instance.red5pro_sm[0]]
+  depends_on         = [aws_instance.red5pro_sm[0],null_resource.red5pro_sm[0]]
   lifecycle {
     ignore_changes = [name, tags]
   }
@@ -800,13 +809,13 @@ resource "aws_lb_target_group" "red5pro_sm_tg" {
   count       = local.autoscale ? 1 : 0
   name        = "${var.name}-stream-manager-tg"
   target_type = "instance"
-  port        = 5080
+  port        = 80
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
 
   health_check {
     path = "/"
-    port = 5080
+    port = 80
   }
 }
 
@@ -835,7 +844,7 @@ resource "aws_lb" "red5pro_sm_lb" {
 resource "aws_lb_listener" "red5pro_sm_http" {
   count             = local.autoscale ? 1 : 0
   load_balancer_arn = aws_lb.red5pro_sm_lb[0].arn
-  port              = "5080"
+  port              = "80"
   protocol          = "HTTP"
 
   default_action {
@@ -957,7 +966,7 @@ resource "null_resource" "stop_stream_manager" {
   provisioner "local-exec" {
     command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_sm[0].id} --region ${var.aws_region}"
     environment = {
-      AWS_ACCESS_KEY_ID     = "${var.aws_access_key}"
+      AWS_ACCESS_KEY_ID     = "${var.aws_access_key}" 
       AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
     }
   }

@@ -15,6 +15,11 @@ output "ssh_key_name" {
   description = "SSH key name"
   value       = local.ssh_key_name
 }
+##venky
+output "ssh_private_key_path" {
+  value = local.ssh_private_key_path
+}
+##venky
 output "vpc_id" {
   description = "VPC ID"
   value       = local.vpc_id
@@ -53,20 +58,17 @@ output "load_balancer_https_url" {
 }
 output "standalone_red5pro_server_ip" {
   description = "standalone Red5 Pro Server IP"
-  value       = local.standalone ? aws_instance.red5pro_sm[0].public_ip : null
+  value       = local.standalone && length(aws_instance.red5pro_sm) > 0 ? aws_instance.red5pro_sm[0].public_ip : null
 }
 output "standalone_red5pro_server_http_url" {
   description = "standalone Red5 Pro Server HTTP URL"
-  value       = local.standalone ? "http://${aws_instance.red5pro_sm[0].public_ip}:5080" : null
+  value       = local.standalone && length(aws_instance.red5pro_sm) > 0 ? "http://${aws_instance.red5pro_sm[0].public_ip}:5080" : null
 }
 output "standalone_red5pro_server_https_url" {
   description = "standalone Red5 Pro Server HTTPS URL"
   value       = local.standalone && var.https_letsencrypt_enable ? "https://${var.https_letsencrypt_certificate_domain_name}:443" : null
 }
-output "ssh_private_key_path" {
-  description = "SSH private key path"
-  value       = local.ssh_private_key_path
-}
+
 output "standalone_red5pro_server_brew_mixer_controller_page_url" {
   description = "standalone Red5 Pro Server Brew Mixer Controller Page URL"
   value       = local.standalone && var.red5pro_brew_mixer_enable ? "https://${var.https_letsencrypt_certificate_domain_name}/brewmixer/rtController.html" : null

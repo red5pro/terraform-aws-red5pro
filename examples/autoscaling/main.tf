@@ -3,7 +3,7 @@
 ####################################################################################
 
 provider "aws" {
-  region     = "ap-east-1" # AWS region
+  region     = "us-east-1" # AWS region
   access_key = ""          # AWS IAM Access key
   secret_key = ""          # AWS IAM Secret key
 }
@@ -16,26 +16,24 @@ module "red5pro" {
   ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
 
   # AWS authetification variables it use for Stream Manager autoscaling configuration
-  aws_region     = "ap-east-1" # AWS region 
+  aws_region     = "us-east-1" # AWS region 
   aws_access_key = ""          # AWS IAM Access key
   aws_secret_key = ""          # AWS IAM Secret key
 
-  # SSH key configuration
-  # ssh_key_use_existing              = false                                              # true - use existing SSH key, false - create new SSH key
-  # ssh_key_existing_private_key_path = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem" # Path to existing SSH private key
-  # ssh_key_existing_public_key_path  = "/PATH/TO/SSH/PUBLIC/KEY/example_pub_key.pem"      # Path to existing SSH Public key
-  ssh_key_create       = true                                                # true - create new SSH key, false - use existing SSH key
-  ssh_key_name         = "venkatesh-key"                                       # Name for new SSH key or for existing SSH key
-  ssh_private_key_path = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
-  aws_ssh_key_pair     = "red5pro_ssh_key"                                       # SSH key pair name
+ 
+  ssh_key_create       = true                                               # true - create new SSH key, false - use existing SSH key
+  ssh_key_name         = "example_key"                                       # Name for new SSH key or for existing SSH key
+  ssh_private_key_path = "./PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
+  aws_ssh_key_pair     = "example_key"                                       # SSH key pair name
 
   # VPC configuration
   vpc_create      = true        # true - create new VPC, false - use existing VPC
   vpc_id_existing = "vpc-12345" # VPC ID for existing VPC
 
   # Kafka standalone instance configuration
-  kafka_standalone_instance_type = "t3.medium" # OCI Instance type for Kafka standalone instance
-  kafka_standalone_volume_size   = 50          # Volume size in GB for Kafka standalone instance
+  kafka_standalone_instance_create = true
+  kafka_standalone_instance_type   = "c5.2xlarge" # OCI Instance type for Kafka standalone instance
+  kafka_standalone_volume_size     = 50          # Volume size in GB for Kafka standalone instance
 
 
   # Load Balancer HTTPS/SSL certificate configuration
@@ -43,11 +41,11 @@ module "red5pro" {
   https_certificate_manager_certificate_name = "red5pro.example.com" # Domain name for your SSL certificate
 
   # Stream Manager configuration 
-  stream_manager_instance_type                = "t3.xlarge"         # Instance type for Stream Manager
-  stream_manager_volume_size                  = 20                  # Volume size for Stream Manager
-  stream_manager_autoscaling_desired_capacity = 1                   # Desired capacity for Stream Manager autoscaling group
-  stream_manager_autoscaling_minimum_capacity = 1                   # Minimum capacity for Stream Manager autoscaling group
-  stream_manager_autoscaling_maximum_capacity = 1                   # Maximum capacity for Stream Manager autoscaling group
+  stream_manager_instance_type                = "c5.2xlarge"         # Instance type for Stream Manager
+  stream_manager_volume_size                  = 50                 # Volume size for Stream Manager
+  stream_manager_autoscaling_desired_capacity = 1                  # Desired capacity for Stream Manager autoscaling group
+  stream_manager_autoscaling_minimum_capacity = 1                 # Minimum capacity for Stream Manager autoscaling group
+  stream_manager_autoscaling_maximum_capacity = 2                  # Maximum capacity for Stream Manager autoscaling group
   stream_manager_auth_user                    = "example_user"      # Stream Manager 2.0 authentication user name
   stream_manager_auth_password                = "example_password"  # Stream Manager 2.0 authentication password
 
@@ -115,7 +113,7 @@ module "red5pro" {
   node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
   node_group_transcoders_capacity      = 20          # Connections capacity for Transcoders
   # Relay node configuration
-  node_group_relays_min           = 0           # Number of minimum Relays
+  node_group_relays_min           = 0          # Number of minimum Relays
   node_group_relays_max           = 20          # Number of maximum Relays
   node_group_relays_instance_type = "t3.medium" # Instance type for Relays
   node_group_relays_capacity      = 20          # Connections capacity for Relays

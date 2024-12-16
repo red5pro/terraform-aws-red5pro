@@ -3,7 +3,7 @@
 #################################################
 
 provider "aws" {
-  region     = "ap-east-1"            # AWS region
+  region     = "us-east-1"            # AWS region
   access_key = ""                     # AWS IAM Access key
   secret_key = ""                     # AWS IAM Secret key
 }
@@ -15,14 +15,12 @@ module "red5pro" {
   path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
   ubuntu_version        = "22.04"                                           # Ubuntu version for Red5 Pro servers
 
-  # SSH key configuration
-  # ssh_key_use_existing              = false # true - use existing SSH key, false - create new SSH key
-  # ssh_key_existing_private_key_path = ""    # Path to existing SSH private key
-  # ssh_key_existing_public_key_path  = ""    # Path to existing SSH Public key
+  
  # SSH key configuration
-  ssh_key_create       = true                                                # true - create new SSH key, false - use existing SSH key
-  ssh_key_name         = "example_key"                                       # Name for new SSH key or for existing SSH key
-  ssh_private_key_path = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
+  ssh_key_create       = false                                            # true - create new SSH key, false - use existing SSH key
+  ssh_key_name         = "example_key"                                  # Name for new SSH key or for existing SSH key
+  ssh_private_key_path = "./PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem"   
+                           # Path to existing SSH private key
 
   # VPC configuration
   vpc_create      = true # true - create new VPC, false - use existing VPC
@@ -47,7 +45,7 @@ module "red5pro" {
   standalone_volume_size   = 8           # Volume size for Red5 Pro server
 
   # Red5Pro server configuration
-  red5pro_license_key                                    = "QGZG-2OLJ-7QPE-ELBW"             # Red5 Pro license key (https://account.red5.net/login)
+  red5pro_license_key                                    = "1111-2222-3333-4444"             # Red5 Pro license key (https://account.red5.net/login)
   red5pro_api_enable                                     = true                              # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
   red5pro_api_key                                        = "example_key"                     # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
   standalone_red5pro_inspector_enable                    = false                             # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5.net/docs/troubleshooting/inspector/overview/)

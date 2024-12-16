@@ -3,7 +3,7 @@
 ##########################################################
 
 provider "aws" {
-  region     = "ap-east-1" # AWS region
+  region     = "us-east-1" # AWS region
   access_key = ""          # AWS IAM Access key
   secret_key = ""          # AWS IAM Secret key
 }
@@ -16,26 +16,24 @@ module "red5pro" {
   ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
 
   # AWS authetification variables it use for Stream Manager autoscaling configuration
-  aws_region     = "ap-east-1" # AWS region 
+  aws_region     = "us-east-1" # AWS region 
   aws_access_key = ""          # AWS IAM Access key
   aws_secret_key = ""          # AWS IAM Secret key
 
   # SSH key configuration
-  # ssh_key_use_existing              = false                                              # true - use existing SSH key, false - create new SSH key
-  # ssh_key_existing_private_key_path = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem" # Path to existing SSH private key
-  # ssh_key_existing_public_key_path  = "/PATH/TO/SSH/PUBLIC/KEY/example_pub_key.pem"      # Path to existing SSH Public key
-  ssh_key_create       = true                                                # true - create new SSH key, false - use existing SSH key
+  ssh_key_create       = true                                              # true - create new SSH key, false - use existing SSH key
   ssh_key_name         = "example_key"                                       # Name for new SSH key or for existing SSH key
-  ssh_private_key_path = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
-  aws_ssh_key_pair     = "red5pro_ssh_key"                                   # SSH key pair name
+  ssh_private_key_path = "./PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
+  aws_ssh_key_pair     = "example_key"                                   # SSH key pair name
 
   # VPC configuration
   vpc_create      = true        # true - create new VPC, false - use existing VPC
   vpc_id_existing = "vpc-12345" # VPC ID for existing VPC
 
   # Kafka standalone instance configuration
-  kafka_standalone_instance_type = "t3.medium" # OCI Instance type for Kafka standalone instance
-  kafka_standalone_volume_size   = 50          # Volume size in GB for Kafka standalone instance
+  kafka_standalone_instance_create = false
+  kafka_standalone_instance_type   = "c5.2xlarge" # OCI Instance type for Kafka standalone instance
+  kafka_standalone_volume_size     = 50          # Volume size in GB for Kafka standalone instance
 
 
   # Stream Manager Elastic IP configuration
@@ -49,7 +47,7 @@ module "red5pro" {
   # https_letsencrypt_certificate_password    = "examplepass"         # Password for Let's Encrypt SSL certificate
 
   # Stream Manager configuration 
-  stream_manager_instance_type  = "t3.xlarge"         # Instance type for Stream Manager
+  stream_manager_instance_type  = "c5.2xlarge"         # Instance type for Stream Manager
   stream_manager_volume_size    = 20                  # Volume size for Stream Manager
   stream_manager_auth_user      = "example_user"      # Stream Manager 2.0 authentication user name
   stream_manager_auth_password  = "example_password"  # Stream Manager 2.0 authentication password
@@ -107,22 +105,22 @@ module "red5pro" {
   node_group_origins_min           = 1           # Number of minimum Origins
   node_group_origins_max           = 20          # Number of maximum Origins
   node_group_origins_instance_type = "t3.medium" # Instance type for Origins
-  node_group_origins_capacity      = 20          # Connections capacity for Origins
+  node_group_origins_capacity      = 3         # Connections capacity for Origins
   # Edge node configuration
-  node_group_edges_min           = 1           # Number of minimum Edges
-  node_group_edges_max           = 40          # Number of maximum Edges
+  node_group_edges_min           = 1          # Number of minimum Edges
+  node_group_edges_max           = 20         # Number of maximum Edges
   node_group_edges_instance_type = "t3.medium" # Instance type for Edges
-  node_group_edges_capacity      = 200         # Connections capacity for Edges
+  node_group_edges_capacity      = 3         # Connections capacity for Edges
   # Transcoder node configuration
-  node_group_transcoders_min           = 0           # Number of minimum Transcoders
+  node_group_transcoders_min           = 0        # Number of minimum Transcoders
   node_group_transcoders_max           = 20          # Number of maximum Transcoders
   node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
-  node_group_transcoders_capacity      = 30          # Connections capacity for Transcoders
+  node_group_transcoders_capacity      = 3         # Connections capacity for Transcoders
   # Relay node configuration
-  node_group_relays_min           = 0           # Number of minimum Relays
+  node_group_relays_min           = 0        # Number of minimum Relays
   node_group_relays_max           = 20          # Number of maximum Relays
   node_group_relays_instance_type = "t3.medium" # Instance type for Relays
-  node_group_relays_capacity      = 30          # Connections capacity for Relays
+  node_group_relays_capacity      = 3         # Connections capacity for Relays
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
 
