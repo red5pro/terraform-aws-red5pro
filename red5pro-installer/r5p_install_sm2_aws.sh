@@ -190,7 +190,7 @@ start_sm() {
                 exit 1
             fi
 
-            # Modify DNS servers in systemd-resolved to use Google DNS servers because of long propagation in OCI DNS servers
+            # Modify DNS servers in systemd-resolved to use Google DNS servers because of long propagation in AWS DNS servers
             log_i "Modify DNS servers in systemd-resolved"
             echo "DNS=8.8.8.8 8.8.4.4" >>/etc/systemd/resolved.conf
             echo "FallbackDNS=2001:4860:4860::8888 2001:4860:4860::8844" >>/etc/systemd/resolved.conf

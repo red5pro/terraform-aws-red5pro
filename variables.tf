@@ -108,22 +108,6 @@ variable "vpc_id_existing" {
   }
 }
 
-# Security group configuration
-variable "security_group_create" {
-  description = "Create a new Security group or use an existing one. true = create new, false = use existing"
-  type        = bool
-  default     = false
-}
-variable "security_group_id_existing" {
-  description = "Security group ID, this Security group should have open default Red5Pro ports: TCP:443,5080,80,1935,8554, UDP:40000-65535"
-  type        = string
-  default     = "sg-12345"
-  validation {
-    condition     = length(var.security_group_id_existing) > 4 && substr(var.security_group_id_existing, 0, 3) == "sg-"
-    error_message = "The security_group_id_existing value must be a valid! Example: sg-12345"
-  }
-}
-
 # Elastic IP configuration
 variable "elastic_ip_create" {
   description = "Create a new Elastic IP or use an existing one. true = create new, false = use existing"

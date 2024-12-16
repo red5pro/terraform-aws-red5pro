@@ -170,6 +170,12 @@ if [ "$SSL" == "letsencrypt" ]; then
         exit 1
     fi
 
+    # Modify DNS servers in systemd-resolved to use Google DNS servers because of long propagation in AWS DNS servers
+    log_i "Modify DNS servers in systemd-resolved"
+    echo "DNS=8.8.8.8 8.8.4.4" >>/etc/systemd/resolved.conf
+    echo "FallbackDNS=2001:4860:4860::8888 2001:4860:4860::8844" >>/etc/systemd/resolved.conf
+    systemctl restart systemd-resolved
+
     cert_path="/etc/letsencrypt/live/$SSL_DOMAIN"
     error=0
     while true; do

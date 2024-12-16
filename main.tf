@@ -19,11 +19,11 @@ locals {
   kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
   kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
   kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
-  #stream_manager_ip = local.autoscale && length(aws_lb.red5pro_sm_lb) > 0 ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && length(aws_instance.red5pro_sm) > 0 ? aws_instance.red5pro_sm[0].public_ip : "null"
-  stream_manager_ip         = local.autoscale && length(aws_lb.red5pro_sm_lb) > 0 ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && var.elastic_ip_create && length(aws_eip.elastic_ip) > 0 ? aws_eip.elastic_ip[0].public_ip : local.cluster && !var.elastic_ip_create ? var.elastic_ip_existing : "null"
-  stream_manager_ssl        = local.autoscale ? "none" : var.https_ssl_certificate
-  stream_manager_standalone = local.autoscale ? false : true
-  stream_manager_url        = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
+  stream_manager_ip             = local.autoscale && length(aws_lb.red5pro_sm_lb) > 0 ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && var.elastic_ip_create && length(aws_eip.elastic_ip) > 0 ? aws_eip.elastic_ip[0].public_ip : local.cluster && !var.elastic_ip_create ? var.elastic_ip_existing : "null"
+  stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
+  stream_manager_standalone     = local.autoscale ? false : true
+  stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
+  elastic_ip                    = local.vpc || local.autoscale ? null : var.elastic_ip_create ? aws_eip.elastic_ip[0].public_ip : data.aws_eip.existing_elastic_ip[0].public_ip
 }
 
 ################################################################################
@@ -32,19 +32,19 @@ locals {
 
 # Create a new Elastic IP (only if elastic_ip_create = true)
 resource "aws_eip" "elastic_ip" {
-  count = local.cluster && var.elastic_ip_create ? 1 : 0
+  count = local.vpc || local.autoscale ? 0 : var.elastic_ip_create ? 1 : 0
 }
 
 # Use an existing Elastic IP (only if elastic_ip_create = false)
 data "aws_eip" "existing_elastic_ip" {
-  count     = local.cluster && !var.elastic_ip_create ? 1 : 0
+  count     = local.vpc || local.autoscale ? 0 : var.elastic_ip_create ? 0 : 1
   public_ip = var.elastic_ip_existing
 }
 
 # Associate the EIP with the Stream Manager EC2 instance
 resource "aws_eip_association" "elastic_ip_association" {
-  count         = local.cluster ? 1 : 0
-  instance_id   = aws_instance.red5pro_sm[0].id
+  count         = local.standalone || local.cluster ? 1 : 0
+  instance_id   = local.standalone ? aws_instance.red5pro_standalone[0].id : aws_instance.red5pro_sm[0].id
   allocation_id = var.elastic_ip_create ? aws_eip.elastic_ip[0].id : data.aws_eip.existing_elastic_ip[0].id
 }
 
@@ -272,17 +272,11 @@ resource "aws_security_group" "red5pro_node_sg" {
 
 # Security group for Kafka (AWS vpc)
 resource "aws_security_group" "red5pro_kafka_sg" {
+  count       = local.cluster_or_autoscale ? 1 : 0
   name        = "${var.name}-kafka-sg"
   description = "Allow inbound/outbound traffic for Kafka"
   vpc_id      = local.vpc_id
 
-  ingress {
-    description     = "Access to kafka from Stream Manager security group"
-    from_port       = 9092
-    to_port         = 9092
-    protocol        = "tcp"
-    security_groups = concat(aws_security_group.red5pro_sm_sg[*].id, aws_security_group.red5pro_images_sg[*].id)
-  }
   # Ingress rule for all ICMP - IPv4
   ingress {
     description = "Allow ICMP (All) - IPv4"
@@ -338,7 +332,7 @@ resource "aws_security_group" "red5pro_images_sg" {
 
 # Security group for standalone Red5Pro server (AWS EC2)
 resource "aws_security_group" "red5pro_standalone_sg" {
-  count       = local.standalone && var.security_group_create ? 1 : 0
+  count       = local.standalone ? 1 : 0
   name        = "${var.name}-standalone-sg"
   description = "Allow inbound/outbound traffic for standalone Red5Pro server"
   vpc_id      = local.vpc_id
@@ -384,7 +378,7 @@ resource "aws_instance" "red5pro_standalone" {
   instance_type          = var.standalone_instance_type
   key_name               = local.ssh_key_name
   subnet_id              = element(local.subnet_ids, 0)
-  vpc_security_group_ids = [var.security_group_create ? aws_security_group.red5pro_standalone_sg[0].id : var.security_group_id_existing]
+  vpc_security_group_ids = [aws_security_group.red5pro_standalone_sg[0].id]
 
   root_block_device {
     volume_size = var.standalone_volume_size
@@ -585,7 +579,7 @@ resource "aws_instance" "red5pro_kafka" {
   instance_type          = var.kafka_standalone_instance_type
   key_name               = local.ssh_key_name
   subnet_id              = element(local.subnet_ids, 0)
-  vpc_security_group_ids = [aws_security_group.red5pro_kafka_sg.id, aws_security_group.red5pro_images_sg[count.index].id]
+  vpc_security_group_ids = [aws_security_group.red5pro_kafka_sg[0].id]
 
   root_block_device {
     volume_size = var.kafka_standalone_volume_size

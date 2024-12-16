@@ -41,12 +41,12 @@ output "stream_manager_red5pro_node_image" {
   value       = try(aws_ami_from_instance.red5pro_node_image[0].name, "")
 }
 output "standalone_red5pro_server_ip" {
-  description = "standalone Red5 Pro Server IP"
-  value       = local.standalone ? aws_instance.red5pro_standalone[0].public_ip : null
+  description = "Standalone Red5 Pro Server IP"
+  value       = local.standalone ? local.elastic_ip : null
 }
 output "standalone_red5pro_server_http_url" {
-  description = "standalone Red5 Pro Server HTTP URL"
-  value       = local.standalone ? "http://${aws_instance.red5pro_standalone[0].public_ip}:5080" : null
+  description = "Standalone Red5 Pro Server HTTP URL"
+  value       = local.standalone ? "http://${local.elastic_ip}:5080" : null
 }
 output "standalone_red5pro_server_https_url" {
   description = "standalone Red5 Pro Server HTTPS URL"
@@ -54,7 +54,7 @@ output "standalone_red5pro_server_https_url" {
 }
 output "manual_dns_record" {
   description = "Manual DNS Record"
-  value       = var.https_ssl_certificate != "none" ? "Please create DNS A record for Stream Manager 2.0: '${var.https_ssl_certificate_domain_name} - ${local.cluster_or_autoscale ? local.stream_manager_ip : aws_instance.red5pro_standalone[0].public_ip}'" : ""
+  value       = var.https_ssl_certificate != "none" ? "Please create DNS A record for Stream Manager 2.0: '${var.https_ssl_certificate_domain_name} - ${local.cluster_or_autoscale ? local.stream_manager_ip : local.elastic_ip}'" : ""
 }
 output "standalone_red5pro_server_brew_mixer_controller_page_url" {
   description = "standalone Red5 Pro Server Brew Mixer Controller Page URL"
