@@ -37,15 +37,8 @@ module "red5pro" {
 
 
   # Stream Manager Elastic IP configuration
-  elastic_ip_create   = true      # true - create new elastic IP, false - use existing elastic IP
+  elastic_ip_create   = true     # true - create new elastic IP, false - use existing elastic IP
   elastic_ip_existing = "1.2.3.4" # Elastic IP for existing elastic IP
-
-  # Stream Manager HTTPS/SSL certificate configuration
-    https_letsencrypt_enable                  = false                  # true - create new Let's Encrypt HTTPS/SSL certificate, false - use Red5 Pro server without HTTPS/SSL certificate
-  # https_letsencrypt_certificate_domain_name = "red5pro.example.com" # Domain name for Let's Encrypt SSL certificate
-  # https_letsencrypt_certificate_email       = "email@example.com"   # Email for Let's Encrypt SSL certificate
-  # https_letsencrypt_certificate_password    = "examplepass"         # Password for Let's Encrypt SSL certificate
-
   # Stream Manager configuration 
   stream_manager_instance_type  = "c5.2xlarge"         # Instance type for Stream Manager
   stream_manager_volume_size    = 20                  # Volume size for Stream Manager
@@ -54,6 +47,17 @@ module "red5pro" {
 
   # Stream Manager 2.0 server HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
+
+  # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
+  # https_ssl_certificate = "letsencrypt"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"
+  # https_ssl_certificate_email = "email@example.com"
+
+  # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
+  # https_ssl_certificate             = "imported"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"
+  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
+  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
 
   # Red5 Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)

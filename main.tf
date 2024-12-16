@@ -19,7 +19,8 @@ locals {
   kafka_ssl_keystore_key            = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
   kafka_ssl_truststore_cert         = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
   kafka_ssl_keystore_cert_chain     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
-  stream_manager_ip = local.autoscale && length(aws_lb.red5pro_sm_lb) > 0 ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && length(aws_instance.red5pro_sm) > 0 ? aws_instance.red5pro_sm[0].public_ip : "null"
+  #stream_manager_ip = local.autoscale && length(aws_lb.red5pro_sm_lb) > 0 ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && length(aws_instance.red5pro_sm) > 0 ? aws_instance.red5pro_sm[0].public_ip : "null"
+  stream_manager_ip = local.autoscale && length(aws_lb.red5pro_sm_lb) > 0 ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && var.elastic_ip_create && length(aws_eip.elastic_ip) > 0 ? aws_eip.elastic_ip[0].public_ip : local.cluster && !var.elastic_ip_create ? var.elastic_ip_existing : "null"
   stream_manager_ssl                = local.autoscale ? "none" : var.https_ssl_certificate
   stream_manager_standalone         = local.autoscale ? false : true
   stream_manager_url                = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
@@ -29,20 +30,23 @@ locals {
 # Elastic IP
 ################################################################################
 
-# resource "aws_eip" "elastic_ip" {
-#   count = local.cluster || local.autoscale ? 1 : var.elastic_ip_create ? 1 : 0
-# }
+# Create a new Elastic IP (only if elastic_ip_create = true)
+resource "aws_eip" "elastic_ip" {
+  count = local.cluster && var.elastic_ip_create ? 1 : 0
+}
 
-# data "aws_eip" "elastic_ip" {
-#  count     = local.cluster || local.autoscale ? 1 : var.elastic_ip_create ? 0 : 1
-#   public_ip = var.elastic_ip_existing
-# }
+# Use an existing Elastic IP (only if elastic_ip_create = false)
+data "aws_eip" "existing_elastic_ip" {
+  count     = local.cluster && !var.elastic_ip_create ? 1 : 0
+  public_ip = var.elastic_ip_existing
+}
 
-# resource "aws_eip_association" "elastic_ip_association" {
-#   count         = local.autoscale || local.cluster ? 1 : 0
-#   instance_id   = local.autoscale ? aws_instance.red5pro_standalone[0].id : aws_instance.red5pro_sm[0].id
-#   allocation_id = var.elastic_ip_create ? aws_eip.elastic_ip[0].id : data.aws_eip.elastic_ip[0].id
-# }
+# Associate the EIP with the Stream Manager EC2 instance
+resource "aws_eip_association" "elastic_ip_association" {
+  count         = local.cluster ? 1 : 0
+  instance_id   = aws_instance.red5pro_sm[0].id
+  allocation_id = var.elastic_ip_create ? aws_eip.elastic_ip[0].id : data.aws_eip.existing_elastic_ip[0].id
+}
 
 ################################################################################
 # SSH_KEY
@@ -695,7 +699,7 @@ resource "null_resource" "red5pro_sm" {
     destination = "/home/ubuntu"
 
     connection {
-      host        = aws_instance.red5pro_sm[0].public_ip
+      host        = local.stream_manager_ip
       type        = "ssh"
       user        = "ubuntu"
       private_key = local.ssh_private_key
@@ -709,7 +713,7 @@ resource "null_resource" "red5pro_sm" {
       "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_IP=${aws_instance.red5pro_sm[0].public_ip}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TRAEFIK_IP=${local.stream_manager_ip}' | sudo tee -a /usr/local/stream-manager/.env",
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
@@ -719,7 +723,7 @@ resource "null_resource" "red5pro_sm" {
     ]
 
     connection {
-      host        = aws_instance.red5pro_sm[0].public_ip
+      host        = local.stream_manager_ip
       type        = "ssh"
       user        = "ubuntu"
       private_key = local.ssh_private_key

@@ -52,6 +52,12 @@ module "red5pro" {
   # Stream Manager 2.0 Load Balancer HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, imported - import existing HTTPS/SSL certificate
 
+  # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
+  # https_ssl_certificate             = "imported"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"
+  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
+  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+
   # Red5 Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
   red5pro_cluster_key = "example_key"          # Red5 Pro cluster key

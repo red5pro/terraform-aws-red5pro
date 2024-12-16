@@ -34,11 +34,20 @@ module "red5pro" {
   elastic_ip_create   = true      # true - create new elastic IP, false - use existing elastic IP
   elastic_ip_existing = "1.2.3.4" # Elastic IP for existing elastic IP
 
-  # Single Red5 Pro server HTTPS/SSL certificate configuration
-  # https_letsencrypt_enable                  = true                  # true - create new Let's Encrypt HTTPS/SSL certificate, false - use Red5 Pro server without HTTPS/SSL certificate
-  # https_letsencrypt_certificate_domain_name = "red5pro.example.com" # Domain name for Let's Encrypt SSL certificate
-  # https_letsencrypt_certificate_email       = "email@example.com"   # Email for Let's Encrypt SSL certificate
-  # https_letsencrypt_certificate_password    = "examplepass"         # Password for Let's Encrypt SSL certificate
+  # Standalone Red5 Pro server HTTPS (SSL) certificate configuration
+  https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
+
+  # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
+  # https_ssl_certificate = "letsencrypt"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"
+  # https_ssl_certificate_email = "email@example.com"
+
+  # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
+  # https_ssl_certificate             = "imported"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"
+  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
+  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+
 
   # Single Red5 Pro server EC2 instance configuration
   standalone_instance_type = "t3.medium" # Instance type for Red5 Pro server. Example: t3.medium, c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge
@@ -62,9 +71,6 @@ module "red5pro" {
   standalone_red5pro_round_trip_auth_endpoint_validate   = "/validateCredentials"            # Round trip authentication server endpoint for validate
   standalone_red5pro_round_trip_auth_endpoint_invalidate = "/invalidateCredentials"          # Round trip authentication server endpoint for invalidate
 
-  # Standalone Red5 Pro server HTTPS (SSL) certificate configuration
-  https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
-
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {
     Terraform   = "true"
@@ -72,3 +78,4 @@ module "red5pro" {
     Project     = "red5pro"
   }
 }
+
