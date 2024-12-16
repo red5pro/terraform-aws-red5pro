@@ -39,14 +39,10 @@ variable "aws_secret_key" {
   description = "AWS secret key"
   default     = ""
 }
-variable "aws_ssh_key_pair" {
-  description = "AWS ssh key pair"
-  default     = ""
-}
 
 variable "enable_root_volume_block_encryption" {
-  type    = bool
-  default = false
+  type        = bool
+  default     = false
   description = "Enable root volume encryption for the EC2 instance"
 }
 
@@ -1015,7 +1011,7 @@ variable "security_group_node_ingress" {
       port_min    = 1936
       port_max    = 1936
     },
-     {
+    {
       description = "Red5 Pro SM2.0 Nodes - Restreamer, SRT (TCP)"
       protocol    = "6"
       source      = "0.0.0.0/0"

@@ -1,29 +1,29 @@
 locals {
-  standalone                        = var.type == "standalone" ? true : false
-  cluster                           = var.type == "cluster" ? true : false
-  autoscale                         = var.type == "autoscale" ? true : false
-  cluster_or_autoscale              = local.cluster || local.autoscale ? true : false
-  vpc                               = var.type == "vpc" ? true : false
-  ssh_public_key = var.ssh_key_use_existing ? file(var.ssh_key_existing_public_key_path) : (length(tls_private_key.red5pro_ssh_key) > 0 ? tls_private_key.red5pro_ssh_key[0].public_key_openssh : "")
-  ssh_key_name         = local.vpc ? null : var.ssh_key_create ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
-  ssh_private_key      = local.vpc ? null : var.ssh_key_create ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_private_key_path)
-  ssh_private_key_path = local.vpc ? null : var.ssh_key_create ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_private_key_path
-  vpc_id                            = var.vpc_create ? aws_vpc.red5pro_vpc[0].id : var.vpc_id_existing
-  vpc_name                          = var.vpc_create ? aws_vpc.red5pro_vpc[0].tags.Name : data.aws_vpc.selected[0].tags.Name
-  subnet_ids                        = var.vpc_create ? tolist(aws_subnet.red5pro_subnets[*].id) : data.aws_subnets.all[0].ids
-  subnet_name                       = var.vpc_create ? tolist([for subnet in aws_subnet.red5pro_subnets : lookup(subnet.tags, "Name", "Unnamed-Subnet")]) : [for subnet_id in data.aws_subnets.all[0].ids : lookup(data.aws_subnet.all_subnets[subnet_id].tags, "Name", "Unnamed-Subnet")]
-  kafka_standalone_instance         = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
-  kafka_ip_placeholder = "127.0.0.1"
-  kafka_ip                          = local.cluster_or_autoscale ? local.kafka_standalone_instance ? try(aws_instance.red5pro_kafka[0].private_ip, "127.0.0.1") : try(aws_instance.red5pro_sm[0].private_ip, "127.0.0.1") : "null"
-  kafka_on_sm_replicas              = local.kafka_standalone_instance ? 0 : 1
-  kafka_ssl_keystore_key            = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
-  kafka_ssl_truststore_cert         = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
-  kafka_ssl_keystore_cert_chain     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
+  standalone                    = var.type == "standalone" ? true : false
+  cluster                       = var.type == "cluster" ? true : false
+  autoscale                     = var.type == "autoscale" ? true : false
+  cluster_or_autoscale          = local.cluster || local.autoscale ? true : false
+  vpc                           = var.type == "vpc" ? true : false
+  ssh_public_key                = var.ssh_key_use_existing ? file(var.ssh_key_existing_public_key_path) : (length(tls_private_key.red5pro_ssh_key) > 0 ? tls_private_key.red5pro_ssh_key[0].public_key_openssh : "")
+  ssh_key_name                  = local.vpc ? null : var.ssh_key_create ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
+  ssh_private_key               = local.vpc ? null : var.ssh_key_create ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_private_key_path)
+  ssh_private_key_path          = local.vpc ? null : var.ssh_key_create ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_private_key_path
+  vpc_id                        = var.vpc_create ? aws_vpc.red5pro_vpc[0].id : var.vpc_id_existing
+  vpc_name                      = var.vpc_create ? aws_vpc.red5pro_vpc[0].tags.Name : data.aws_vpc.selected[0].tags.Name
+  subnet_ids                    = var.vpc_create ? tolist(aws_subnet.red5pro_subnets[*].id) : data.aws_subnets.all[0].ids
+  subnet_name                   = var.vpc_create ? tolist([for subnet in aws_subnet.red5pro_subnets : lookup(subnet.tags, "Name", "Unnamed-Subnet")]) : [for subnet_id in data.aws_subnets.all[0].ids : lookup(data.aws_subnet.all_subnets[subnet_id].tags, "Name", "Unnamed-Subnet")]
+  kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
+  kafka_ip_placeholder          = "127.0.0.1"
+  kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? try(aws_instance.red5pro_kafka[0].private_ip, "127.0.0.1") : try(aws_instance.red5pro_sm[0].private_ip, "127.0.0.1") : "null"
+  kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
+  kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
+  kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
+  kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
   #stream_manager_ip = local.autoscale && length(aws_lb.red5pro_sm_lb) > 0 ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && length(aws_instance.red5pro_sm) > 0 ? aws_instance.red5pro_sm[0].public_ip : "null"
-  stream_manager_ip = local.autoscale && length(aws_lb.red5pro_sm_lb) > 0 ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && var.elastic_ip_create && length(aws_eip.elastic_ip) > 0 ? aws_eip.elastic_ip[0].public_ip : local.cluster && !var.elastic_ip_create ? var.elastic_ip_existing : "null"
-  stream_manager_ssl                = local.autoscale ? "none" : var.https_ssl_certificate
-  stream_manager_standalone         = local.autoscale ? false : true
-  stream_manager_url                = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
+  stream_manager_ip         = local.autoscale && length(aws_lb.red5pro_sm_lb) > 0 ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && var.elastic_ip_create && length(aws_eip.elastic_ip) > 0 ? aws_eip.elastic_ip[0].public_ip : local.cluster && !var.elastic_ip_create ? var.elastic_ip_existing : "null"
+  stream_manager_ssl        = local.autoscale ? "none" : var.https_ssl_certificate
+  stream_manager_standalone = local.autoscale ? false : true
+  stream_manager_url        = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
 }
 
 ################################################################################
@@ -283,22 +283,22 @@ resource "aws_security_group" "red5pro_kafka_sg" {
     protocol        = "tcp"
     security_groups = concat(aws_security_group.red5pro_sm_sg[*].id, aws_security_group.red5pro_images_sg[*].id)
   }
-   # Ingress rule for all ICMP - IPv4
+  # Ingress rule for all ICMP - IPv4
   ingress {
-    description  = "Allow ICMP (All) - IPv4"
-    from_port    = 0
-    to_port      = 0
-    protocol     = "icmp"
-    cidr_blocks  = ["0.0.0.0/0"]
+    description = "Allow ICMP (All) - IPv4"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "icmp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   # Ingress rule for TCP port 9092 from all sources (0.0.0.0/0)
   ingress {
-    description  = "Allow TCP port 9092 from all sources"
-    from_port    = 9092
-    to_port      = 9092
-    protocol     = "tcp"
-    cidr_blocks  = ["0.0.0.0/0"]
+    description = "Allow TCP port 9092 from all sources"
+    from_port   = 9092
+    to_port     = 9092
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
   egress {
     description      = "Access from kafka to 0.0.0.0/0"
@@ -633,7 +633,7 @@ resource "null_resource" "red5pro_kafka" {
       private_key = local.ssh_private_key
     }
   }
-depends_on = [tls_cert_request.kafka_server_csr, aws_instance.red5pro_kafka]
+  depends_on = [tls_cert_request.kafka_server_csr, aws_instance.red5pro_kafka]
 }
 
 ################################################################################
@@ -667,7 +667,6 @@ resource "aws_instance" "red5pro_sm" {
           echo -n "${local.ssh_public_key}" > /usr/local/stream-manager/keys/red5pro_ssh_public_key.pub
           chmod 400 /usr/local/stream-manager/certs/privkey.pem
           chmod 400 /usr/local/stream-manager/keys/red5pro_ssh_public_key.pub
-          
           ############################ .env file #########################################################
           cat >> /usr/local/stream-manager/.env <<- EOM
           KAFKA_CLUSTER_ID=${random_id.kafka_cluster_id[0].b64_std}
@@ -680,7 +679,7 @@ resource "aws_instance" "red5pro_sm" {
           R5AS_AUTH_PASS=${var.stream_manager_auth_password}
           TF_VAR_aws_access_key=${var.aws_access_key}
           TF_VAR_aws_secret_key=${var.aws_secret_key}
-          TF_VAR_aws_ssh_key_pair=${var.aws_ssh_key_pair}
+          TF_VAR_aws_ssh_key_pair=${var.ssh_key_name}
           TF_VAR_r5p_license_key=${var.red5pro_license_key}
           TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}
           TRAEFIK_HOST=${var.https_ssl_certificate_domain_name}
@@ -688,11 +687,11 @@ resource "aws_instance" "red5pro_sm" {
           TRAEFIK_CMD=${local.stream_manager_ssl == "imported" ? "--providers.file.filename=/scripts/traefik.yaml" : ""}
         EOF
   )
-    tags = merge({ "Name" = "${var.name}-stream-manager", }, var.tags, )
+  tags = merge({ "Name" = "${var.name}-stream-manager", }, var.tags, )
 
 }
 resource "null_resource" "red5pro_sm" {
- count = local.cluster_or_autoscale ? 1 : 0
+  count = local.cluster_or_autoscale ? 1 : 0
 
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
@@ -743,7 +742,7 @@ resource "aws_ami_from_instance" "red5pro_sm_image" {
   count              = local.autoscale ? 1 : 0
   name               = "${var.name}-stream-manager-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
   source_instance_id = aws_instance.red5pro_sm[0].id
-  depends_on         = [aws_instance.red5pro_sm[0],null_resource.red5pro_sm[0]]
+  depends_on         = [aws_instance.red5pro_sm[0], null_resource.red5pro_sm[0]]
   lifecycle {
     ignore_changes = [name, tags]
   }
@@ -970,7 +969,7 @@ resource "null_resource" "stop_stream_manager" {
   provisioner "local-exec" {
     command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_sm[0].id} --region ${var.aws_region}"
     environment = {
-      AWS_ACCESS_KEY_ID     = "${var.aws_access_key}" 
+      AWS_ACCESS_KEY_ID     = "${var.aws_access_key}"
       AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
     }
   }
