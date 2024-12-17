@@ -20,28 +20,23 @@ module "red5pro" {
   aws_access_key = ""          # AWS IAM Access key
   aws_secret_key = ""          # AWS IAM Secret key
 
-  # SSH key configuration
-  ssh_key_create       = true                                              # true - create new SSH key, false - use existing SSH key
-  ssh_key_name         = "example_key"                                       # Name for new SSH key or for existing SSH key
-  ssh_private_key_path = "./PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
-  aws_ssh_key_pair     = "example_key"                                   # SSH key pair name
+ # SSH key configuration
+  ssh_key_create       = false                                                 # true - create new SSH key, false - use existing SSH key
+  ssh_key_name         = "example_key"                                         # Name for new SSH key or for existing SSH key
+  ssh_private_key_path = "./PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem"  # Path to existing SSH private key
 
   # VPC configuration
   vpc_create      = true        # true - create new VPC, false - use existing VPC
   vpc_id_existing = "vpc-12345" # VPC ID for existing VPC
 
   # Kafka standalone instance configuration
-  kafka_standalone_instance_create = false
+  kafka_standalone_instance_create = true
   kafka_standalone_instance_type   = "c5.2xlarge" # OCI Instance type for Kafka standalone instance
-  kafka_standalone_volume_size     = 50          # Volume size in GB for Kafka standalone instance
+  kafka_standalone_volume_size     = 16          # Volume size in GB for Kafka standalone instance
 
-
-  # Stream Manager Elastic IP configuration
-  elastic_ip_create   = true     # true - create new elastic IP, false - use existing elastic IP
-  elastic_ip_existing = "1.2.3.4" # Elastic IP for existing elastic IP
   # Stream Manager configuration 
   stream_manager_instance_type  = "c5.2xlarge"         # Instance type for Stream Manager
-  stream_manager_volume_size    = 20                  # Volume size for Stream Manager
+  stream_manager_volume_size    = 16                  # Volume size for Stream Manager
   stream_manager_auth_user      = "example_user"      # Stream Manager 2.0 authentication user name
   stream_manager_auth_password  = "example_password"  # Stream Manager 2.0 authentication password
 
@@ -68,7 +63,7 @@ module "red5pro" {
   # Red5 Pro autoscaling Origin node image configuration
   node_image_create        = true        # Default: true for Autoscaling and Cluster, true - create new Origin node image, false - not create new Origin node image
   node_image_instance_type = "t3.medium" # Instance type for Origin node image
-  node_image_volume_size   = 50         # Volume size for Origin node image
+  
   # Extra configuration for Red5 Pro autoscaling nodes
   # Webhooks configuration - (Optional) https://www.red5.net/docs/special/webhooks/overview/
   node_config_webhooks = {

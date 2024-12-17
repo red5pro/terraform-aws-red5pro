@@ -42,11 +42,11 @@ output "stream_manager_red5pro_node_image" {
 }
 output "standalone_red5pro_server_ip" {
   description = "Standalone Red5 Pro Server IP"
-  value       = local.standalone ? local.elastic_ip : null
+  value       = local.standalone ? local.standalone_elastic_ip : null
 }
 output "standalone_red5pro_server_http_url" {
   description = "Standalone Red5 Pro Server HTTP URL"
-  value       = local.standalone ? "http://${local.elastic_ip}:5080" : null
+  value       = local.standalone ? "http://${local.standalone_elastic_ip}:5080" : null
 }
 output "standalone_red5pro_server_https_url" {
   description = "standalone Red5 Pro Server HTTPS URL"
@@ -54,7 +54,7 @@ output "standalone_red5pro_server_https_url" {
 }
 output "manual_dns_record" {
   description = "Manual DNS Record"
-  value       = var.https_ssl_certificate != "none" ? "Please create DNS A record for Stream Manager 2.0: '${var.https_ssl_certificate_domain_name} - ${local.cluster_or_autoscale ? local.stream_manager_ip : local.elastic_ip}'" : ""
+  value       = var.https_ssl_certificate != "none" ? "Please create DNS A record for Stream Manager 2.0: '${var.https_ssl_certificate_domain_name} - ${local.cluster_or_autoscale ? local.stream_manager_ip : local.standalone_elastic_ip}'" : ""
 }
 output "standalone_red5pro_server_brew_mixer_controller_page_url" {
   description = "standalone Red5 Pro Server Brew Mixer Controller Page URL"

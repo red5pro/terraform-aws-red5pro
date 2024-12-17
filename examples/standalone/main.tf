@@ -12,27 +12,21 @@ module "red5pro" {
   source                = "../../"
   type                  = "standalone"                                      # Deployment type: standalone, cluster, autoscale
   name                  = "red5pro-standalone"                              # Name to be used on all the resources as identifier
-  path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
+  path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip"           # Absolute path or relative path to Red5 Pro server ZIP file
   ubuntu_version        = "22.04"                                           # Ubuntu version for Red5 Pro servers
 
-  
  # SSH key configuration
-  ssh_key_create       = false                                            # true - create new SSH key, false - use existing SSH key
-  ssh_key_name         = "example_key"                                  # Name for new SSH key or for existing SSH key
-  ssh_private_key_path = "./PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem"   
-                           # Path to existing SSH private key
+  ssh_key_create       = false                                                 # true - create new SSH key, false - use existing SSH key
+  ssh_key_name         = "example_key"                                         # Name for new SSH key or for existing SSH key
+  ssh_private_key_path = "./PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem"  # Path to existing SSH private key
 
   # VPC configuration
   vpc_create      = true # true - create new VPC, false - use existing VPC
   vpc_id_existing = "vpc-12345"   # VPC ID for existing VPC
 
-  # Security group configuration
-  security_group_create      = true # true - create new security group, false - use existing security group
-  security_group_id_existing = "sg-12345"   # Security group ID for existing security group
-
   # Elastic IP configuration
-  elastic_ip_create   = true      # true - create new elastic IP, false - use existing elastic IP
-  elastic_ip_existing = "1.2.3.4" # Elastic IP for existing elastic IP
+  standalone_elastic_ip_create   = true      # true - create new elastic IP, false - use existing elastic IP
+  standalone_elastic_ip_existing = "1.2.3.4" # Elastic IP for existing elastic IP
 
   # Standalone Red5 Pro server HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
@@ -50,8 +44,8 @@ module "red5pro" {
 
 
   # Single Red5 Pro server EC2 instance configuration
-  standalone_instance_type = "t3.medium" # Instance type for Red5 Pro server. Example: t3.medium, c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge
-  standalone_volume_size   = 8           # Volume size for Red5 Pro server
+  standalone_instance_type = "t3.medium"  # Instance type for Red5 Pro server. Example: t3.medium, c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge
+  standalone_volume_size   = 16           # Volume size for Red5 Pro server
 
   # Red5Pro server configuration
   red5pro_license_key                                    = "1111-2222-3333-4444"             # Red5 Pro license key (https://account.red5.net/login)

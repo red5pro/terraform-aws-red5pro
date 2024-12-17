@@ -21,12 +21,6 @@ variable "path_to_red5pro_build" {
   type        = string
   default     = ""
 }
-variable "path_to_aws_cloud_controller" {
-  description = "Path to the AWS Cloud Controller jar file, absolute path or relative path. https://account.red5.net/downloads. Example: /home/ubuntu/terraform-aws-red5pro/aws-cloud-controller-0.0.0.jar"
-  type        = string
-  default     = ""
-}
-
 variable "aws_region" {
   description = "AWS region to deploy the resources"
   default     = ""
@@ -40,35 +34,13 @@ variable "aws_secret_key" {
   default     = ""
 }
 
-variable "enable_root_volume_block_encryption" {
-  type        = bool
-  default     = false
-  description = "Enable root volume encryption for the EC2 instance"
-}
-
+# variable "enable_root_volume_block_encryption" {
+#   type        = bool
+#   default     = false
+#   description = "Enable root volume encryption for the EC2 instance"
+# }
 
 # SSH key configuration
-variable "ssh_key_use_existing" {
-  description = "SSH key pair configuration, true = use existing, false = create new"
-  type        = bool
-  default     = false
-}
-# variable "ssh_key_name" {
-#   description = "SSH key pair name new/existing"
-#   type        = string
-#   default     = ""
-# }
-
-# variable "ssh_key_existing_private_key_path" {
-#   description = "SSH private key path existing"
-#   type        = string
-#   default     = ""
-# }
-variable "ssh_key_existing_public_key_path" {
-  description = "SSH public key path existing"
-  type        = string
-  default     = ""
-}
 variable "ssh_key_create" {
   description = "Create a new SSH key pair or use an existing one. true = create new, false = use existing"
   type        = bool
@@ -81,12 +53,6 @@ variable "ssh_key_name" {
 }
 
 variable "ssh_private_key_path" {
-  description = "SSH private key path existing"
-  type        = string
-  default     = ""
-}
-######################
-variable "ssh_key_existing_private_key_path" {
   description = "SSH private key path existing"
   type        = string
   default     = ""
@@ -108,14 +74,26 @@ variable "vpc_id_existing" {
   }
 }
 
-# Elastic IP configuration
-variable "elastic_ip_create" {
-  description = "Create a new Elastic IP or use an existing one. true = create new, false = use existing"
+# Elastic IP configuration for Stream Manager 2.0
+variable "stream_manager_elastic_ip_create" {
+  description = "Stream Manager 2.0 - Create a new Elastic IP or use an existing one. true = create new, false = use existing"
   type        = bool
   default     = true
 }
-variable "elastic_ip_existing" {
-  description = "Elastic IP Existing"
+variable "stream_manager_elastic_ip_existing" {
+  description = "Stream Manager 2.0 - Elastic IP Existing"
+  type        = string
+  default     = "1.2.3.4"
+}
+
+# Elastic IP configuration for Kafka
+variable "standalone_elastic_ip_create" {
+  description = "Standalone Red5 Pro - Create a new Elastic IP or use an existing one. true = create new, false = use existing"
+  type        = bool
+  default     = true
+}
+variable "standalone_elastic_ip_existing" {
+  description = "Standalone Red5 Pro - Elastic IP Existing"
   type        = string
   default     = "1.2.3.4"
 }
@@ -308,26 +286,6 @@ variable "https_ssl_certificate" {
     condition     = var.https_ssl_certificate == "none" || var.https_ssl_certificate == "letsencrypt" || var.https_ssl_certificate == "imported"
     error_message = "The https_ssl_certificate value must be a valid! Example: none, letsencrypt, imported"
   }
-}
-variable "https_letsencrypt_enable" {
-  description = "Enable HTTPS and get SSL certificate using Let's Encrypt automaticaly (standalone/cluster) (https://www.red5.net/docs/installation/ssl/overview/)"
-  type        = bool
-  default     = false
-}
-variable "https_letsencrypt_certificate_domain_name" {
-  description = "Domain name for Let's Encrypt ssl certificate (standalone/cluster)"
-  type        = string
-  default     = ""
-}
-variable "https_letsencrypt_certificate_email" {
-  description = "Email for Let's Encrypt ssl certificate (standalone/cluster)"
-  type        = string
-  default     = "email@example.com"
-}
-variable "https_letsencrypt_certificate_password" {
-  description = "Password for Let's Encrypt ssl certificate (standalone/cluster)"
-  type        = string
-  default     = ""
 }
 variable "https_ssl_certificate_domain_name" {
   description = "Domain name for SSL certificate (letsencrypt/imported)"
@@ -963,6 +921,41 @@ variable "security_group_stream_manager_egress" {
   ]
 }
 
+variable "security_group_kafka_ingress" {
+  description = "Security group for Kafka standalone instance - ingress"
+  type        = list(map(string))
+  default = [
+    {
+      from_port       = 22
+      to_port         = 22
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+    {
+      from_port       = 9092
+      to_port         = 9092
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+  ]
+}
+
+variable "security_group_kafka_egress" {
+  description = "Security group for Kafka standalone instance - egress"
+  type        = list(map(string))
+  default = [
+    {
+      from_port       = 0
+      to_port         = 0
+      protocol        = "-1"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+  ]
+}
+
 variable "security_group_node_ingress" {
   description = "Security group for Node - ingress"
   type        = list(map(string))
@@ -1169,12 +1162,12 @@ variable "node_group_origins_instance_type" {
   default     = "t3.medium"
 }
 variable "node_group_origins_volume_size" {
-  description = "Volume size in GB for Origins. Minimum 50GB"
+  description = "Volume size in GB for Origins. Minimum 8GB"
   type        = number
-  default     = 50
+  default     = 16
   validation {
-    condition     = var.node_group_origins_volume_size >= 50
-    error_message = "The node_group_origins_volume_size value must be a valid! Minimum 50"
+    condition     = var.node_group_origins_volume_size >= 8
+    error_message = "The node_group_origins_volume_size value must be a valid! Minimum 8"
   }
 }
 variable "node_group_origins_capacity" {
@@ -1203,12 +1196,12 @@ variable "node_group_edges_capacity" {
   default     = 200
 }
 variable "node_group_edges_volume_size" {
-  description = "Volume size in GB for Edges. Minimum 50GB"
+  description = "Volume size in GB for Edges. Minimum 8GB"
   type        = number
-  default     = 50
+  default     = 16
   validation {
-    condition     = var.node_group_edges_volume_size >= 50
-    error_message = "The node_group_edges_volume_size value must be a valid! Minimum 50"
+    condition     = var.node_group_edges_volume_size >= 8
+    error_message = "The node_group_edges_volume_size value must be a valid! Minimum 8"
   }
 }
 variable "node_group_transcoders_min" {
@@ -1232,12 +1225,12 @@ variable "node_group_transcoders_capacity" {
   default     = 30
 }
 variable "node_group_transcoders_volume_size" {
-  description = "Volume size in GB for Transcoders. Minimum 50GB"
+  description = "Volume size in GB for Transcoders. Minimum 8GB"
   type        = number
   default     = 50
   validation {
-    condition     = var.node_group_transcoders_volume_size >= 50
-    error_message = "The node_group_transcoders_volume_size value must be a valid! Minimum 50"
+    condition     = var.node_group_transcoders_volume_size >= 8
+    error_message = "The node_group_transcoders_volume_size value must be a valid! Minimum 8"
   }
 }
 variable "node_group_relays_min" {
@@ -1261,12 +1254,12 @@ variable "node_group_relays_capacity" {
   default     = 30
 }
 variable "node_group_relays_volume_size" {
-  description = "Volume size in GB for Relays. Minimum 50GB"
+  description = "Volume size in GB for Relays. Minimum 8GB"
   type        = number
   default     = 50
   validation {
-    condition     = var.node_group_relays_volume_size >= 50
-    error_message = "The node_group_relays_volume_size value must be a valid! Minimum 50"
+    condition     = var.node_group_relays_volume_size >= 8
+    error_message = "The node_group_relays_volume_size value must be a valid! Minimum 8"
   }
 }
 variable "ubuntu_version_aws_image" {

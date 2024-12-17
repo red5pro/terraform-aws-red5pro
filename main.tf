@@ -4,7 +4,6 @@ locals {
   autoscale                     = var.type == "autoscale" ? true : false
   cluster_or_autoscale          = local.cluster || local.autoscale ? true : false
   vpc                           = var.type == "vpc" ? true : false
-  ssh_public_key                = var.ssh_key_use_existing ? file(var.ssh_key_existing_public_key_path) : (length(tls_private_key.red5pro_ssh_key) > 0 ? tls_private_key.red5pro_ssh_key[0].public_key_openssh : "")
   ssh_key_name                  = local.vpc ? null : var.ssh_key_create ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
   ssh_private_key               = local.vpc ? null : var.ssh_key_create ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_private_key_path)
   ssh_private_key_path          = local.vpc ? null : var.ssh_key_create ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_private_key_path
@@ -13,39 +12,62 @@ locals {
   subnet_ids                    = var.vpc_create ? tolist(aws_subnet.red5pro_subnets[*].id) : data.aws_subnets.all[0].ids
   subnet_name                   = var.vpc_create ? tolist([for subnet in aws_subnet.red5pro_subnets : lookup(subnet.tags, "Name", "Unnamed-Subnet")]) : [for subnet_id in data.aws_subnets.all[0].ids : lookup(data.aws_subnet.all_subnets[subnet_id].tags, "Name", "Unnamed-Subnet")]
   kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
-  kafka_ip_placeholder          = "127.0.0.1"
-  kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? try(aws_instance.red5pro_kafka[0].private_ip, "127.0.0.1") : try(aws_instance.red5pro_sm[0].private_ip, "127.0.0.1") : "null"
+  kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? aws_instance.red5pro_kafka[0].private_ip : aws_instance.red5pro_sm[0].private_ip : "null"
   kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
   kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
   kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
   kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
-  stream_manager_ip             = local.autoscale && length(aws_lb.red5pro_sm_lb) > 0 ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && var.elastic_ip_create && length(aws_eip.elastic_ip) > 0 ? aws_eip.elastic_ip[0].public_ip : local.cluster && !var.elastic_ip_create ? var.elastic_ip_existing : "null"
+  stream_manager_ip             = local.cluster ? var.stream_manager_elastic_ip_create ? aws_eip.elastic_ip_sm[0].public_ip : data.aws_eip.existing_elastic_ip_sm[0].public_ip : local.autoscale ? aws_instance.red5pro_sm[0].public_ip : "null"
   stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
   stream_manager_standalone     = local.autoscale ? false : true
   stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
-  elastic_ip                    = local.vpc || local.autoscale ? null : var.elastic_ip_create ? aws_eip.elastic_ip[0].public_ip : data.aws_eip.existing_elastic_ip[0].public_ip
+  standalone_elastic_ip         = local.standalone ? var.standalone_elastic_ip_create ? aws_eip.elastic_ip_standalone[0].public_ip : data.aws_eip.existing_elastic_ip_standalone[0].public_ip : "null"
 }
 
 ################################################################################
-# Elastic IP
+# Elastic IP for Standalone Red5 Pro server
 ################################################################################
 
-# Create a new Elastic IP (only if elastic_ip_create = true)
-resource "aws_eip" "elastic_ip" {
-  count = local.vpc || local.autoscale ? 0 : var.elastic_ip_create ? 1 : 0
+# Create a new Elastic IP (only if standalone_elastic_ip_create = true)
+resource "aws_eip" "elastic_ip_standalone" {
+  count = local.standalone && var.standalone_elastic_ip_create ? 1 : 0
+  tags  = merge({ "Name" = "${var.name}-elastic-ip-standalone" }, var.tags, )
 }
 
-# Use an existing Elastic IP (only if elastic_ip_create = false)
-data "aws_eip" "existing_elastic_ip" {
-  count     = local.vpc || local.autoscale ? 0 : var.elastic_ip_create ? 0 : 1
-  public_ip = var.elastic_ip_existing
+# Use an existing Elastic IP (only if standalone_elastic_ip_create = false)
+data "aws_eip" "existing_elastic_ip_standalone" {
+  count     = local.standalone && var.standalone_elastic_ip_create == false ? 1 : 0
+  public_ip = var.standalone_elastic_ip_existing
 }
 
 # Associate the EIP with the Stream Manager EC2 instance
-resource "aws_eip_association" "elastic_ip_association" {
-  count         = local.standalone || local.cluster ? 1 : 0
-  instance_id   = local.standalone ? aws_instance.red5pro_standalone[0].id : aws_instance.red5pro_sm[0].id
-  allocation_id = var.elastic_ip_create ? aws_eip.elastic_ip[0].id : data.aws_eip.existing_elastic_ip[0].id
+resource "aws_eip_association" "elastic_ip_association_standalone" {
+  count         = local.standalone ? 1 : 0
+  instance_id   = aws_instance.red5pro_standalone[0].id
+  allocation_id = var.standalone_elastic_ip_create ? aws_eip.elastic_ip_standalone[0].id : data.aws_eip.existing_elastic_ip_standalone[0].id
+}
+
+################################################################################
+# Elastic IP for Stream Manager 2.0
+################################################################################
+
+# Create a new Elastic IP (only if stream_manager_elastic_ip_create = true)
+resource "aws_eip" "elastic_ip_sm" {
+  count = local.cluster && var.stream_manager_elastic_ip_create ? 1 : 0
+  tags  = merge({ "Name" = "${var.name}-elastic-ip-sm" }, var.tags, )
+}
+
+# Use an existing Elastic IP (only if stream_manager_elastic_ip_create = false)
+data "aws_eip" "existing_elastic_ip_sm" {
+  count     = local.cluster && var.stream_manager_elastic_ip_create == false ? 1 : 0
+  public_ip = var.stream_manager_elastic_ip_existing
+}
+
+# Associate the EIP with the Stream Manager EC2 instance
+resource "aws_eip_association" "elastic_ip_association_sm" {
+  count         = local.cluster ? 1 : 0
+  instance_id   = aws_instance.red5pro_sm[0].id
+  allocation_id = var.stream_manager_elastic_ip_create ? aws_eip.elastic_ip_sm[0].id : data.aws_eip.existing_elastic_ip_sm[0].id
 }
 
 ################################################################################
@@ -277,30 +299,25 @@ resource "aws_security_group" "red5pro_kafka_sg" {
   description = "Allow inbound/outbound traffic for Kafka"
   vpc_id      = local.vpc_id
 
-  # Ingress rule for all ICMP - IPv4
-  ingress {
-    description = "Allow ICMP (All) - IPv4"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "icmp"
-    cidr_blocks = ["0.0.0.0/0"]
+  dynamic "ingress" {
+    for_each = var.security_group_kafka_ingress
+    content {
+      from_port        = lookup(ingress.value, "from_port", 0)
+      to_port          = lookup(ingress.value, "to_port", 0)
+      protocol         = lookup(ingress.value, "protocol", "tcp")
+      cidr_blocks      = [lookup(ingress.value, "cidr_block", "0.0.0.0/0")]
+      ipv6_cidr_blocks = [lookup(ingress.value, "ipv6_cidr_block", "::/0")]
+    }
   }
-
-  # Ingress rule for TCP port 9092 from all sources (0.0.0.0/0)
-  ingress {
-    description = "Allow TCP port 9092 from all sources"
-    from_port   = 9092
-    to_port     = 9092
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  egress {
-    description      = "Access from kafka to 0.0.0.0/0"
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+  dynamic "egress" {
+    for_each = var.security_group_kafka_egress
+    content {
+      from_port        = lookup(egress.value, "from_port", 0)
+      to_port          = lookup(egress.value, "to_port", 0)
+      protocol         = lookup(egress.value, "protocol", "-1")
+      cidr_blocks      = [lookup(egress.value, "cidr_block", "0.0.0.0/0")]
+      ipv6_cidr_blocks = [lookup(egress.value, "ipv6_cidr_block", "::/0")]
+    }
   }
 
   tags = merge({ "Name" = "${var.name}-kafka-sg" }, var.tags, )
@@ -450,7 +467,15 @@ resource "aws_instance" "red5pro_standalone" {
   }
 
   tags = merge({ "Name" = "${var.name}-standalone-server" }, var.tags, )
+
+  lifecycle {
+    precondition {
+      condition     = fileexists(var.path_to_red5pro_build) == true
+      error_message = "ERROR! Value in variable path_to_red5pro_build must be a valid! Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-0.0.0.b0-release.zip"
+    }
+  }
 }
+
 
 ################################################################################
 # Kafka keys and certificates
@@ -587,6 +612,7 @@ resource "aws_instance" "red5pro_kafka" {
   tags = merge({ "Name" = "${var.name}-kafka-standalone", }, var.tags, )
 
 }
+
 resource "null_resource" "red5pro_kafka" {
   count = local.kafka_standalone_instance ? 1 : 0
 
@@ -646,7 +672,7 @@ resource "aws_instance" "red5pro_sm" {
   instance_type          = var.stream_manager_instance_type
   key_name               = local.ssh_key_name
   subnet_id              = element(local.subnet_ids, 0)
-  vpc_security_group_ids = local.cluster ? aws_security_group.red5pro_sm_sg[*].id : aws_security_group.red5pro_images_sg[*].id
+  vpc_security_group_ids = [aws_security_group.red5pro_sm_sg[0].id]
 
   root_block_device {
     volume_size = var.stream_manager_volume_size
@@ -658,9 +684,7 @@ resource "aws_instance" "red5pro_sm" {
           mkdir -p /usr/local/stream-manager/certs
           echo "${try(file(var.https_ssl_certificate_cert_path), "")}" > /usr/local/stream-manager/certs/cert.pem
           echo "${try(file(var.https_ssl_certificate_key_path), "")}" > /usr/local/stream-manager/certs/privkey.pem
-          echo -n "${local.ssh_public_key}" > /usr/local/stream-manager/keys/red5pro_ssh_public_key.pub
           chmod 400 /usr/local/stream-manager/certs/privkey.pem
-          chmod 400 /usr/local/stream-manager/keys/red5pro_ssh_public_key.pub
           ############################ .env file #########################################################
           cat >> /usr/local/stream-manager/.env <<- EOM
           KAFKA_CLUSTER_ID=${random_id.kafka_cluster_id[0].b64_std}
@@ -682,8 +706,8 @@ resource "aws_instance" "red5pro_sm" {
         EOF
   )
   tags = merge({ "Name" = "${var.name}-stream-manager", }, var.tags, )
-
 }
+
 resource "null_resource" "red5pro_sm" {
   count = local.cluster_or_autoscale ? 1 : 0
 
@@ -714,7 +738,6 @@ resource "null_resource" "red5pro_sm" {
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_sm2_aws.sh",
     ]
-
     connection {
       host        = local.stream_manager_ip
       type        = "ssh"
@@ -723,9 +746,8 @@ resource "null_resource" "red5pro_sm" {
     }
 
   }
-  depends_on = [tls_cert_request.kafka_server_csr, null_resource.red5pro_kafka]
+  depends_on = [tls_cert_request.kafka_server_csr, aws_instance.red5pro_sm, null_resource.red5pro_kafka]
 }
-
 
 ################################################################################
 # Stream manager autoscaling - (AWS EC2)
@@ -736,7 +758,9 @@ resource "aws_ami_from_instance" "red5pro_sm_image" {
   count              = local.autoscale ? 1 : 0
   name               = "${var.name}-stream-manager-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
   source_instance_id = aws_instance.red5pro_sm[0].id
-  depends_on         = [aws_instance.red5pro_sm[0], null_resource.red5pro_sm[0]]
+
+  depends_on = [aws_instance.red5pro_sm[0], null_resource.red5pro_sm[0]]
+
   lifecycle {
     ignore_changes = [name, tags]
   }
@@ -933,6 +957,13 @@ resource "aws_instance" "red5pro_node" {
   }
 
   tags = merge({ "Name" = "${var.name}-node-image" }, var.tags, )
+  
+  lifecycle {
+    precondition {
+      condition     = fileexists(var.path_to_red5pro_build) == true
+      error_message = "ERROR! Value in variable path_to_red5pro_build must be a valid! Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-0.0.0.b0-release.zip"
+    }
+  }
 }
 
 
@@ -986,6 +1017,21 @@ resource "null_resource" "stop_node" {
 ################################################################################
 # Create/Delete node group (Stream Manager API)
 ################################################################################
+resource "time_sleep" "wait_for_delete_nodegroup" {
+  count = local.cluster_or_autoscale && var.node_group_create ? 1 : 0
+  depends_on = [
+    aws_instance.red5pro_sm[0],
+    aws_instance.red5pro_kafka[0],
+    aws_security_group.red5pro_node_sg[0],
+    aws_security_group.red5pro_kafka_sg[0],
+    aws_security_group.red5pro_sm_sg[0],
+    aws_internet_gateway.red5pro_igw[0],
+    aws_route.red5pro_route[0],
+    aws_route_table_association.red5pro_subnets_association[0],
+    aws_route_table_association.red5pro_subnets_association[1],
+  ]
+  destroy_duration = "60s"
+}
 
 resource "null_resource" "node_group" {
   count = local.cluster_or_autoscale && var.node_group_create ? 1 : 0
@@ -1049,7 +1095,8 @@ resource "null_resource" "node_group" {
     command = "bash ${abspath(path.module)}/red5pro-installer/r5p_delete_node_group.sh '${self.triggers.SM_URL}' '${self.triggers.R5AS_AUTH_USER}' '${self.triggers.R5AS_AUTH_PASS}'"
   }
 
-  depends_on = [aws_instance.red5pro_sm[0], aws_autoscaling_group.red5pro_sm_ag[0]]
+  depends_on = [time_sleep.wait_for_delete_nodegroup[0]]
+
   lifecycle {
     precondition {
       condition     = var.node_image_create == true
