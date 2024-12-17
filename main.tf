@@ -4,6 +4,7 @@ locals {
   autoscale                     = var.type == "autoscale" ? true : false
   cluster_or_autoscale          = local.cluster || local.autoscale ? true : false
   vpc                           = var.type == "vpc" ? true : false
+  ssh_public_key                = var.ssh_key_use_existing ? file(var.ssh_key_existing_public_key_path) : (length(tls_private_key.red5pro_ssh_key) > 0 ? tls_private_key.red5pro_ssh_key[0].public_key_openssh : "")
   ssh_key_name                  = local.vpc ? null : var.ssh_key_create ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
   ssh_private_key               = local.vpc ? null : var.ssh_key_create ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_private_key_path)
   ssh_private_key_path          = local.vpc ? null : var.ssh_key_create ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_private_key_path
@@ -17,7 +18,8 @@ locals {
   kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
   kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
   kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
-  stream_manager_ip             = local.cluster ? var.stream_manager_elastic_ip_create ? aws_eip.elastic_ip_sm[0].public_ip : data.aws_eip.existing_elastic_ip_sm[0].public_ip : local.autoscale ? aws_instance.red5pro_sm[0].public_ip : "null"
+  stream_manager_ip             = local.autoscale ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && var.elastic_ip_create && length(aws_eip.elastic_ip) > 0 ? aws_eip.elastic_ip[0].public_ip : local.cluster && !var.elastic_ip_create ? var.elastic_ip_existing : "null"
+  stream_manager_ssh_ip         = local.autoscale && length(aws_instance.red5pro_sm) > 0 ? aws_instance.red5pro_sm[0].public_ip : local.cluster && var.elastic_ip_create && length(aws_eip.elastic_ip) > 0 ? aws_eip.elastic_ip[0].public_ip : local.cluster && !var.elastic_ip_create ? var.elastic_ip_existing : "null"
   stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
   stream_manager_standalone     = local.autoscale ? false : true
   stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
@@ -730,7 +732,7 @@ resource "null_resource" "red5pro_sm" {
       "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_IP=${local.stream_manager_ip}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TRAEFIK_IP=${local.stream_manager_ssh_ip}' | sudo tee -a /usr/local/stream-manager/.env",
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
@@ -739,7 +741,7 @@ resource "null_resource" "red5pro_sm" {
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_sm2_aws.sh",
     ]
     connection {
-      host        = local.stream_manager_ip
+      host        = local.stream_manager_ssh_ip
       type        = "ssh"
       user        = "ubuntu"
       private_key = local.ssh_private_key
@@ -957,7 +959,7 @@ resource "aws_instance" "red5pro_node" {
   }
 
   tags = merge({ "Name" = "${var.name}-node-image" }, var.tags, )
-  
+
   lifecycle {
     precondition {
       condition     = fileexists(var.path_to_red5pro_build) == true

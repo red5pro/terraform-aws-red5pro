@@ -20,10 +20,10 @@ module "red5pro" {
   aws_access_key = ""          # AWS IAM Access key
   aws_secret_key = ""          # AWS IAM Secret key
 
- # SSH key configuration
+  # SSH key configuration
   ssh_key_create       = true                                                 # true - create new SSH key, false - use existing SSH key
-  ssh_key_name         = "example_key"                                         # Name for new SSH key or for existing SSH key
-  ssh_private_key_path = "./PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem"  # Path to existing SSH private key
+  ssh_key_name         = "example_key"                                        # Name for new SSH key or for existing SSH key
+  ssh_private_key_path = "./PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
 
   # VPC configuration
   vpc_create      = true        # true - create new VPC, false - use existing VPC
@@ -32,13 +32,13 @@ module "red5pro" {
   # Kafka standalone instance configuration
   kafka_standalone_instance_create = true
   kafka_standalone_instance_type   = "c5.2xlarge" # OCI Instance type for Kafka standalone instance
-  kafka_standalone_volume_size     = 16          # Volume size in GB for Kafka standalone instance
+  kafka_standalone_volume_size     = 16           # Volume size in GB for Kafka standalone instance
 
   # Stream Manager configuration 
-  stream_manager_instance_type  = "c5.2xlarge"         # Instance type for Stream Manager
-  stream_manager_volume_size    = 16                  # Volume size for Stream Manager
-  stream_manager_auth_user      = "example_user"      # Stream Manager 2.0 authentication user name
-  stream_manager_auth_password  = "example_password"  # Stream Manager 2.0 authentication password
+  stream_manager_instance_type = "c5.2xlarge"       # Instance type for Stream Manager
+  stream_manager_volume_size   = 16                 # Volume size for Stream Manager
+  stream_manager_auth_user     = "example_user"     # Stream Manager 2.0 authentication user name
+  stream_manager_auth_password = "example_password" # Stream Manager 2.0 authentication password
 
   # Stream Manager 2.0 server HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
@@ -56,14 +56,14 @@ module "red5pro" {
 
   # Red5 Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
-  red5pro_cluster_key = "example_key"          # Red5 Pro cluster key
+  red5pro_cluster_key = "example_key"         # Red5 Pro cluster key
   red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
-  red5pro_api_key     = "example_key"          # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
+  red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
   # Red5 Pro autoscaling Origin node image configuration
   node_image_create        = true        # Default: true for Autoscaling and Cluster, true - create new Origin node image, false - not create new Origin node image
   node_image_instance_type = "t3.medium" # Instance type for Origin node image
-  
+
   # Extra configuration for Red5 Pro autoscaling nodes
   # Webhooks configuration - (Optional) https://www.red5.net/docs/special/webhooks/overview/
   node_config_webhooks = {
@@ -104,22 +104,22 @@ module "red5pro" {
   node_group_origins_min           = 1           # Number of minimum Origins
   node_group_origins_max           = 20          # Number of maximum Origins
   node_group_origins_instance_type = "t3.medium" # Instance type for Origins
-  node_group_origins_capacity      = 3         # Connections capacity for Origins
+  node_group_origins_capacity      = 3           # Connections capacity for Origins
   # Edge node configuration
-  node_group_edges_min           = 1          # Number of minimum Edges
-  node_group_edges_max           = 20         # Number of maximum Edges
+  node_group_edges_min           = 1           # Number of minimum Edges
+  node_group_edges_max           = 20          # Number of maximum Edges
   node_group_edges_instance_type = "t3.medium" # Instance type for Edges
-  node_group_edges_capacity      = 3         # Connections capacity for Edges
+  node_group_edges_capacity      = 3           # Connections capacity for Edges
   # Transcoder node configuration
-  node_group_transcoders_min           = 0        # Number of minimum Transcoders
+  node_group_transcoders_min           = 0           # Number of minimum Transcoders
   node_group_transcoders_max           = 20          # Number of maximum Transcoders
   node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
-  node_group_transcoders_capacity      = 3         # Connections capacity for Transcoders
+  node_group_transcoders_capacity      = 3           # Connections capacity for Transcoders
   # Relay node configuration
-  node_group_relays_min           = 0        # Number of minimum Relays
+  node_group_relays_min           = 0           # Number of minimum Relays
   node_group_relays_max           = 20          # Number of maximum Relays
   node_group_relays_instance_type = "t3.medium" # Instance type for Relays
-  node_group_relays_capacity      = 3         # Connections capacity for Relays
+  node_group_relays_capacity      = 3           # Connections capacity for Relays
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
 
