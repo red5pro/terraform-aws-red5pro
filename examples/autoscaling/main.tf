@@ -21,7 +21,7 @@ module "red5pro" {
   aws_secret_key = ""          # AWS IAM Secret key
 
  # SSH key configuration
-  ssh_key_create       = false                                                 # true - create new SSH key, false - use existing SSH key
+  ssh_key_create       = true                                                 # true - create new SSH key, false - use existing SSH key
   ssh_key_name         = "example_key"                                         # Name for new SSH key or for existing SSH key
   ssh_private_key_path = "./PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem"  # Path to existing SSH private key
 
