@@ -51,16 +51,6 @@ variable "ssh_private_key_path" {
   type        = string
   default     = ""
 }
-variable "ssh_key_use_existing" {
-  description = "SSH key pair configuration, true = use existing, false = create new"
-  type        = bool
-  default     = false
-}
-variable "ssh_key_existing_public_key_path" {
-  description = "SSH public key path existing"
-  type        = string
-  default     = ""
-}
 # VPC configuration
 variable "vpc_create" {
   description = "Create a new VPC or use an existing one. true = create new, false = use existing"
@@ -88,17 +78,6 @@ variable "stream_manager_elastic_ip_existing" {
   type        = string
   default     = "1.2.3.4"
 }
-variable "elastic_ip_create" {
-  description = "Create a new Elastic IP or use an existing one. true = create new, false = use existing"
-  type        = bool
-  default     = true
-}
-variable "elastic_ip_existing" {
-  description = "Elastic IP Existing"
-  type        = string
-  default     = "1.2.3.4"
-}
-
 
 # Elastic IP configuration for Kafka
 variable "standalone_elastic_ip_create" {
@@ -947,27 +926,6 @@ variable "security_group_kafka_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      from_port       = 5080
-      to_port         = 5080
-      protocol        = "tcp"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-    {
-      from_port       = 80
-      to_port         = 80
-      protocol        = "tcp"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-    {
-      from_port       = 443
-      to_port         = 443
-      protocol        = "tcp"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-    {
       from_port       = 9092
       to_port         = 9092
       protocol        = "tcp"
@@ -1005,27 +963,6 @@ variable "security_group_node_ingress" {
     {
       from_port       = 5080
       to_port         = 5080
-      protocol        = "tcp"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-    {
-      from_port       = 80
-      to_port         = 80
-      protocol        = "tcp"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-    {
-      from_port       = 9092
-      to_port         = 9092
-      protocol        = "tcp"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-    {
-      from_port       = 443
-      to_port         = 443
       protocol        = "tcp"
       cidr_block      = "0.0.0.0/0"
       ipv6_cidr_block = "::/0"
@@ -1096,27 +1033,6 @@ variable "security_group_standalone_ingress" {
     {
       from_port       = 22
       to_port         = 22
-      protocol        = "tcp"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-    {
-      from_port       = 80
-      to_port         = 80
-      protocol        = "tcp"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-    {
-      from_port       = 5080
-      to_port         = 5080
-      protocol        = "tcp"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-    {
-      from_port       = 443
-      to_port         = 443
       protocol        = "tcp"
       cidr_block      = "0.0.0.0/0"
       ipv6_cidr_block = "::/0"

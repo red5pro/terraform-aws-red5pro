@@ -4,7 +4,6 @@ locals {
   autoscale                     = var.type == "autoscale" ? true : false
   cluster_or_autoscale          = local.cluster || local.autoscale ? true : false
   vpc                           = var.type == "vpc" ? true : false
-  ssh_public_key                = var.ssh_key_use_existing ? file(var.ssh_key_existing_public_key_path) : (length(tls_private_key.red5pro_ssh_key) > 0 ? tls_private_key.red5pro_ssh_key[0].public_key_openssh : "")
   ssh_key_name                  = local.vpc ? null : var.ssh_key_create ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
   ssh_private_key               = local.vpc ? null : var.ssh_key_create ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_private_key_path)
   ssh_private_key_path          = local.vpc ? null : var.ssh_key_create ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_private_key_path
@@ -18,8 +17,8 @@ locals {
   kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
   kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
   kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
-  stream_manager_ip             = local.autoscale ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && var.elastic_ip_create && length(aws_eip.elastic_ip) > 0 ? aws_eip.elastic_ip[0].public_ip : local.cluster && !var.elastic_ip_create ? var.elastic_ip_existing : "null"
-  stream_manager_ssh_ip         = local.autoscale && length(aws_instance.red5pro_sm) > 0 ? aws_instance.red5pro_sm[0].public_ip : local.cluster && var.elastic_ip_create && length(aws_eip.elastic_ip) > 0 ? aws_eip.elastic_ip[0].public_ip : local.cluster && !var.elastic_ip_create ? var.elastic_ip_existing : "null"
+  stream_manager_ip             = local.autoscale ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && var.stream_manager_elastic_ip_create && length(aws_eip.elastic_ip_sm) > 0 ? aws_eip.elastic_ip_sm[0].public_ip : local.cluster && !var.stream_manager_elastic_ip_create ? var.stream_manager_elastic_ip_existing : "null"
+  stream_manager_ssh_ip         = local.autoscale && length(aws_instance.red5pro_sm) > 0 ? aws_instance.red5pro_sm[0].public_ip : local.cluster && var.stream_manager_elastic_ip_create && length(aws_eip.elastic_ip_sm) > 0 ? aws_eip.elastic_ip_sm[0].public_ip : local.cluster && !var.stream_manager_elastic_ip_create ? var.stream_manager_elastic_ip_existing : "null"
   stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
   stream_manager_standalone     = local.autoscale ? false : true
   stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
@@ -56,7 +55,7 @@ resource "aws_eip_association" "elastic_ip_association_standalone" {
 # Create a new Elastic IP (only if stream_manager_elastic_ip_create = true)
 resource "aws_eip" "elastic_ip_sm" {
   count = local.cluster && var.stream_manager_elastic_ip_create ? 1 : 0
-  tags  = merge({ "Name" = "${var.name}-elastic-ip-sm" }, var.tags, )
+  tags  = merge({ "Name" = "${var.name}-elastic-ip-sm" }, var.tags)
 }
 
 # Use an existing Elastic IP (only if stream_manager_elastic_ip_create = false)
@@ -71,7 +70,6 @@ resource "aws_eip_association" "elastic_ip_association_sm" {
   instance_id   = aws_instance.red5pro_sm[0].id
   allocation_id = var.stream_manager_elastic_ip_create ? aws_eip.elastic_ip_sm[0].id : data.aws_eip.existing_elastic_ip_sm[0].id
 }
-
 ################################################################################
 # SSH_KEY
 ################################################################################
@@ -718,7 +716,7 @@ resource "null_resource" "red5pro_sm" {
     destination = "/home/ubuntu"
 
     connection {
-      host        = local.stream_manager_ip
+      host        = local.stream_manager_ssh_ip
       type        = "ssh"
       user        = "ubuntu"
       private_key = local.ssh_private_key

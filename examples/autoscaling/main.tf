@@ -21,21 +21,22 @@ module "red5pro" {
   aws_secret_key = ""          # AWS IAM Secret key
 
   # SSH key configuration
-  ssh_key_create       = true                                                 # true - create new SSH key, false - use existing SSH key
-  ssh_key_name         = "example_key"                                        # Name for new SSH key or for existing SSH key
-  ssh_private_key_path = "./PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
+  ssh_key_create       = false               # true - create new SSH key, false - use existing SSH key
+  ssh_key_name         = "example_key"       # Name for new SSH key or for existing SSH key
+  ssh_private_key_path = "./example_key.pem" # Path to existing SSH private key
 
   # VPC configuration
-  vpc_create      = true        # true - create new VPC, false - use existing VPC
+  vpc_create      = false       # true - create new VPC, false - use existing VPC
   vpc_id_existing = "vpc-12345" # VPC ID for existing VPC
 
   # Kafka standalone instance configuration
-  kafka_standalone_instance_type = "c5.2xlarge" # OCI Instance type for Kafka standalone instance
-  kafka_standalone_volume_size   = 16           # Volume size in GB for Kafka standalone instance
+  kafka_standalone_instance_create = true         #
+  kafka_standalone_instance_type   = "c5.2xlarge" # OCI Instance type for Kafka standalone instance
+  kafka_standalone_volume_size     = 16           # Volume size in GB for Kafka standalone instance
 
   # Load Balancer HTTPS/SSL certificate configuration
-  https_certificate_manager_use_existing     = false                 # If you want to use SSL certificate set it to true
-  https_certificate_manager_certificate_name = "red5pro.example.com" # Domain name for your SSL certificate
+  https_certificate_manager_use_existing     = true                # If you want to use SSL certificate set it to true
+  https_certificate_manager_certificate_name = "red5pro@gmail.com" # Domain name for your SSL certificate
 
   # Stream Manager configuration 
   stream_manager_instance_type                = "c5.2xlarge"       # Instance type for Stream Manager

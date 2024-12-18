@@ -21,9 +21,9 @@ module "red5pro" {
   aws_secret_key = ""          # AWS IAM Secret key
 
   # SSH key configuration
-  ssh_key_create       = true                                                 # true - create new SSH key, false - use existing SSH key
-  ssh_key_name         = "example_key"                                        # Name for new SSH key or for existing SSH key
-  ssh_private_key_path = "./PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
+  ssh_key_create       = true                # true - create new SSH key, false - use existing SSH key
+  ssh_key_name         = "example_key"       # Name for new SSH key or for existing SSH key
+  ssh_private_key_path = "./example_key.pem" # Path to existing SSH private key
 
   # VPC configuration
   vpc_create      = true        # true - create new VPC, false - use existing VPC
@@ -39,6 +39,10 @@ module "red5pro" {
   stream_manager_volume_size   = 16                 # Volume size for Stream Manager
   stream_manager_auth_user     = "example_user"     # Stream Manager 2.0 authentication user name
   stream_manager_auth_password = "example_password" # Stream Manager 2.0 authentication password
+
+  # Stream Manager Elastic IP configuration
+  stream_manager_elastic_ip_create   = true      # true - create new elastic IP, false - use existing elastic IP
+  stream_manager_elastic_ip_existing = "1.2.3.4" # Elastic IP for existing elastic IP
 
   # Stream Manager 2.0 server HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
@@ -104,22 +108,22 @@ module "red5pro" {
   node_group_origins_min           = 1           # Number of minimum Origins
   node_group_origins_max           = 20          # Number of maximum Origins
   node_group_origins_instance_type = "t3.medium" # Instance type for Origins
-  node_group_origins_capacity      = 3           # Connections capacity for Origins
+  node_group_origins_capacity      = 2           # Connections capacity for Origins
   # Edge node configuration
   node_group_edges_min           = 1           # Number of minimum Edges
   node_group_edges_max           = 20          # Number of maximum Edges
   node_group_edges_instance_type = "t3.medium" # Instance type for Edges
-  node_group_edges_capacity      = 3           # Connections capacity for Edges
+  node_group_edges_capacity      = 2           # Connections capacity for Edges
   # Transcoder node configuration
   node_group_transcoders_min           = 0           # Number of minimum Transcoders
   node_group_transcoders_max           = 20          # Number of maximum Transcoders
   node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
-  node_group_transcoders_capacity      = 3           # Connections capacity for Transcoders
+  node_group_transcoders_capacity      = 2           # Connections capacity for Transcoders
   # Relay node configuration
   node_group_relays_min           = 0           # Number of minimum Relays
   node_group_relays_max           = 20          # Number of maximum Relays
   node_group_relays_instance_type = "t3.medium" # Instance type for Relays
-  node_group_relays_capacity      = 3           # Connections capacity for Relays
+  node_group_relays_capacity      = 2           # Connections capacity for Relays
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
 
