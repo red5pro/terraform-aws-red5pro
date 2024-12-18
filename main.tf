@@ -1029,6 +1029,9 @@ resource "time_sleep" "wait_for_delete_nodegroup" {
     aws_route.red5pro_route[0],
     aws_route_table_association.red5pro_subnets_association[0],
     aws_route_table_association.red5pro_subnets_association[1],
+    aws_autoscaling_group.red5pro_sm_ag[0],
+    aws_autoscaling_attachment.red5pro_sm_aa[0],
+    aws_lb_listener.red5pro_sm_http[0],
   ]
   destroy_duration = "60s"
 }
