@@ -8,12 +8,12 @@ variable "name" {
   }
 }
 variable "type" {
-  description = "Type of deployment: standalone, cluster, autoscaling"
+  description = "Type of deployment: standalone, cluster, autoscale"
   type        = string
   default     = ""
   validation {
     condition     = var.type == "standalone" || var.type == "cluster" || var.type == "autoscale" || var.type == "vpc"
-    error_message = "The type value must be a valid! Example: standalone, cluster, autoscaling"
+    error_message = "The type value must be a valid! Example: standalone, cluster, autoscale"
   }
 }
 variable "path_to_red5pro_build" {
@@ -126,16 +126,6 @@ variable "standalone_red5pro_hls_enable" {
   description = "Red5 Pro standalone server HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
   type        = bool
   default     = false
-}
-variable "standalone_red5pro_hls_output_format" {
-  description = "Red5 Pro standalone server - HLS output format. Options: TS, FMP4, SMP4"
-  type        = string
-  default     = "TS"
-}
-variable "standalone_red5pro_hls_dvr_playlist" {
-  description = "Red5 Pro standalone server - HLS DVR playlist"
-  type        = string
-  default     = "false"
 }
 variable "standalone_red5pro_webhooks_enable" {
   description = "Red5 Pro standalone server Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
@@ -309,17 +299,11 @@ variable "https_ssl_certificate_key_path" {
   default     = ""
 }
 # HTTPS/SSL variables for autoscaling
-variable "https_certificate_manager_use_existing" {
-  description = "Use existing AWS Certificate Manager certificate (autoscaling)"
-  type        = bool
-  default     = false
-}
 variable "https_certificate_manager_certificate_name" {
-  description = "AWS Certificate Manager certificate name (autoscaling)"
+  description = "AWS Certificate Manager certificate name (autoscale)"
   type        = string
   default     = ""
 }
-
 variable "stream_manager_instance_type" {
   description = "value to set the instance type for stream manager"
   type        = string
@@ -336,17 +320,17 @@ variable "stream_manager_api_key" {
   default     = ""
 }
 variable "stream_manager_autoscaling_desired_capacity" {
-  description = "value to set the desired capacity for stream manager autoscaling"
+  description = "value to set the desired capacity for stream manager autoscale"
   type        = number
   default     = 1
 }
 variable "stream_manager_autoscaling_minimum_capacity" {
-  description = "value to set the minimum capacity for stream manager autoscaling"
+  description = "value to set the minimum capacity for stream manager autoscale"
   type        = number
   default     = 1
 }
 variable "stream_manager_autoscaling_maximum_capacity" {
-  description = "value to set the maximum capacity for stream manager autoscaling"
+  description = "value to set the maximum capacity for stream manager autoscale"
   type        = number
   default     = 1
 }
@@ -370,16 +354,7 @@ variable "stream_manager_auth_password" {
   type        = string
   default     = ""
 }
-variable "load_balancer_reserved_ip_use_existing" {
-  description = "Use existing Reserved IP for Load Balancer. true = use existing, false = create new"
-  type        = bool
-  default     = false
-}
-variable "load_balancer_reserved_ip_existing" {
-  description = "Existing Reserved IP for Load Balancer"
-  type        = string
-  default     = ""
-}
+
 variable "red5pro_license_key" {
   description = "Red5 Pro license key (https://www.red5.net/docs/installation/installation/license-key/)"
   type        = string
@@ -1113,7 +1088,7 @@ variable "security_group_standalone_egress" {
   ]
 }
 
-# Red5 Pro autoscaling Node group - (Optional) 
+# Red5 Pro autoscale Node group - (Optional) 
 variable "node_group_create" {
   description = "Create new node group. Linux or Mac OS only."
   type        = bool

@@ -21,12 +21,12 @@ module "red5pro" {
   aws_secret_key = ""          # AWS IAM Secret key
 
   # SSH key configuration
-  ssh_key_create       = true                # true - create new SSH key, false - use existing SSH key
-  ssh_key_name         = "example_key"       # Name for new SSH key or for existing SSH key
-  ssh_private_key_path = "./example_key.pem" # Path to existing SSH private key
+  ssh_key_create       = false                                             # true - create new SSH key, false - use existing SSH key
+  ssh_key_name         = "example_key.pem"                                 # Name of existing SSH key private key
+  ssh_private_key_path = "/PATH/TO/SSH/PUBLIC/KEY/example_private_key.pem" # Path to existing SSH private key
 
   # VPC configuration
-  vpc_create      = true        # true - create new VPC, false - use existing VPC
+  vpc_create      = false        # true - create new VPC, false - use existing VPC
   vpc_id_existing = "vpc-12345" # VPC ID for existing VPC
 
   # Kafka standalone instance configuration
@@ -57,6 +57,11 @@ module "red5pro" {
   # https_ssl_certificate_domain_name = "red5pro.example.com"
   # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
   # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+
+  # Example of existing HTTPS/SSL certificate configuration - please uncomment and provide your domain name
+  # https_ssl_certificate             = "existing"  # Use existing HTTPS/SSL certificate
+  # https_ssl_certificate_domain_name = "red5pro.example.com"  # Replace with your domain name
+
 
   # Red5 Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)

@@ -16,16 +16,16 @@ module "red5pro" {
   ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
 
   # SSH key configuration
-  ssh_key_create       = true                                                # true - create new SSH key, false - use existing SSH key
-  ssh_key_name         = "example_key"                                       # Name for new SSH key or for existing SSH key
+  ssh_key_create       = false                                               # true - create new SSH key, false - use existing SSH key
+  ssh_key_name         = "example_key"                                       # Name to existing SSH key
   ssh_private_key_path = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
 
   # VPC configuration
-  vpc_create      = true        # true - create new VPC, false - use existing VPC
+  vpc_create      = false        # true - create new VPC, false - use existing VPC
   vpc_id_existing = "vpc-12345" # VPC ID for existing VPC
 
   # Elastic IP configuration
-  standalone_elastic_ip_create   = true      # true - create new elastic IP, false - use existing elastic IP
+  standalone_elastic_ip_create   = false     # true - create new elastic IP, false - use existing elastic IP
   standalone_elastic_ip_existing = "1.2.3.4" # Elastic IP for existing elastic IP
 
   # Standalone Red5 Pro server HTTPS (SSL) certificate configuration
@@ -41,6 +41,10 @@ module "red5pro" {
   # https_ssl_certificate_domain_name = "red5pro.example.com"
   # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
   # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+
+  # Example of existing HTTPS/SSL certificate configuration - please uncomment and provide your domain name
+  # https_ssl_certificate             = "existing"  # Use existing HTTPS/SSL certificate
+  # https_ssl_certificate_domain_name = "red5pro.example.com"  # Replace with your domain name
 
 
   # Single Red5 Pro server EC2 instance configuration

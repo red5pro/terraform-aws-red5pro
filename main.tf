@@ -383,7 +383,7 @@ resource "aws_security_group" "red5pro_standalone_sg" {
 ################################################################################
 
 resource "random_password" "ssl_password_red5pro_standalone" {
-  count   = local.standalone && var.https_ssl_certificate != "false" ? 1 : 0
+  count   = local.standalone && var.https_ssl_certificate != "none" ? 1 : 0
   length  = 16
   special = false
 }

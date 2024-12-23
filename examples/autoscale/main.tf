@@ -21,22 +21,17 @@ module "red5pro" {
   aws_secret_key = ""          # AWS IAM Secret key
 
   # SSH key configuration
-  ssh_key_create       = false               # true - create new SSH key, false - use existing SSH key
-  ssh_key_name         = "example_key"       # Name for new SSH key or for existing SSH key
-  ssh_private_key_path = "./example_key.pem" # Path to existing SSH private key
+  ssh_key_create       = false                                             # true - create new SSH key, false - use existing SSH key
+  ssh_key_name         = "example_key.pem"                                 # Name of existing SSH key private key
+  ssh_private_key_path = "/PATH/TO/SSH/PUBLIC/KEY/example_private_key.pem" # Path to existing SSH private key
 
   # VPC configuration
-  vpc_create      = false       # true - create new VPC, false - use existing VPC
+  vpc_create      = false      # true - create new VPC, false - use existing VPC
   vpc_id_existing = "vpc-12345" # VPC ID for existing VPC
 
   # Kafka standalone instance configuration
-  kafka_standalone_instance_create = true         #
   kafka_standalone_instance_type   = "c5.2xlarge" # OCI Instance type for Kafka standalone instance
   kafka_standalone_volume_size     = 16           # Volume size in GB for Kafka standalone instance
-
-  # Load Balancer HTTPS/SSL certificate configuration
-  https_certificate_manager_use_existing     = true                # If you want to use SSL certificate set it to true
-  https_certificate_manager_certificate_name = "red5pro@gmail.com" # Domain name for your SSL certificate
 
   # Stream Manager configuration 
   stream_manager_instance_type                = "c5.2xlarge"       # Instance type for Stream Manager
@@ -49,12 +44,16 @@ module "red5pro" {
 
   # Stream Manager 2.0 Load Balancer HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, imported - import existing HTTPS/SSL certificate
+  
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
-  # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
-  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"  # Replace with your domain name
+  # https_ssl_certificate_cert_path   = "./fullchain.pem"      # Path to full chain file
+  # https_ssl_certificate_key_path    = "./privkey.pem"        # Path to privkey file
+
+  # Example of existing HTTPS/SSL certificate configuration - please uncomment and provide your domain name
+  # https_ssl_certificate             = "existing"             # Use existing HTTPS/SSL certificate
+  # https_ssl_certificate_domain_name = "red5pro.example.com"  # Replace with your domain name
 
   # Red5 Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
@@ -117,7 +116,7 @@ module "red5pro" {
   node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
   node_group_transcoders_capacity      = 20          # Connections capacity for Transcoders
   # Relay node configuration
-  node_group_relays_min           = 0           # Number of minimum Relays
+  node_group_relays_min           = 0          # Number of minimum Relays
   node_group_relays_max           = 20          # Number of maximum Relays
   node_group_relays_instance_type = "t3.medium" # Instance type for Relays
   node_group_relays_capacity      = 20          # Connections capacity for Relays
@@ -129,3 +128,4 @@ module "red5pro" {
     Project     = "red5pro"
   }
 }
+
