@@ -7,11 +7,9 @@ output "ssh_key_name" {
   description = "SSH key name"
   value       = local.ssh_key_name
 }
-##venky
 output "ssh_private_key_path" {
   value = local.ssh_private_key_path
 }
-##venky
 output "vpc_id" {
   description = "VPC ID"
   value       = local.vpc_id

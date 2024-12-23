@@ -835,15 +835,21 @@ resource "aws_lb_target_group" "red5pro_sm_tg" {
   vpc_id      = local.vpc_id
 
   health_check {
-    path = "/"
+    path = "/as/v1/admin/healthz"
     port = 80
   }
 }
 
 # AWS Stream Manager autoscaling - SSL certificate
+resource "aws_acm_certificate" "imported_cert" {
+  count             = local.autoscale && var.https_ssl_certificate == "imported" ? 1 : 0
+  certificate_body  = file("./cert.pem")
+  private_key       = file("./privkey.pem")
+  certificate_chain = file("./fullchain.pem")
+}
 data "aws_acm_certificate" "red5pro_sm_cert" {
-  count    = local.autoscale && var.https_certificate_manager_use_existing ? 1 : 0
-  domain   = var.https_certificate_manager_certificate_name
+  count    = local.autoscale && var.https_ssl_certificate == "existing" ? 1 : 0
+  domain   = var.https_ssl_certificate_domain_name
   statuses = ["ISSUED"]
 }
 
@@ -876,16 +882,31 @@ resource "aws_lb_listener" "red5pro_sm_http" {
 
 # AWS Stream Manager autoscaling - LB HTTPS listener
 resource "aws_lb_listener" "red5pro_sm_https" {
-  count             = local.autoscale && var.https_certificate_manager_use_existing ? 1 : 0
+  count             = local.autoscale && (var.https_ssl_certificate == "imported" || var.https_ssl_certificate == "existing") ? 1 : 0
   load_balancer_arn = aws_lb.red5pro_sm_lb[0].arn
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = data.aws_acm_certificate.red5pro_sm_cert[0].arn
-
+  certificate_arn   = var.https_ssl_certificate == "imported" ? aws_acm_certificate.imported_cert[0].arn : var.https_ssl_certificate == "existing" ? data.aws_acm_certificate.red5pro_sm_cert[0].arn : null
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.red5pro_sm_tg[0].arn
+  }
+}
+resource "aws_lb_listener_rule" "red5pro_sm_https" {
+  count        = local.autoscale && (var.https_ssl_certificate == "imported" || var.https_ssl_certificate == "existing") ? 1 : 0
+  listener_arn = aws_lb_listener.red5pro_sm_https[0].arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.red5pro_sm_tg[0].arn
+  }
+
+  condition {
+    host_header {
+      values = ["autoscale.ci.red5.net"]
+    }
   }
 }
 

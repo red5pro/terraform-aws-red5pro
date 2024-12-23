@@ -27,7 +27,7 @@ output "stream_manager_https_url" {
   description = "Stream Manager HTTPS URL"
   value       = module.red5pro.stream_manager_https_url
 }
-##output "node_image_name" {
-#description = "AMI image name of the Red5 Pro Node Origin image"
-#value       = red5pro-auto-node-image-17Dec24-0746
-#}
+output "node_image_name" {
+  description = "The name of the newly created AMI."
+  value       = aws_ami_from_instance.red5pro_node_image[0].name
+}
