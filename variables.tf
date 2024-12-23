@@ -281,20 +281,28 @@ variable "https_ssl_certificate" {
   }
 }
 variable "https_ssl_certificate_domain_name" {
-  description = "Domain name for SSL certificate (letsencrypt/imported)"
+  description = "Domain name for SSL certificate (letsencrypt/imported/existing)"
   type        = string
   default     = ""
 }
+
 variable "https_ssl_certificate_email" {
   description = "Email for SSL certificate (letsencrypt)"
   type        = string
   default     = ""
 }
+
 variable "https_ssl_certificate_cert_path" {
-  description = "Path to SSL certificate (imported)"
+  description = "Path to public certificate file (imported)"
   type        = string
   default     = ""
 }
+variable "https_ssl_certificate_fullchain_path" {
+  description = "Path to certificate chain file (imported)"
+  type        = string
+  default     = ""
+}
+
 variable "https_ssl_certificate_key_path" {
   description = "Path to SSL key (imported)"
   type        = string
@@ -362,7 +370,6 @@ variable "stream_manager_auth_password" {
   type        = string
   default     = ""
 }
-############
 variable "load_balancer_reserved_ip_use_existing" {
   description = "Use existing Reserved IP for Load Balancer. true = use existing, false = create new"
   type        = bool
@@ -373,7 +380,6 @@ variable "load_balancer_reserved_ip_existing" {
   type        = string
   default     = ""
 }
-#######
 variable "red5pro_license_key" {
   description = "Red5 Pro license key (https://www.red5.net/docs/installation/installation/license-key/)"
   type        = string
