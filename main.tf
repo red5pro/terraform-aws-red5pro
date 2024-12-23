@@ -843,9 +843,9 @@ resource "aws_lb_target_group" "red5pro_sm_tg" {
 # AWS Stream Manager autoscaling - SSL certificate
 resource "aws_acm_certificate" "imported_cert" {
   count             = local.autoscale && var.https_ssl_certificate == "imported" ? 1 : 0
-  certificate_body  = file("./cert.pem")
-  private_key       = file("./privkey.pem")
-  certificate_chain = file("./fullchain.pem")
+  certificate_body  = file(var.https_ssl_certificate_cert_path)
+  private_key       = file(var.https_ssl_certificate_key_path)
+  certificate_chain = file(var.https_ssl_certificate_fullchain_path)
 }
 data "aws_acm_certificate" "red5pro_sm_cert" {
   count    = local.autoscale && var.https_ssl_certificate == "existing" ? 1 : 0
