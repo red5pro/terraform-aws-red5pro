@@ -47,14 +47,16 @@ module "red5pro" {
   # https_ssl_certificate_domain_name = "red5pro.example.com"  # Replace with your domain name
 
 
-  # Single Red5 Pro server EC2 instance configuration
+  # Standalone Red5 Pro server EC2 instance configuration
   standalone_instance_type = "t3.medium" # Instance type for Red5 Pro server. Example: t3.medium, c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge
   standalone_volume_size   = 16          # Volume size for Red5 Pro server
 
-  # Red5Pro server configuration
+  # Red5pro general configuration
   red5pro_license_key                                    = "1111-2222-3333-4444"             # Red5 Pro license key (https://account.red5.net/login)
   red5pro_api_enable                                     = true                              # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
   red5pro_api_key                                        = "example_key"                     # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
+
+  # Standalone Red5 Pro server configuration
   standalone_red5pro_inspector_enable                    = false                             # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5.net/docs/troubleshooting/inspector/overview/)
   standalone_red5pro_restreamer_enable                   = false                             # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5.net/docs/special/restreamer/overview/)
   standalone_red5pro_socialpusher_enable                 = false                             # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5.net/docs/special/social-media-plugin/overview/)
