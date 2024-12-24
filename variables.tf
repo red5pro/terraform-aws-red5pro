@@ -127,6 +127,11 @@ variable "standalone_red5pro_hls_enable" {
   type        = bool
   default     = false
 }
+variable "standalone_red5pro_hls_output_format" {
+  description = "Red5 Pro standalone server - HLS output format. Options: TS, FMP4, SMP4"
+  type        = string
+  default     = "TS"
+}
 variable "standalone_red5pro_webhooks_enable" {
   description = "Red5 Pro standalone server Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
   type        = bool
@@ -167,6 +172,42 @@ variable "standalone_red5pro_round_trip_auth_endpoint_invalidate" {
   type        = string
   default     = "/invalidateCredentials"
 }
+variable "red5pro_cloudstorage_enable" {
+  description = "Red5 Pro server cloud storage enable/disable (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)"
+  type        = bool
+  default     = false
+}
+variable "red5pro_cloudstorage_aws_access_key" {
+  description = "Red5 Pro server cloud storage - AWS access key (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "red5pro_cloudstorage_aws_secret_key" {
+  description = "Red5 Pro server cloud storage - AWS secret key (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "red5pro_cloudstorage_aws_bucket_name" {
+  description = "Red5 Pro server cloud storage - AWS bucket name (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "red5pro_cloudstorage_aws_region" {
+  description = "Red5 Pro server cloud storage - AWS region (S3 Bucket)"
+  type        = string
+  default     = ""
+}
+variable "red5pro_cloudstorage_postprocessor_enable" {
+  description = "Red5 Pro server cloud storage - enable/disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)"
+  type        = bool
+  default     = false
+}
+variable "red5pro_cloudstorage_aws_bucket_acl_policy" {
+  description = "Red5 Pro server cloud storage - AWS bucket ACL policy (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
+  type        = string
+  default     = "public-read"
+}
+
 variable "red5pro_stream_auto_record_enable" {
   description = "Red5 Pro server - enable/disable broadcast stream auto record"
   type        = bool
@@ -427,7 +468,6 @@ variable "origin_image_red5pro_round_trip_auth_endpoint_invalidate" {
   type        = string
   default     = "/invalidateCredentials"
 }
-
 variable "origin_image_red5pro_stream_auto_record_enable" {
   description = "Origin node image - enable/disable Red5 Pro server broadcast stream auto record"
   type        = bool
