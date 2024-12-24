@@ -167,41 +167,6 @@ variable "standalone_red5pro_round_trip_auth_endpoint_invalidate" {
   type        = string
   default     = "/invalidateCredentials"
 }
-variable "red5pro_cloudstorage_enable" {
-  description = "Red5 Pro server cloud storage enable/disable (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)"
-  type        = bool
-  default     = false
-}
-variable "red5pro_cloudstorage_aws_access_key" {
-  description = "Red5 Pro server cloud storage - AWS access key (S3 Bucket)"
-  type        = string
-  default     = ""
-}
-variable "red5pro_cloudstorage_aws_secret_key" {
-  description = "Red5 Pro server cloud storage - AWS secret key (S3 Bucket)"
-  type        = string
-  default     = ""
-}
-variable "red5pro_cloudstorage_aws_bucket_name" {
-  description = "Red5 Pro server cloud storage - AWS bucket name (S3 Bucket)"
-  type        = string
-  default     = ""
-}
-variable "red5pro_cloudstorage_aws_region" {
-  description = "Red5 Pro server cloud storage - AWS region (S3 Bucket)"
-  type        = string
-  default     = ""
-}
-variable "red5pro_cloudstorage_postprocessor_enable" {
-  description = "Red5 Pro server cloud storage - enable/disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)"
-  type        = bool
-  default     = false
-}
-variable "red5pro_cloudstorage_aws_bucket_acl_policy" {
-  description = "Red5 Pro server cloud storage - AWS bucket ACL policy (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
-  type        = string
-  default     = "public-read"
-}
 variable "red5pro_stream_auto_record_enable" {
   description = "Red5 Pro server - enable/disable broadcast stream auto record"
   type        = bool
@@ -299,11 +264,6 @@ variable "https_ssl_certificate_key_path" {
   default     = ""
 }
 # HTTPS/SSL variables for autoscaling
-variable "https_certificate_manager_certificate_name" {
-  description = "AWS Certificate Manager certificate name (autoscale)"
-  type        = string
-  default     = ""
-}
 variable "stream_manager_instance_type" {
   description = "value to set the instance type for stream manager"
   type        = string
@@ -467,41 +427,7 @@ variable "origin_image_red5pro_round_trip_auth_endpoint_invalidate" {
   type        = string
   default     = "/invalidateCredentials"
 }
-variable "origin_image_red5pro_cloudstorage_enable" {
-  description = "Origin node image - enable/disable Red5 Pro server cloud storage (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)"
-  type        = bool
-  default     = false
-}
-variable "origin_image_red5pro_cloudstorage_aws_access_key" {
-  description = "Origin node image - AWS access key for cloud storage (S3 Bucket)"
-  type        = string
-  default     = ""
-}
-variable "origin_image_red5pro_cloudstorage_aws_secret_key" {
-  description = "Origin node image - AWS secret key for cloud storage (S3 Bucket)"
-  type        = string
-  default     = ""
-}
-variable "origin_image_red5pro_cloudstorage_aws_bucket_name" {
-  description = "Origin node image - AWS bucket name for cloud storage (S3 Bucket)"
-  type        = string
-  default     = ""
-}
-variable "origin_image_red5pro_cloudstorage_aws_region" {
-  description = "Origin node image - AWS region for cloud storage (S3 Bucket)"
-  type        = string
-  default     = ""
-}
-variable "origin_image_red5pro_cloudstorage_postprocessor_enable" {
-  description = "Origin node image - enable/disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)"
-  type        = bool
-  default     = false
-}
-variable "origin_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
-  description = "Origin node image - AWS bucket ACL policy for cloud storage (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
-  type        = string
-  default     = "public-read"
-}
+
 variable "origin_image_red5pro_stream_auto_record_enable" {
   description = "Origin node image - enable/disable Red5 Pro server broadcast stream auto record"
   type        = bool
@@ -695,41 +621,6 @@ variable "transcoder_image_red5pro_round_trip_auth_endpoint_invalidate" {
   description = "Transcoder node image - Round trip authentication server endpoint for invalidate"
   type        = string
   default     = "/invalidateCredentials"
-}
-variable "transcoder_image_red5pro_cloudstorage_enable" {
-  description = "Transcoder node image - enable/disable Red5 Pro server cloud storage (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)"
-  type        = bool
-  default     = false
-}
-variable "transcoder_image_red5pro_cloudstorage_aws_access_key" {
-  description = "Transcoder node image - AWS access key for cloud storage (S3 Bucket)"
-  type        = string
-  default     = ""
-}
-variable "transcoder_image_red5pro_cloudstorage_aws_secret_key" {
-  description = "Transcoder node image - AWS secret key for cloud storage (S3 Bucket)"
-  type        = string
-  default     = ""
-}
-variable "transcoder_image_red5pro_cloudstorage_aws_bucket_name" {
-  description = "Transcoder node image - AWS bucket name for cloud storage (S3 Bucket)"
-  type        = string
-  default     = ""
-}
-variable "transcoder_image_red5pro_cloudstorage_aws_region" {
-  description = "Transcoder node image - AWS region for cloud storage (S3 Bucket)"
-  type        = string
-  default     = ""
-}
-variable "transcoder_image_red5pro_cloudstorage_postprocessor_enable" {
-  description = "Transcoder node image - enable/disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)"
-  type        = bool
-  default     = false
-}
-variable "transcoder_image_red5pro_cloudstorage_aws_bucket_acl_policy" {
-  description = "Transcoder node image - AWS bucket ACL policy for cloud storage (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
-  type        = string
-  default     = "public-read"
 }
 variable "transcoder_image_red5pro_stream_auto_record_enable" {
   description = "Transcoder node image - enable/disable Red5 Pro server broadcast stream auto record"
