@@ -1,5 +1,5 @@
 #################################################
-# Example for single Red5 Pro server deployment #
+# Example for Standalone Red5 Pro server deployment #
 #################################################
 
 provider "aws" {
