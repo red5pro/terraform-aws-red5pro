@@ -66,6 +66,21 @@ variable "vpc_id_existing" {
     error_message = "The vpc_id_existing value must be a valid! Example: vpc-12345"
   }
 }
+# Security group configuration
+variable "security_group_create" {
+  description = "Create a new Security group or use an existing one. true = create new, false = use existing"
+  type        = bool
+  default     = false
+}
+variable "security_group_id_existing" {
+  description = "Security group ID, this Security group should have open default Red5Pro ports: TCP:443,5080,80,1935,8554, UDP:40000-65535"
+  type        = string
+  default     = "sg-12345"
+  validation {
+    condition     = length(var.security_group_id_existing) > 4 && substr(var.security_group_id_existing, 0, 3) == "sg-"
+    error_message = "The security_group_id_existing value must be a valid! Example: sg-12345"
+  }
+}
 
 # Elastic IP configuration for Stream Manager 2.0
 variable "stream_manager_elastic_ip_create" {
@@ -172,77 +187,78 @@ variable "standalone_red5pro_round_trip_auth_endpoint_invalidate" {
   type        = string
   default     = "/invalidateCredentials"
 }
-variable "red5pro_cloudstorage_enable" {
+variable "standalone_red5pro_cloudstorage_enable" {
   description = "Red5 Pro server cloud storage enable/disable (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)"
   type        = bool
   default     = false
 }
-variable "red5pro_cloudstorage_aws_access_key" {
+variable "standalone_red5pro_cloudstorage_aws_access_key" {
   description = "Red5 Pro server cloud storage - AWS access key (S3 Bucket)"
   type        = string
   default     = ""
 }
-variable "red5pro_cloudstorage_aws_secret_key" {
+variable "standalone_red5pro_cloudstorage_aws_secret_key" {
   description = "Red5 Pro server cloud storage - AWS secret key (S3 Bucket)"
   type        = string
   default     = ""
 }
-variable "red5pro_cloudstorage_aws_bucket_name" {
+variable "standalone_red5pro_cloudstorage_aws_bucket_name" {
   description = "Red5 Pro server cloud storage - AWS bucket name (S3 Bucket)"
   type        = string
   default     = ""
 }
-variable "red5pro_cloudstorage_aws_region" {
+variable "standalone_red5pro_cloudstorage_aws_region" {
   description = "Red5 Pro server cloud storage - AWS region (S3 Bucket)"
   type        = string
   default     = ""
 }
-variable "red5pro_cloudstorage_postprocessor_enable" {
+variable "standalone_red5pro_cloudstorage_postprocessor_enable" {
   description = "Red5 Pro server cloud storage - enable/disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)"
   type        = bool
   default     = false
 }
-variable "red5pro_cloudstorage_aws_bucket_acl_policy" {
+variable "standalone_red5pro_cloudstorage_aws_bucket_acl_policy" {
   description = "Red5 Pro server cloud storage - AWS bucket ACL policy (S3 Bucket). Example: none, public-read, authenticated-read, private, public-read-write"
   type        = string
   default     = "public-read"
 }
 
-variable "red5pro_stream_auto_record_enable" {
+variable "standalone_red5pro_stream_auto_record_enable" {
   description = "Red5 Pro server - enable/disable broadcast stream auto record"
   type        = bool
   default     = false
 }
-variable "red5pro_coturn_enable" {
+variable "standalone_red5pro_coturn_enable" {
   description = "Red5Pro server customized Coturn configuration"
   type        = bool
   default     = false
 }
-variable "red5pro_coturn_address" {
+variable "standalone_red5pro_coturn_address" {
   description = "Red5Pro server customized Coturn address. Example: stun:1.2.3.4:3478"
   type        = string
   default     = ""
 }
-variable "red5pro_efs_enable" {
+variable "standalone_red5pro_efs_enable" {
   description = "Red5 Pro server enable/disable EFS mount to record streams"
   type        = bool
   default     = false
 }
-variable "red5pro_efs_dns_name" {
+variable "standalone_red5pro_efs_dns_name" {
   description = "Red5 Pro server EFS DNS name"
   type        = string
   default     = ""
 }
-variable "red5pro_efs_mount_point" {
+variable "standalone_red5pro_efs_mount_point" {
   description = "Red5 Pro server EFS mount point"
   type        = string
   default     = "/usr/local/red5pro/webapps/live/streams"
 }
-variable "red5pro_brew_mixer_enable" {
+variable "standalone_red5pro_brew_mixer_enable" {
   description = "Red5 Pro server enable/disable brew mixer"
   type        = bool
   default     = false
 }
+
 
 # kafka configuration
 variable "kafka_standalone_instance_create" {

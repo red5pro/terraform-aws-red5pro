@@ -58,7 +58,7 @@ module "red5pro" {
   # Red5Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
   red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
-  red5pro_api_key     = "examplekey"          # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
+  red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
   # Standalone Red5pro Server Configuration
   standalone_red5pro_inspector_enable                    = false                              # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5.net/docs/troubleshooting/inspector/overview/)
@@ -74,19 +74,19 @@ module "red5pro" {
   standalone_red5pro_round_trip_auth_protocol            = "http"                             # Round trip authentication server protocol
   standalone_red5pro_round_trip_auth_endpoint_validate   = "/validateCredentials"             # Round trip authentication server endpoint for validate
   standalone_red5pro_round_trip_auth_endpoint_invalidate = "/invalidateCredentials"           # Round trip authentication server endpoint for invalidate
-  red5pro_cloudstorage_enable                            = false                              # true - enable Red5 Pro server cloud storage, false - disable Red5 Pro server cloud storage (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)
-  red5pro_cloudstorage_aws_access_key                    = ""                                 # AWS access key for Red5 Pro cloud storage (S3 Bucket)
-  red5pro_cloudstorage_aws_secret_key                    = ""                                 # AWS secret key for Red5 Pro cloud storage (S3 Bucket)
-  red5pro_cloudstorage_aws_bucket_name                   = "s3-bucket-example-name"           # AWS bucket name for Red5 Pro cloud storage (S3 Bucket)
-  red5pro_cloudstorage_aws_region                        = "us-east-1"                        # AWS region for Red5 Pro cloud storage  (S3 Bucket)
-  red5pro_cloudstorage_postprocessor_enable              = false                              # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
-  red5pro_cloudstorage_aws_bucket_acl_policy             = "public-read"                      # AWS bucket ACL policy for Red5 Pro cloud storage (S3 Bucket) Example: none, public-read, authenticated-read, private, public-read-write
-  red5pro_stream_auto_record_enable                      = false                              # true - enable Red5 Pro server broadcast stream auto record, false - disable Red5 Pro server broadcast stream auto record
-  red5pro_coturn_enable                                  = false                              # true - enable customized Coturn configuration for Red5Pro server, false - disable customized Coturn configuration for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
-  red5pro_coturn_address                                 = "stun:1.2.3.4:3478"                # Customized coturn address for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
-  red5pro_efs_enable                                     = false                              # enable/disable EFS mount to record streams
-  red5pro_efs_dns_name                                   = "example.efs.region.amazonaws.com" # EFS DNS name
-  red5pro_brew_mixer_enable                              = false                              # true - enable Red5 Pro server brew mixer, false - disable Red5 Pro server brew mixer
+  standalone_red5pro_cloudstorage_enable                 = false                              # true - enable Red5 Pro server cloud storage, false - disable Red5 Pro server cloud storage (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)
+  standalone_red5pro_cloudstorage_aws_access_key         = ""                                 # AWS access key for Red5 Pro cloud storage (S3 Bucket)
+  standalone_red5pro_cloudstorage_aws_secret_key         = ""                                 # AWS secret key for Red5 Pro cloud storage (S3 Bucket)
+  standalone_red5pro_cloudstorage_aws_bucket_name        = "s3-bucket-example-name"           # AWS bucket name for Red5 Pro cloud storage (S3 Bucket)
+  standalone_red5pro_cloudstorage_aws_region             = "us-east-1"                        # AWS region for Red5 Pro cloud storage  (S3 Bucket)
+  standalone_red5pro_cloudstorage_postprocessor_enable   = false                              # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
+  standalone_red5pro_cloudstorage_aws_bucket_acl_policy  = "public-read"                      # AWS bucket ACL policy for Red5 Pro cloud storage (S3 Bucket) Example: none, public-read, authenticated-read, private, public-read-write
+  standalone_red5pro_stream_auto_record_enable           = false                              # true - enable Red5 Pro server broadcast stream auto record, false - disable Red5 Pro server broadcast stream auto record
+  standalone_red5pro_coturn_enable                       = false                              # true - enable customized Coturn configuration for Red5Pro server, false - disable customized Coturn configuration for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
+  standalone_red5pro_coturn_address                      = "stun:1.2.3.4:3478"                # Customized coturn address for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
+  standalone_red5pro_efs_enable                          = false                              # enable/disable EFS mount to record streams
+  standalone_red5pro_efs_dns_name                        = "example.efs.region.amazonaws.com" # EFS DNS name
+  standalone_red5pro_brew_mixer_enable                   = false                              # true - enable Red5 Pro server brew mixer, false - disable Red5 Pro server brew mixer
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {
