@@ -9,7 +9,6 @@ locals {
   vpc_id                        = var.vpc_use_existing ? var.vpc_id_existing : aws_vpc.red5pro_vpc[0].id
   vpc_name                      = var.vpc_use_existing ? data.aws_vpc.selected[0].tags.Name : aws_vpc.red5pro_vpc[0].tags.Name
   subnet_ids                    = var.vpc_use_existing ? data.aws_subnets.all[0].ids : tolist(aws_subnet.red5pro_subnets[*].id)
-  subnet_name                   = var.vpc_use_existing ? [for subnet_id in data.aws_subnets.all[0].ids : lookup(data.aws_subnet.all_subnets[subnet_id].tags, "Name", "Unnamed-Subnet")] : tolist([for subnet in aws_subnet.red5pro_subnets : lookup(subnet.tags, "Name", "Unnamed-Subnet")])
   kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
   kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? aws_instance.red5pro_kafka[0].private_ip : aws_instance.red5pro_sm[0].private_ip : "null"
   kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
@@ -204,7 +203,7 @@ resource "aws_internet_gateway" "red5pro_igw" {
 }
 
 resource "aws_subnet" "red5pro_subnets" {
-  count                   = var.vpc_use_existing ? 0 : length(data.aws_availability_zones.available[0].names) 
+  count                   = var.vpc_use_existing ? 0 : length(data.aws_availability_zones.available[0].names)
   vpc_id                  = aws_vpc.red5pro_vpc[0].id
   cidr_block              = element(var.vpc_public_subnets, count.index)
   map_public_ip_on_launch = true

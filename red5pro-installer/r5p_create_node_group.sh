@@ -13,7 +13,7 @@
 
 # NODE_GROUP_REGION="us-ashburn-1"
 # NODE_ENVIRONMENT="terra"
-# NODE_SUBNET_NAME="red5-ci-deployments-multiregion-subnet-public"
+# NODE_VPC_NAME="red5pro-vpc"
 # NODE_SECURITY_GROUP_NAME="red5-ci-deployments-multiregion-node-nsg"
 # NODE_IMAGE_NAME="as-node-b3367-b290"
 
