@@ -45,10 +45,10 @@
                     "min": "ORIGINS_MIN",
                     "max": "ORIGINS_MAX",
                     "increment": 1,
-                    "outExpression": "(avg(connections.client) / 200) * 0.5 + (avg(connections.publisher) / 50) * 0.5 > 1.0",
-                    "inExpression": "avg(connections.client) < 10",
-                    "capacityRankingExpression": "(connections.client / 200) * 10",
-                    "capacityLimitExpression": "10"
+                    "outExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) > 1.0",
+                    "inExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) < 0.2",
+                    "capacityRankingExpression": "cpu.loadavg.1min / cpu.processors",
+                    "capacityLimitExpression": "2.0"
                 },
                 "edge": {
                     "nodeGroupName": "nodegroup-oe",
@@ -57,10 +57,10 @@
                     "min": "EDGES_MIN",
                     "max": "EDGES_MAX",
                     "increment": 1,
-                    "outExpression": "(avg(connections.client) / 200) * 0.5 + (avg(connections.subscriber) / 50) * 0.5 > 1.0",
-                    "inExpression": "avg(connections.client) < 10",
-                    "capacityRankingExpression": "(connections.client / 200) * 10",
-                    "capacityLimitExpression": "10"
+                    "outExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) > 1.0",
+                    "inExpression": "avg(cpu.loadavg.1min) / avg(cpu.processors) < 0.2",
+                    "capacityRankingExpression": "cpu.loadavg.1min / cpu.processors",
+                    "capacityLimitExpression": "2.0"
                 }
             },
             "cloudProperties": "region=NODE_GROUP_REGION"

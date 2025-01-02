@@ -35,7 +35,7 @@ output "stream_manager_url_https" {
   value       = local.cluster_or_autoscale && var.https_ssl_certificate != "none" ? "https://${var.https_ssl_certificate_domain_name}:443" : ""
 }
 output "stream_manager_red5pro_node_image" {
-  description = "Stream Manager 2.0 Red5 Pro Node Image (OCI Custom Image)"
+  description = "Stream Manager 2.0 Red5 Pro Node Image (AWS AMI)"
   value       = try(aws_ami_from_instance.red5pro_node_image[0].name, "")
 }
 output "standalone_red5pro_server_ip" {
@@ -56,5 +56,5 @@ output "manual_dns_record" {
 }
 output "standalone_red5pro_server_brew_mixer_controller_page_url" {
   description = "standalone Red5 Pro Server Brew Mixer Controller Page URL"
-  value       = local.standalone && var.red5pro_brew_mixer_enable ? "https://${var.https_ssl_certificate_domain_name}/brewmixer/rtController.html" : null
+  value       = local.standalone && var.standalone_red5pro_brew_mixer_enable ? var.https_ssl_certificate == "none" ? "http://${local.standalone_elastic_ip}:5080/brewmixer/rtController.html" : "https://${var.https_ssl_certificate_domain_name}/brewmixer/rtController.html" : null
 }

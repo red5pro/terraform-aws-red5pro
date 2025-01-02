@@ -10,7 +10,7 @@ provider "aws" {
 
 module "red5pro" {
   source = "../../"
-  type   = "standalone"         # Deployment type: single, cluster, autoscale
+  type   = "standalone"         # Deployment type: standalone, cluster, autoscale
   name   = "red5pro-standalone" # Name to be used on all the resources as identifier
 
   ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
@@ -22,12 +22,8 @@ module "red5pro" {
   ssh_private_key_path = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # Path to existing SSH private key
 
   # VPC configuration
-  vpc_create      = false       # true - create new VPC, false - use existing VPC
+  vpc_use_existing      = false         # true - use existing VPC and subnets, false - create new VPC and subnets
   vpc_id_existing = "vpc-12345" # VPC ID for existing VPC
-
-  # Security group configuration
-  security_group_create      = false      # true - create new security group, false - use existing security group
-  security_group_id_existing = "sg-12345" # Security group ID for existing security group
 
   # Elastic IP configuration
   standalone_elastic_ip_create   = true      # true - create new elastic IP, false - use existing elastic IP
@@ -66,6 +62,8 @@ module "red5pro" {
   standalone_red5pro_socialpusher_enable                 = false                              # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5.net/docs/special/social-media-plugin/overview/)
   standalone_red5pro_suppressor_enable                   = false                              # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
   standalone_red5pro_hls_enable                          = false                              # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5.net/docs/protocols/hls-plugin/hls-vod/)
+  standalone_red5pro_hls_output_format                   = "TS"                               # HLS output format. Options: TS, FMP4, SMP4
+  standalone_red5pro_hls_dvr_playlist                    = "false"                            # HLS DVR playlist. Options: true, false
   standalone_red5pro_webhooks_enable                     = false                              # true - enable Red5 Pro server webhooks, false - disable Red5 Pro server webhooks (https://www.red5.net/docs/special/webhooks/overview/)
   standalone_red5pro_webhooks_endpoint                   = "https://example.com/red5/status"  # Red5 Pro server webhooks endpoint
   standalone_red5pro_round_trip_auth_enable              = false                              # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5.net/docs/special/round-trip-auth/overview/)
@@ -86,6 +84,7 @@ module "red5pro" {
   standalone_red5pro_coturn_address                      = "stun:1.2.3.4:3478"                # Customized coturn address for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
   standalone_red5pro_efs_enable                          = false                              # enable/disable EFS mount to record streams
   standalone_red5pro_efs_dns_name                        = "example.efs.region.amazonaws.com" # EFS DNS name
+  standalone_red5pro_efs_mount_point                     = "/usr/local/red5pro/webapps/live/streams"                         # EFS mount point
   standalone_red5pro_brew_mixer_enable                   = false                              # true - enable Red5 Pro server brew mixer, false - disable Red5 Pro server brew mixer
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources

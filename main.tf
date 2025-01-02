@@ -3,14 +3,13 @@ locals {
   cluster                       = var.type == "cluster" ? true : false
   autoscale                     = var.type == "autoscale" ? true : false
   cluster_or_autoscale          = local.cluster || local.autoscale ? true : false
-  vpc                           = var.type == "vpc" ? true : false
-  ssh_key_name                  = local.vpc ? null : var.ssh_key_create ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
-  ssh_private_key               = local.vpc ? null : var.ssh_key_create ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_private_key_path)
-  ssh_private_key_path          = local.vpc ? null : var.ssh_key_create ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_private_key_path
-  vpc_id                        = var.vpc_create ? aws_vpc.red5pro_vpc[0].id : var.vpc_id_existing
-  vpc_name                      = var.vpc_create ? aws_vpc.red5pro_vpc[0].tags.Name : data.aws_vpc.selected[0].tags.Name
-  subnet_ids                    = var.vpc_create ? tolist(aws_subnet.red5pro_subnets[*].id) : data.aws_subnets.all[0].ids
-  subnet_name                   = var.vpc_create ? tolist([for subnet in aws_subnet.red5pro_subnets : lookup(subnet.tags, "Name", "Unnamed-Subnet")]) : [for subnet_id in data.aws_subnets.all[0].ids : lookup(data.aws_subnet.all_subnets[subnet_id].tags, "Name", "Unnamed-Subnet")]
+  ssh_key_name                  = var.ssh_key_create ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
+  ssh_private_key               = var.ssh_key_create ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_private_key_path)
+  ssh_private_key_path          = var.ssh_key_create ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_private_key_path
+  vpc_id                        = var.vpc_use_existing ? var.vpc_id_existing : aws_vpc.red5pro_vpc[0].id
+  vpc_name                      = var.vpc_use_existing ? data.aws_vpc.selected[0].tags.Name : aws_vpc.red5pro_vpc[0].tags.Name
+  subnet_ids                    = var.vpc_use_existing ? data.aws_subnets.all[0].ids : tolist(aws_subnet.red5pro_subnets[*].id)
+  subnet_name                   = var.vpc_use_existing ? [for subnet_id in data.aws_subnets.all[0].ids : lookup(data.aws_subnet.all_subnets[subnet_id].tags, "Name", "Unnamed-Subnet")] : tolist([for subnet in aws_subnet.red5pro_subnets : lookup(subnet.tags, "Name", "Unnamed-Subnet")])
   kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
   kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? aws_instance.red5pro_kafka[0].private_ip : aws_instance.red5pro_sm[0].private_ip : "null"
   kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
@@ -76,34 +75,34 @@ resource "aws_eip_association" "elastic_ip_association_sm" {
 
 # SSH key pair generation
 resource "tls_private_key" "red5pro_ssh_key" {
-  count     = local.vpc ? 0 : var.ssh_key_create ? 1 : 0
+  count     = var.ssh_key_create ? 1 : 0
   algorithm = "RSA"
   rsa_bits  = 2048
 }
 
 # Import SSH key pair to AWS
 resource "aws_key_pair" "red5pro_ssh_key" {
-  count      = local.vpc ? 0 : var.ssh_key_create ? 1 : 0
+  count      = var.ssh_key_create ? 1 : 0
   key_name   = var.ssh_key_name
   public_key = tls_private_key.red5pro_ssh_key[0].public_key_openssh
 }
 
 # Save SSH key pair files to local folder
 resource "local_file" "red5pro_ssh_key_pem" {
-  count           = local.vpc ? 0 : var.ssh_key_create ? 1 : 0
+  count           = var.ssh_key_create ? 1 : 0
   filename        = "./${var.ssh_key_name}.pem"
   content         = tls_private_key.red5pro_ssh_key[0].private_key_pem
   file_permission = "0400"
 }
 resource "local_file" "red5pro_ssh_key_pub" {
-  count    = local.vpc ? 0 : var.ssh_key_create ? 1 : 0
+  count    = var.ssh_key_create ? 1 : 0
   filename = "./${var.ssh_key_name}.pub"
   content  = tls_private_key.red5pro_ssh_key[0].public_key_openssh
 }
 
 # Check current SSH key pair on the AWS
 data "aws_key_pair" "ssh_key_pair" {
-  count    = local.vpc ? 0 : var.ssh_key_create ? 0 : 1
+  count    = var.ssh_key_create ? 0 : 1
   key_name = var.ssh_key_name
 }
 ################################################################################
@@ -129,7 +128,7 @@ data "aws_ami" "latest_ubuntu" {
 ################################################################################
 
 data "aws_vpc" "selected" {
-  count = var.vpc_create ? 0 : 1
+  count = var.vpc_use_existing ? 1 : 0
   id    = var.vpc_id_existing
   lifecycle {
     postcondition {
@@ -142,7 +141,7 @@ data "aws_vpc" "selected" {
 }
 
 data "aws_subnets" "all" {
-  count = var.vpc_create ? 0 : 1
+  count = var.vpc_use_existing ? 1 : 0
   filter {
     name   = "vpc-id"
     values = [var.vpc_id_existing]
@@ -156,7 +155,7 @@ data "aws_subnets" "all" {
 }
 
 data "aws_subnet" "all_subnets" {
-  for_each = var.vpc_create ? toset([]) : toset(data.aws_subnets.all[0].ids)
+  for_each = var.vpc_use_existing ? toset(data.aws_subnets.all[0].ids) : toset([])
   id       = each.value
   lifecycle {
     postcondition {
@@ -171,7 +170,7 @@ data "aws_subnet" "all_subnets" {
 ################################################################################
 
 data "aws_availability_zones" "available" {
-  count = var.vpc_create ? 1 : 0
+  count = var.vpc_use_existing ? 0 : 1
   state = "available"
 
   filter {
@@ -188,7 +187,7 @@ data "aws_availability_zones" "available" {
 }
 
 resource "aws_vpc" "red5pro_vpc" {
-  count                = var.vpc_create ? 1 : 0
+  count                = var.vpc_use_existing ? 0 : 1
   cidr_block           = var.vpc_cidr_block
   instance_tenancy     = "default"
   enable_dns_support   = true
@@ -198,14 +197,14 @@ resource "aws_vpc" "red5pro_vpc" {
 }
 
 resource "aws_internet_gateway" "red5pro_igw" {
-  count  = var.vpc_create ? 1 : 0
+  count  = var.vpc_use_existing ? 0 : 1
   vpc_id = aws_vpc.red5pro_vpc[0].id
 
   tags = merge({ "Name" = "${var.name}-igw" }, var.tags, )
 }
 
 resource "aws_subnet" "red5pro_subnets" {
-  count                   = var.vpc_create ? length(data.aws_availability_zones.available[0].names) : 0
+  count                   = var.vpc_use_existing ? 0 : length(data.aws_availability_zones.available[0].names) 
   vpc_id                  = aws_vpc.red5pro_vpc[0].id
   cidr_block              = element(var.vpc_public_subnets, count.index)
   map_public_ip_on_launch = true
@@ -215,7 +214,7 @@ resource "aws_subnet" "red5pro_subnets" {
 }
 
 resource "aws_route" "red5pro_route" {
-  count                  = var.vpc_create ? 1 : 0
+  count                  = var.vpc_use_existing ? 0 : 1
   route_table_id         = aws_vpc.red5pro_vpc[0].main_route_table_id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.red5pro_igw[0].id
@@ -223,7 +222,7 @@ resource "aws_route" "red5pro_route" {
 }
 
 resource "aws_route_table_association" "red5pro_subnets_association" {
-  count          = var.vpc_create ? length(aws_subnet.red5pro_subnets) : 0
+  count          = var.vpc_use_existing ? 0 : length(aws_subnet.red5pro_subnets)
   subnet_id      = aws_subnet.red5pro_subnets[count.index].id
   route_table_id = aws_vpc.red5pro_vpc[0].main_route_table_id
 }
@@ -436,17 +435,38 @@ resource "aws_instance" "red5pro_standalone" {
       "export NODE_SOCIALPUSHER_ENABLE='${var.standalone_red5pro_socialpusher_enable}'",
       "export NODE_SUPPRESSOR_ENABLE='${var.standalone_red5pro_suppressor_enable}'",
       "export NODE_HLS_ENABLE='${var.standalone_red5pro_hls_enable}'",
+      "export NODE_HLS_OUTPUT_FORMAT='${var.standalone_red5pro_hls_output_format}'",
+      "export NODE_HLS_DVR_PLAYLIST='${var.standalone_red5pro_hls_dvr_playlist}'",
+      "export NODE_WEBHOOKS_ENABLE='${var.standalone_red5pro_webhooks_enable}'",
+      "export NODE_WEBHOOKS_ENDPOINT='${var.standalone_red5pro_webhooks_endpoint}'",
       "export NODE_ROUND_TRIP_AUTH_ENABLE='${var.standalone_red5pro_round_trip_auth_enable}'",
       "export NODE_ROUND_TRIP_AUTH_HOST='${var.standalone_red5pro_round_trip_auth_host}'",
       "export NODE_ROUND_TRIP_AUTH_PORT='${var.standalone_red5pro_round_trip_auth_port}'",
       "export NODE_ROUND_TRIP_AUTH_PROTOCOL='${var.standalone_red5pro_round_trip_auth_protocol}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE='${var.standalone_red5pro_round_trip_auth_endpoint_validate}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE='${var.standalone_red5pro_round_trip_auth_endpoint_invalidate}'",
+      "export NODE_CLOUDSTORAGE_ENABLE='${var.standalone_red5pro_cloudstorage_enable}'",
+      "export NODE_CLOUDSTORAGE_AWS_ACCESS_KEY='${var.standalone_red5pro_cloudstorage_aws_access_key}'",
+      "export NODE_CLOUDSTORAGE_AWS_SECRET_KEY='${var.standalone_red5pro_cloudstorage_aws_secret_key}'",
+      "export NODE_CLOUDSTORAGE_AWS_BUCKET_NAME='${var.standalone_red5pro_cloudstorage_aws_bucket_name}'",
+      "export NODE_CLOUDSTORAGE_AWS_REGION='${var.standalone_red5pro_cloudstorage_aws_region}'",
+      "export NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE='${var.standalone_red5pro_cloudstorage_postprocessor_enable}'",
+      "export NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY='${var.standalone_red5pro_cloudstorage_aws_bucket_acl_policy}'",
+      "export NODE_STREAM_AUTO_RECORD_ENABLE='${var.standalone_red5pro_stream_auto_record_enable}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_node_apps_plugins.sh",
-      "sudo systemctl daemon-reload && sudo systemctl start red5pro",
+      "export COTURN_ENABLE='${var.standalone_red5pro_coturn_enable}'",
+      "export COTURN_ADDRESS='${var.standalone_red5pro_coturn_address}'",
+      "sudo -E /home/ubuntu/red5pro-installer/r5p_config_coturn.sh",
+      "export NODE_EFS_ENABLE='${var.standalone_red5pro_efs_enable}'",
+      "export NODE_EFS_DNS_NAME='${var.standalone_red5pro_efs_dns_name}'",
+      "export NODE_EFS_MOUNT_POINT='${var.standalone_red5pro_efs_mount_point}'",
+      "sudo -E /home/ubuntu/red5pro-installer/r5p_config_efs.sh",
+      "export BREW_MIXER_ENABLE='${var.standalone_red5pro_brew_mixer_enable}'",
+      "[ $BREW_MIXER_ENABLE = true ] && echo 'Start Brew Mixer configuration...' && cd /usr/local/red5pro/extras/brewmixer/ && sudo bash ./node-mixer-standalone-deploy.sh",
+      "sudo systemctl daemon-reload && sudo systemctl restart red5pro",
       "sudo mkdir -p /usr/local/red5pro/certs",
       "echo '${try(file(var.https_ssl_certificate_cert_path), "")}' | sudo tee -a /usr/local/red5pro/certs/fullchain.pem",
       "echo '${try(file(var.https_ssl_certificate_key_path), "")}' | sudo tee -a /usr/local/red5pro/certs/privkey.pem",

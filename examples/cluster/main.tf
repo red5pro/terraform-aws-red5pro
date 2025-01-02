@@ -26,12 +26,12 @@ module "red5pro" {
   ssh_private_key_path = "/PATH/TO/SSH/PUBLIC/KEY/example_private_key.pem" # Path to existing SSH private key
 
   # VPC configuration
-  vpc_create      = false        # true - create new VPC, false - use existing VPC
+  vpc_use_existing      = false         # true - use existing VPC and subnets, false - create new VPC and subnets
   vpc_id_existing = "vpc-12345" # VPC ID for existing VPC
 
   # Kafka standalone instance configuration
   kafka_standalone_instance_create = true
-  kafka_standalone_instance_type   = "c5.2xlarge" # OCI Instance type for Kafka standalone instance
+  kafka_standalone_instance_type   = "c5.2xlarge" # Instance type for Kafka standalone instance
   kafka_standalone_volume_size     = 16           # Volume size in GB for Kafka standalone instance
 
   # Stream Manager configuration 

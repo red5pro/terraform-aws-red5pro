@@ -12,7 +12,7 @@ variable "type" {
   type        = string
   default     = ""
   validation {
-    condition     = var.type == "standalone" || var.type == "cluster" || var.type == "autoscale" || var.type == "vpc"
+    condition     = var.type == "standalone" || var.type == "cluster" || var.type == "autoscale"
     error_message = "The type value must be a valid! Example: standalone, cluster, autoscale"
   }
 }
@@ -52,10 +52,10 @@ variable "ssh_private_key_path" {
   default     = ""
 }
 # VPC configuration
-variable "vpc_create" {
-  description = "Create a new VPC or use an existing one. true = create new, false = use existing"
+variable "vpc_use_existing" {
+  description = "Use existing VPC or create a new one. true = use existing, false = create new"
   type        = bool
-  default     = true
+  default     = false
 }
 variable "vpc_id_existing" {
   description = "VPC ID, this VPC should have minimum 2 public subnets."
@@ -64,21 +64,6 @@ variable "vpc_id_existing" {
   validation {
     condition     = length(var.vpc_id_existing) > 4 && substr(var.vpc_id_existing, 0, 4) == "vpc-"
     error_message = "The vpc_id_existing value must be a valid! Example: vpc-12345"
-  }
-}
-# Security group configuration
-variable "security_group_create" {
-  description = "Create a new Security group or use an existing one. true = create new, false = use existing"
-  type        = bool
-  default     = false
-}
-variable "security_group_id_existing" {
-  description = "Security group ID, this Security group should have open default Red5Pro ports: TCP:443,5080,80,1935,8554, UDP:40000-65535"
-  type        = string
-  default     = "sg-12345"
-  validation {
-    condition     = length(var.security_group_id_existing) > 4 && substr(var.security_group_id_existing, 0, 3) == "sg-"
-    error_message = "The security_group_id_existing value must be a valid! Example: sg-12345"
   }
 }
 
@@ -115,7 +100,11 @@ variable "standalone_instance_type" {
 variable "standalone_volume_size" {
   description = "Red5 Pro standalone server volume size"
   type        = number
-  default     = 8
+  default     = 16
+  validation {
+    condition     = var.standalone_volume_size >= 8
+    error_message = "The standalone_volume_size value must be a valid! Minimum 8"
+  }
 }
 variable "standalone_red5pro_inspector_enable" {
   description = "Red5 Pro standalone server Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
@@ -146,6 +135,11 @@ variable "standalone_red5pro_hls_output_format" {
   description = "Red5 Pro standalone server - HLS output format. Options: TS, FMP4, SMP4"
   type        = string
   default     = "TS"
+}
+variable "standalone_red5pro_hls_dvr_playlist" {
+  description = "Red5 Pro standalone server - HLS DVR playlist"
+  type        = string
+  default     = "false"
 }
 variable "standalone_red5pro_webhooks_enable" {
   description = "Red5 Pro standalone server Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
@@ -258,8 +252,6 @@ variable "standalone_red5pro_brew_mixer_enable" {
   type        = bool
   default     = false
 }
-
-
 # kafka configuration
 variable "kafka_standalone_instance_create" {
   description = "Create a new Kafka standalone instance true/false"
@@ -274,7 +266,11 @@ variable "kafka_standalone_instance_type" {
 variable "kafka_standalone_volume_size" {
   description = "value to set the volume size for kafka"
   type        = number
-  default     = 50
+  default     = 24
+  validation {
+    condition     = var.kafka_standalone_volume_size >= 8
+    error_message = "The kafka_standalone_volume_size value must be a valid! Minimum 8"
+  }
 }
 variable "kafka_standalone_instance_arhive_url" {
   description = "Kafka standalone instance - archive URL"
@@ -329,7 +325,11 @@ variable "stream_manager_instance_type" {
 variable "stream_manager_volume_size" {
   description = "value to set the volume size for stream manager"
   type        = number
-  default     = 20
+  default     = 24
+  validation {
+    condition     = var.stream_manager_volume_size >= 8
+    error_message = "The stream_manager_volume_size value must be a valid! Minimum 8"
+  }
 }
 variable "stream_manager_api_key" {
   description = "value to set the api key for stream manager"
@@ -393,7 +393,7 @@ variable "red5pro_api_key" {
   default     = ""
 }
 
-# Red5 Pro Origin node image configuration
+# Red5 Pro Node image configuration
 variable "node_image_create" {
   description = "Create new Origin node image true/false. (Default:true) (https://www.red5.net/docs/special/relays/overview/#origin-and-edge-nodes)"
   type        = bool
@@ -408,367 +408,10 @@ variable "node_image_volume_size" {
   description = "node image - volume size"
   type        = number
   default     = 8
-}
-variable "origin_image_red5pro_inspector_enable" {
-  description = "Origin node image - Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
-  type        = bool
-  default     = false
-}
-variable "origin_image_red5pro_restreamer_enable" {
-  description = "Origin node image - Restreamer enable/disable (https://www.red5.net/docs/special/restreamer/overview/)"
-  type        = bool
-  default     = false
-}
-variable "origin_image_red5pro_socialpusher_enable" {
-  description = "Origin node image - SocialPusher enable/disable (https://www.red5.net/docs/special/social-media-plugin/rest-api/)"
-  type        = bool
-  default     = false
-}
-variable "origin_image_red5pro_suppressor_enable" {
-  description = "Origin node image - Suppressor enable/disable"
-  type        = bool
-  default     = false
-}
-variable "origin_image_red5pro_hls_enable" {
-  description = "Origin node image - HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
-  type        = bool
-  default     = false
-}
-variable "origin_image_red5pro_webhooks_enable" {
-  description = "Origin node image - Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
-  type        = bool
-  default     = false
-}
-variable "origin_image_red5pro_hls_output_format" {
-  description = "Origin node image - HLS output format. Options: TS, FMP4, SMP4"
-  type        = string
-  default     = "TS"
-}
-variable "origin_image_red5pro_hls_dvr_playlist" {
-  description = "Origin node image - HLS DVR playlist"
-  type        = string
-  default     = "false"
-}
-variable "origin_image_red5pro_webhooks_endpoint" {
-  description = "Origin node image - Webhooks endpoint"
-  type        = string
-  default     = ""
-}
-variable "origin_image_red5pro_round_trip_auth_enable" {
-  description = "Origin node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
-  type        = bool
-  default     = false
-}
-variable "origin_image_red5pro_round_trip_auth_host" {
-  description = "Origin node image - Round trip authentication server host"
-  type        = string
-  default     = ""
-}
-variable "origin_image_red5pro_round_trip_auth_port" {
-  description = "Origin node image - Round trip authentication server port"
-  type        = number
-  default     = 3000
-}
-variable "origin_image_red5pro_round_trip_auth_protocol" {
-  description = "Origin node image - Round trip authentication server protocol"
-  type        = string
-  default     = "http"
-}
-variable "origin_image_red5pro_round_trip_auth_endpoint_validate" {
-  description = "Origin node image - Round trip authentication server endpoint for validate"
-  type        = string
-  default     = "/validateCredentials"
-}
-variable "origin_image_red5pro_round_trip_auth_endpoint_invalidate" {
-  description = "Origin node image - Round trip authentication server endpoint for invalidate"
-  type        = string
-  default     = "/invalidateCredentials"
-}
-variable "origin_image_red5pro_stream_auto_record_enable" {
-  description = "Origin node image - enable/disable Red5 Pro server broadcast stream auto record"
-  type        = bool
-  default     = false
-}
-variable "origin_image_red5pro_efs_enable" {
-  description = "Origin node image enable/disable EFS mount to record streams"
-  type        = bool
-  default     = false
-}
-variable "origin_image_red5pro_efs_dns_name" {
-  description = "Origin node image - EFS DNS name"
-  type        = string
-  default     = ""
-}
-variable "origin_image_red5pro_efs_mount_point" {
-  description = "Origin node image - EFS mount point"
-  type        = string
-  default     = "/usr/local/red5pro/webapps/live/streams"
-}
-
-# Red5 Pro Edge node image configuration
-variable "edge_image_create" {
-  description = "Create new Edge node image true/false. (Default:true) (https://www.red5.net/docs/special/relays/overview/#origin-and-edge-nodes)"
-  type        = bool
-  default     = false
-}
-variable "edge_image_instance_type" {
-  description = "Edge node image - instance type"
-  type        = string
-  default     = "t3.medium"
-}
-variable "edge_image_volume_size" {
-  description = "Edge node image - volume size"
-  type        = number
-  default     = 8
-}
-variable "edge_image_red5pro_inspector_enable" {
-  description = "Edge node image - Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
-  type        = bool
-  default     = false
-}
-variable "edge_image_red5pro_restreamer_enable" {
-  description = "Edge node image - Restreamer enable/disable (https://www.red5.net/docs/special/restreamer/overview/)"
-  type        = bool
-  default     = false
-}
-variable "edge_image_red5pro_socialpusher_enable" {
-  description = "Edge node image - SocialPusher enable/disable (https://www.red5.net/docs/special/social-media-plugin/rest-api/)"
-  type        = bool
-  default     = false
-}
-variable "edge_image_red5pro_suppressor_enable" {
-  description = "Edge node image - Suppressor enable/disable"
-  type        = bool
-  default     = false
-}
-variable "edge_image_red5pro_hls_enable" {
-  description = "Edge node image - HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
-  type        = bool
-  default     = false
-}
-variable "edge_image_red5pro_webhooks_enable" {
-  description = "Edge node image - Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
-  type        = bool
-  default     = false
-}
-variable "edge_image_red5pro_webhooks_endpoint" {
-  description = "Edge node image - Webhooks endpoint"
-  type        = string
-  default     = ""
-}
-variable "edge_image_red5pro_round_trip_auth_enable" {
-  description = "Edge node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
-  type        = bool
-  default     = false
-}
-variable "edge_image_red5pro_round_trip_auth_host" {
-  description = "Edge node image - Round trip authentication server host"
-  type        = string
-  default     = ""
-}
-variable "edge_image_red5pro_round_trip_auth_port" {
-  description = "Edge node image - Round trip authentication server port"
-  type        = number
-  default     = 3000
-}
-variable "edge_image_red5pro_round_trip_auth_protocol" {
-  description = "Edge node image - Round trip authentication server protocol"
-  type        = string
-  default     = "http"
-}
-variable "edge_image_red5pro_round_trip_auth_endpoint_validate" {
-  description = "Edge node image - Round trip authentication server endpoint for validate"
-  type        = string
-  default     = "/validateCredentials"
-}
-variable "edge_image_red5pro_round_trip_auth_endpoint_invalidate" {
-  description = "Edge node image - Round trip authentication server endpoint for invalidate"
-  type        = string
-  default     = "/invalidateCredentials"
-}
-
-# Red5 Pro Transcoder node image configuration
-variable "transcoder_image_create" {
-  description = "Create new Transcoder node image true/false. (Default:true) (https://www.red5.net/docs/special/relays/overview/#origin-and-edge-nodes)"
-  type        = bool
-  default     = false
-}
-variable "transcoder_image_instance_type" {
-  description = "Transcoder node image - instance type"
-  type        = string
-  default     = "t3.medium"
-}
-variable "transcoder_image_volume_size" {
-  description = "Transcoder node image - volume size"
-  type        = number
-  default     = 8
-}
-variable "transcoder_image_red5pro_inspector_enable" {
-  description = "Transcoder node image - Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
-  type        = bool
-  default     = false
-}
-variable "transcoder_image_red5pro_restreamer_enable" {
-  description = "Transcoder node image - Restreamer enable/disable (https://www.red5.net/docs/special/restreamer/overview/)"
-  type        = bool
-  default     = false
-}
-variable "transcoder_image_red5pro_socialpusher_enable" {
-  description = "Transcoder node image - SocialPusher enable/disable (https://www.red5.net/docs/special/social-media-plugin/rest-api/)"
-  type        = bool
-  default     = false
-}
-variable "transcoder_image_red5pro_suppressor_enable" {
-  description = "Transcoder node image - Suppressor enable/disable"
-  type        = bool
-  default     = false
-}
-variable "transcoder_image_red5pro_hls_enable" {
-  description = "Transcoder node image - HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
-  type        = bool
-  default     = false
-}
-variable "transcoder_image_red5pro_hls_output_format" {
-  description = "Transcoder node image - HLS output format. Options: TS, FMP4, SMP4"
-  type        = string
-  default     = "TS"
-}
-variable "transcoder_image_red5pro_hls_dvr_playlist" {
-  description = "Transcoder node image - HLS DVR playlist"
-  type        = string
-  default     = "false"
-}
-variable "transcoder_image_red5pro_webhooks_enable" {
-  description = "Transcoder node image - Webhooks enable/disable (https://www.red5.net/docs/special/webhooks/overview/)"
-  type        = bool
-  default     = false
-}
-variable "transcoder_image_red5pro_webhooks_endpoint" {
-  description = "Transcoder node image - Webhooks endpoint"
-  type        = string
-  default     = ""
-}
-variable "transcoder_image_red5pro_round_trip_auth_enable" {
-  description = "Transcoder node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
-  type        = bool
-  default     = false
-}
-variable "transcoder_image_red5pro_round_trip_auth_host" {
-  description = "Transcoder node image - Round trip authentication server host"
-  type        = string
-  default     = ""
-}
-variable "transcoder_image_red5pro_round_trip_auth_port" {
-  description = "Transcoder node image - Round trip authentication server port"
-  type        = number
-  default     = 3000
-}
-variable "transcoder_image_red5pro_round_trip_auth_protocol" {
-  description = "Transcoder node image - Round trip authentication server protocol"
-  type        = string
-  default     = "http"
-}
-variable "transcoder_image_red5pro_round_trip_auth_endpoint_validate" {
-  description = "Transcoder node image - Round trip authentication server endpoint for validate"
-  type        = string
-  default     = "/validateCredentials"
-}
-variable "transcoder_image_red5pro_round_trip_auth_endpoint_invalidate" {
-  description = "Transcoder node image - Round trip authentication server endpoint for invalidate"
-  type        = string
-  default     = "/invalidateCredentials"
-}
-variable "transcoder_image_red5pro_stream_auto_record_enable" {
-  description = "Transcoder node image - enable/disable Red5 Pro server broadcast stream auto record"
-  type        = bool
-  default     = false
-}
-variable "transcoder_image_red5pro_efs_enable" {
-  description = "Transcoder node image enable/disable EFS mount to record streams"
-  type        = bool
-  default     = false
-}
-variable "transcoder_image_red5pro_efs_dns_name" {
-  description = "Transcoder node image - EFS DNS name"
-  type        = string
-  default     = ""
-}
-variable "transcoder_image_red5pro_efs_mount_point" {
-  description = "Transcoder node image - EFS mount point"
-  type        = string
-  default     = "/usr/local/red5pro/webapps/live/streams"
-}
-
-# Red5 Pro Relay node image configuration
-variable "relay_image_create" {
-  description = "Create new Relay node image true/false. (Default:true) (https://www.red5.net/docs/special/relays/overview/#origin-and-edge-nodes)"
-  type        = bool
-  default     = false
-}
-variable "relay_image_instance_type" {
-  description = "Relay node image - instance type"
-  type        = string
-  default     = "t3.medium"
-}
-variable "relay_image_volume_size" {
-  description = "Relay node image - volume size"
-  type        = number
-  default     = 8
-}
-variable "relay_image_red5pro_inspector_enable" {
-  description = "Relay node image - Inspector enable/disable (https://www.red5.net/docs/troubleshooting/inspector/overview/)"
-  type        = bool
-  default     = false
-}
-variable "relay_image_red5pro_restreamer_enable" {
-  description = "Relay node image - Restreamer enable/disable (https://www.red5.net/docs/special/restreamer/overview/)"
-  type        = bool
-  default     = false
-}
-variable "relay_image_red5pro_socialpusher_enable" {
-  description = "Relay node image - SocialPusher enable/disable (https://www.red5.net/docs/special/social-media-plugin/rest-api/)"
-  type        = bool
-  default     = false
-}
-variable "relay_image_red5pro_suppressor_enable" {
-  description = "Relay node image - Suppressor enable/disable"
-  type        = bool
-  default     = false
-}
-variable "relay_image_red5pro_hls_enable" {
-  description = "Relay node image - HLS enable/disable (https://www.red5.net/docs/protocols/hls-plugin/overview/)"
-  type        = bool
-  default     = false
-}
-variable "relay_image_red5pro_round_trip_auth_enable" {
-  description = "Relay node image - Round trip authentication on the enable/disable - Auth server should be deployed separately (https://www.red5.net/docs/special/round-trip-auth/overview/)"
-  type        = bool
-  default     = false
-}
-variable "relay_image_red5pro_round_trip_auth_host" {
-  description = "Relay node image - Round trip authentication server host"
-  type        = string
-  default     = ""
-}
-variable "relay_image_red5pro_round_trip_auth_port" {
-  description = "Relay node image - Round trip authentication server port"
-  type        = number
-  default     = 3000
-}
-variable "relay_image_red5pro_round_trip_auth_protocol" {
-  description = "Relay node image - Round trip authentication server protocol"
-  type        = string
-  default     = "http"
-}
-variable "relay_image_red5pro_round_trip_auth_endpoint_validate" {
-  description = "Relay node image - Round trip authentication server endpoint for validate"
-  type        = string
-  default     = "/validateCredentials"
-}
-variable "relay_image_red5pro_round_trip_auth_endpoint_invalidate" {
-  description = "Relay node image - Round trip authentication server endpoint for invalidate"
-  type        = string
-  default     = "/invalidateCredentials"
+  validation {
+    condition     = var.node_image_volume_size >= 8
+    error_message = "The node_image_volume_size value must be a valid! Minimum 8"
+  }
 }
 variable "tags" {
   description = "A map of tags to add to all resources"
@@ -966,6 +609,13 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      from_port       = 5080
+      to_port         = 5080
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+    {
       from_port       = 1936
       to_port         = 1936
       protocol        = "tcp"
@@ -1127,7 +777,7 @@ variable "node_group_transcoders_capacity" {
 variable "node_group_transcoders_volume_size" {
   description = "Volume size in GB for Transcoders. Minimum 8GB"
   type        = number
-  default     = 50
+  default     = 16
   validation {
     condition     = var.node_group_transcoders_volume_size >= 8
     error_message = "The node_group_transcoders_volume_size value must be a valid! Minimum 8"
@@ -1156,7 +806,7 @@ variable "node_group_relays_capacity" {
 variable "node_group_relays_volume_size" {
   description = "Volume size in GB for Relays. Minimum 8GB"
   type        = number
-  default     = 50
+  default     = 16
   validation {
     condition     = var.node_group_relays_volume_size >= 8
     error_message = "The node_group_relays_volume_size value must be a valid! Minimum 8"
