@@ -938,10 +938,10 @@ resource "aws_autoscaling_attachment" "red5pro_sm_aa" {
 
 
 ################################################################################
-# Red5 Pro Autoscaling Node - Origin/Edge/Transcoders/Relay (AWS Instance)
+# Red5 Pro Autoscaling Node - Origin/Edge/Transcoders/Relay (AWS EC2 Instance)
 ################################################################################
 
-# ORIGIN Node instance for AMI (AWS EC2)
+# Node instance for AMI (AWS EC2)
 resource "aws_instance" "red5pro_node" {
   count                  = local.cluster_or_autoscale && var.node_image_create ? 1 : 0
   ami                    = data.aws_ami.latest_ubuntu.id

@@ -26,12 +26,12 @@ module "red5pro" {
   ssh_private_key_path = "/PATH/TO/SSH/PUBLIC/KEY/example_private_key.pem" # Path to existing SSH private key
 
   # VPC configuration
-  vpc_use_existing      = false         # true - use existing VPC and subnets, false - create new VPC and subnets
-  vpc_id_existing = "vpc-12345" # VPC ID for existing VPC
+  vpc_use_existing = false       # true - use existing VPC and subnets, false - create new VPC and subnets
+  vpc_id_existing  = "vpc-12345" # VPC ID for existing VPC
 
   # Kafka standalone instance configuration
-  kafka_standalone_instance_type   = "c5.2xlarge" # Instance type for Kafka standalone instance
-  kafka_standalone_volume_size     = 16           # Volume size in GB for Kafka standalone instance
+  kafka_standalone_instance_type = "c5.2xlarge" # Instance type for Kafka standalone instance
+  kafka_standalone_volume_size   = 16           # Volume size in GB for Kafka standalone instance
 
   # Stream Manager configuration 
   stream_manager_instance_type                = "c5.2xlarge"       # Instance type for Stream Manager
@@ -44,15 +44,15 @@ module "red5pro" {
 
   # Stream Manager 2.0 Load Balancer HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, imported - import existing HTTPS/SSL certificate
-  
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
+  # https_ssl_certificate             = "imported"             # Improt local HTTPS/SSL certificate to AWS ACM
   # https_ssl_certificate_domain_name = "red5pro.example.com"  # Replace with your domain name
   # https_ssl_certificate_cert_path   = "./fullchain.pem"      # Path to full chain file
   # https_ssl_certificate_key_path    = "./privkey.pem"        # Path to privkey file
 
   # Example of existing HTTPS/SSL certificate configuration - please uncomment and provide your domain name
-  # https_ssl_certificate             = "existing"             # Use existing HTTPS/SSL certificate
+  # https_ssl_certificate             = "existing"             # Use existing HTTPS/SSL certificate from AWS ACM
   # https_ssl_certificate_domain_name = "red5pro.example.com"  # Replace with your domain name
 
   # Red5 Pro general configuration
@@ -61,9 +61,9 @@ module "red5pro" {
   red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
   red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
-  # Red5 Pro autoscaling Origin node image configuration
-  node_image_create        = true        # Default: true for Autoscaling and Cluster, true - create new Origin node image, false - not create new Origin node image
-  node_image_instance_type = "t3.medium" # Instance type for Origin node image
+  # Red5 Pro autoscaling Node image configuration
+  node_image_create        = true        # Default: true for Autoscaling and Cluster, true - create new Node image, false - not create new Node image
+  node_image_instance_type = "t3.medium" # Instance type for Node image
 
   # Extra configuration for Red5 Pro autoscaling nodes
   # Webhooks configuration - (Optional) https://www.red5.net/docs/special/webhooks/overview/
@@ -97,29 +97,24 @@ module "red5pro" {
     target_nodes = ["origin", "edge", "transcoder"],
   }
 
-  # Red5 Pro autoscaling Node group - (Optional)
-  node_group_create = true                   # Linux or Mac OS only. true - create new Node group, false - not create new Node group
-  node_group_name   = "terraform-node-group" # Node group name
-  # Origin node configuration
-  node_group_origins_min           = 1           # Number of minimum Origins
-  node_group_origins_max           = 20          # Number of maximum Origins
-  node_group_origins_instance_type = "t3.medium" # Instance type for Origins
-  node_group_origins_capacity      = 20          # Connections capacity for Origins
-  # Edge node configuration
-  node_group_edges_min           = 1           # Number of minimum Edges
-  node_group_edges_max           = 40          # Number of maximum Edges
-  node_group_edges_instance_type = "t3.medium" # Instance type for Edges
-  node_group_edges_capacity      = 200         # Connections capacity for Edges
-  # Transcoder node configuration
+  # Red5 Pro autoscaling Node group
+  node_group_create                    = true        # Linux or Mac OS only. true - create new Node group, false - not create new Node group
+  node_group_origins_min               = 1           # Number of minimum Origins
+  node_group_origins_max               = 20          # Number of maximum Origins
+  node_group_origins_instance_type     = "t3.medium" # Instance type for Origins
+  node_group_origins_volume_size       = 16          # Volume size for Origins
+  node_group_edges_min                 = 1           # Number of minimum Edges
+  node_group_edges_max                 = 20          # Number of maximum Edges
+  node_group_edges_instance_type       = "t3.medium" # Instance type for Edges
+  node_group_edges_volume_size         = 16          # Volume size for Edges
   node_group_transcoders_min           = 0           # Number of minimum Transcoders
   node_group_transcoders_max           = 20          # Number of maximum Transcoders
   node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
-  node_group_transcoders_capacity      = 20          # Connections capacity for Transcoders
-  # Relay node configuration
-  node_group_relays_min           = 0          # Number of minimum Relays
-  node_group_relays_max           = 20          # Number of maximum Relays
-  node_group_relays_instance_type = "t3.medium" # Instance type for Relays
-  node_group_relays_capacity      = 20          # Connections capacity for Relays
+  node_group_transcoders_volume_size   = 16          # Volume size for Transcoders
+  node_group_relays_min                = 0           # Number of minimum Relays
+  node_group_relays_max                = 20          # Number of maximum Relays
+  node_group_relays_instance_type      = "t3.medium" # Instance type for Relays
+  node_group_relays_volume_size        = 16          # Volume size for Relays
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {

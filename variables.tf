@@ -395,17 +395,17 @@ variable "red5pro_api_key" {
 
 # Red5 Pro Node image configuration
 variable "node_image_create" {
-  description = "Create new Origin node image true/false. (Default:true) (https://www.red5.net/docs/special/relays/overview/#origin-and-edge-nodes)"
+  description = "Create new Node image true/false"
   type        = bool
   default     = false
 }
 variable "node_image_instance_type" {
-  description = "Origin node image - instance type"
+  description = "Node image - instance type"
   type        = string
   default     = "t3.medium"
 }
 variable "node_image_volume_size" {
-  description = "node image - volume size"
+  description = "Node image - volume size"
   type        = number
   default     = 8
   validation {
@@ -720,11 +720,6 @@ variable "node_group_origins_volume_size" {
     error_message = "The node_group_origins_volume_size value must be a valid! Minimum 8"
   }
 }
-variable "node_group_origins_capacity" {
-  description = "Connections capacity for Origins"
-  type        = number
-  default     = 30
-}
 variable "node_group_edges_min" {
   description = "Number of minimum Edges"
   type        = number
@@ -739,11 +734,6 @@ variable "node_group_edges_instance_type" {
   description = "Instance type for Edges"
   type        = string
   default     = "t3.medium"
-}
-variable "node_group_edges_capacity" {
-  description = "Connections capacity for Edges"
-  type        = number
-  default     = 200
 }
 variable "node_group_edges_volume_size" {
   description = "Volume size in GB for Edges. Minimum 8GB"
@@ -769,11 +759,6 @@ variable "node_group_transcoders_instance_type" {
   type        = string
   default     = "t3.medium"
 }
-variable "node_group_transcoders_capacity" {
-  description = "Connections capacity for Transcoders"
-  type        = number
-  default     = 30
-}
 variable "node_group_transcoders_volume_size" {
   description = "Volume size in GB for Transcoders. Minimum 8GB"
   type        = number
@@ -797,11 +782,6 @@ variable "node_group_relays_instance_type" {
   description = "Instance type for Relays"
   type        = string
   default     = "t3.medium"
-}
-variable "node_group_relays_capacity" {
-  description = "Connections capacity for Relays"
-  type        = number
-  default     = 30
 }
 variable "node_group_relays_volume_size" {
   description = "Volume size in GB for Relays. Minimum 8GB"
