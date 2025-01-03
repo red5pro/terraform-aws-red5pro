@@ -60,7 +60,6 @@ module "red5pro" {
 
   # Red5 Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
-  red5pro_cluster_key = "example_key"         # Red5 Pro cluster key
   red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
   red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
