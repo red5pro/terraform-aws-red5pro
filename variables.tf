@@ -351,16 +351,6 @@ variable "stream_manager_autoscaling_maximum_capacity" {
   type        = number
   default     = 1
 }
-variable "stream_manager_coturn_enable" {
-  description = "Red5Pro Stream Manager customized Coturn configuration"
-  type        = bool
-  default     = false
-}
-variable "stream_manager_coturn_address" {
-  description = "Red5Pro Stream Manager customized Coturn address. Example: stun:1.2.3.4:3478"
-  type        = string
-  default     = ""
-}
 variable "stream_manager_auth_user" {
   description = "value to set the user name for Stream Manager 2.0 authentication"
   type        = string
@@ -371,14 +361,9 @@ variable "stream_manager_auth_password" {
   type        = string
   default     = ""
 }
-
+# Red5 Pro general configuration
 variable "red5pro_license_key" {
   description = "Red5 Pro license key (https://www.red5.net/docs/installation/installation/license-key/)"
-  type        = string
-  default     = ""
-}
-variable "red5pro_cluster_key" {
-  description = "Red5 Pro node cluster key"
   type        = string
   default     = ""
 }
@@ -413,6 +398,8 @@ variable "node_image_volume_size" {
     error_message = "The node_image_volume_size value must be a valid! Minimum 8"
   }
 }
+
+# General configuration
 variable "tags" {
   description = "A map of tags to add to all resources"
   type        = map(string)
@@ -455,13 +442,6 @@ variable "security_group_stream_manager_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      from_port       = 5080
-      to_port         = 5080
-      protocol        = "tcp"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-    {
       from_port       = 9092
       to_port         = 9092
       protocol        = "tcp"
@@ -490,6 +470,7 @@ variable "security_group_kafka_ingress" {
   type        = list(map(string))
   default = [
     {
+      description     = "Kafka standalone server - SSH"
       from_port       = 22
       to_port         = 22
       protocol        = "tcp"
@@ -497,6 +478,7 @@ variable "security_group_kafka_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "Kafka standalone server - Kafka"
       from_port       = 9092
       to_port         = 9092
       protocol        = "tcp"
@@ -525,6 +507,7 @@ variable "security_group_node_ingress" {
   type        = list(map(string))
   default = [
     {
+      description     = "Red5 Pro SM2.0 Nodes - SSH"
       from_port       = 22
       to_port         = 22
       protocol        = "tcp"
@@ -532,6 +515,7 @@ variable "security_group_node_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "Red5 Pro SM2.0 Nodes - HTTP"
       from_port       = 5080
       to_port         = 5080
       protocol        = "tcp"
@@ -539,6 +523,7 @@ variable "security_group_node_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "Red5 Pro SM2.0 Nodes - RTMP (TCP)"
       from_port       = 1935
       to_port         = 1935
       protocol        = "tcp"
@@ -546,20 +531,23 @@ variable "security_group_node_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description = "Red5 Pro SM2.0 Nodes - RTMPS (TCP)"
-      protocol    = "6"
-      source      = "0.0.0.0/0"
-      port_min    = 1936
-      port_max    = 1936
+      description     = "Red5 Pro SM2.0 Nodes - RTMPS (TCP)"
+      port_min        = 1936
+      port_max        = 1936
+      protocol        = "tcp"
+      source          = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
     },
     {
-      description = "Red5 Pro SM2.0 Nodes - Restreamer, SRT (TCP)"
-      protocol    = "6"
-      source      = "0.0.0.0/0"
-      port_min    = 8000
-      port_max    = 8100
+      description     = "Red5 Pro SM2.0 Nodes - Restreamer, SRT (TCP)"
+      port_min        = 8000
+      port_max        = 8100
+      protocol        = "tcp"
+      source          = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
     },
     {
+      description     = "Red5 Pro SM2.0 Nodes - RTSP (TCP)"
       from_port       = 8554
       to_port         = 8554
       protocol        = "tcp"
@@ -567,6 +555,7 @@ variable "security_group_node_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "Red5 Pro SM2.0 Nodes - Restreamer, SRT (UDP)"
       from_port       = 8000
       to_port         = 8100
       protocol        = "udp"
@@ -574,6 +563,7 @@ variable "security_group_node_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "Red5 Pro SM2.0 Nodes - WebRTC (UDP)"
       from_port       = 40000
       to_port         = 65535
       protocol        = "udp"
@@ -602,6 +592,7 @@ variable "security_group_standalone_ingress" {
   type        = list(map(string))
   default = [
     {
+      description     = "Red5 Pro Standalone - SSH"
       from_port       = 22
       to_port         = 22
       protocol        = "tcp"
@@ -609,6 +600,7 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "Red5 Pro Standalone - HTTP"
       from_port       = 5080
       to_port         = 5080
       protocol        = "tcp"
@@ -616,31 +608,31 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "Red5 Pro Standalone - RTMPS (TCP)"
       from_port       = 1936
       to_port         = 1936
       protocol        = "tcp"
       cidr_block      = "0.0.0.0/0"
       ipv6_cidr_block = "::/0"
-      description     = "Red5 Pro Standalone server - RTMPS (TCP)"
     },
     {
+      description     = "Red5 Pro Standalone - RTSP (TCP)"
       from_port       = 8554
       to_port         = 8554
       protocol        = "tcp"
       cidr_block      = "0.0.0.0/0"
       ipv6_cidr_block = "::/0"
-      description     = "Red5 Pro Standalone server - RTSP (TCP)"
     },
     {
+      description     = "Red5 Pro Standalone - Restreamer, SRT (TCP)"
       from_port       = 8000
       to_port         = 8100
       protocol        = "tcp"
       cidr_block      = "0.0.0.0/0"
       ipv6_cidr_block = "::/0"
-      description     = "Red5 Pro Standalone server - Restreamer, SRT (TCP)"
     },
-
     {
+      description     = "Red5 Pro Standalone - RTMP (TCP)"
       from_port       = 1935
       to_port         = 1935
       protocol        = "tcp"
@@ -648,6 +640,7 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "Red5 Pro Standalone - RTSP (TCP)"
       from_port       = 8554
       to_port         = 8554
       protocol        = "tcp"
@@ -655,6 +648,7 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "Red5 Pro Standalone - Restreamer, SRT (UDP)"
       from_port       = 8000
       to_port         = 8001
       protocol        = "udp"
@@ -662,6 +656,7 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "Red5 Pro Standalone - WebRTC (UDP)"
       from_port       = 40000
       to_port         = 65535
       protocol        = "udp"
@@ -690,11 +685,6 @@ variable "node_group_create" {
   description = "Create new node group. Linux or Mac OS only."
   type        = bool
   default     = false
-}
-variable "node_group_name" {
-  description = "Node group name"
-  type        = string
-  default     = "terraform-node-group"
 }
 variable "node_group_origins_min" {
   description = "Number of minimum Origins"
