@@ -949,7 +949,7 @@ resource "aws_acm_certificate" "imported_cert" {
   count             = local.autoscale && var.https_ssl_certificate == "imported" ? 1 : 0
   certificate_body  = file(var.https_ssl_certificate_cert_path)
   private_key       = file(var.https_ssl_certificate_key_path)
-  certificate_chain = try(file(var.https_ssl_certificate_fullchain_path), "")
+  certificate_chain = file(var.https_ssl_certificate_fullchain_path)
 }
 data "aws_acm_certificate" "red5pro_sm_cert" {
   count    = local.autoscale && var.https_ssl_certificate == "existing" ? 1 : 0
