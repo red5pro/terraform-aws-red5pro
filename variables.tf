@@ -45,7 +45,6 @@ variable "ssh_key_name" {
   type        = string
   default     = ""
 }
-
 variable "ssh_private_key_path" {
   description = "SSH private key path existing"
   type        = string
@@ -216,7 +215,6 @@ variable "standalone_red5pro_cloudstorage_aws_bucket_acl_policy" {
   type        = string
   default     = "public-read"
 }
-
 variable "standalone_red5pro_stream_auto_record_enable" {
   description = "Red5 Pro server - enable/disable broadcast stream auto record"
   type        = bool
@@ -293,13 +291,11 @@ variable "https_ssl_certificate_domain_name" {
   type        = string
   default     = ""
 }
-
 variable "https_ssl_certificate_email" {
   description = "Email for SSL certificate (letsencrypt)"
   type        = string
   default     = ""
 }
-
 variable "https_ssl_certificate_cert_path" {
   description = "Path to public certificate file (imported)"
   type        = string
@@ -310,7 +306,6 @@ variable "https_ssl_certificate_fullchain_path" {
   type        = string
   default     = ""
 }
-
 variable "https_ssl_certificate_key_path" {
   description = "Path to SSL key (imported)"
   type        = string
@@ -418,9 +413,17 @@ variable "vpc_public_subnets" {
 
 variable "security_group_stream_manager_ingress" {
   description = "Security group for Stream Managers - ingress"
-  type        = list(map(string))
+  type = list(object({
+    description     = string
+    from_port       = number
+    to_port         = number
+    protocol        = string
+    cidr_block      = string
+    ipv6_cidr_block = string
+  }))
   default = [
     {
+      description     = "SSH"
       from_port       = 22
       to_port         = 22
       protocol        = "tcp"
@@ -428,6 +431,7 @@ variable "security_group_stream_manager_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "HTTP"
       from_port       = 80
       to_port         = 80
       protocol        = "tcp"
@@ -435,6 +439,7 @@ variable "security_group_stream_manager_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "HTTPS"
       from_port       = 443
       to_port         = 443
       protocol        = "tcp"
@@ -442,6 +447,7 @@ variable "security_group_stream_manager_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
+      description     = "Kafka"
       from_port       = 9092
       to_port         = 9092
       protocol        = "tcp"
@@ -453,9 +459,17 @@ variable "security_group_stream_manager_ingress" {
 
 variable "security_group_stream_manager_egress" {
   description = "Security group for Stream Managers - egress"
-  type        = list(map(string))
+  type = list(object({
+    description     = string
+    from_port       = number
+    to_port         = number
+    protocol        = string
+    cidr_block      = string
+    ipv6_cidr_block = string
+  }))
   default = [
     {
+      description     = "All egress traffic"
       from_port       = 0
       to_port         = 0
       protocol        = "-1"
@@ -467,10 +481,17 @@ variable "security_group_stream_manager_egress" {
 
 variable "security_group_kafka_ingress" {
   description = "Security group for Kafka standalone instance - ingress"
-  type        = list(map(string))
+  type = list(object({
+    description     = string
+    from_port       = number
+    to_port         = number
+    protocol        = string
+    cidr_block      = string
+    ipv6_cidr_block = string
+  }))
   default = [
     {
-      description     = "Kafka standalone server - SSH"
+      description     = "SSH"
       from_port       = 22
       to_port         = 22
       protocol        = "tcp"
@@ -478,7 +499,7 @@ variable "security_group_kafka_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Kafka standalone server - Kafka"
+      description     = "Kafka"
       from_port       = 9092
       to_port         = 9092
       protocol        = "tcp"
@@ -490,9 +511,17 @@ variable "security_group_kafka_ingress" {
 
 variable "security_group_kafka_egress" {
   description = "Security group for Kafka standalone instance - egress"
-  type        = list(map(string))
+  type = list(object({
+    description     = string
+    from_port       = number
+    to_port         = number
+    protocol        = string
+    cidr_block      = string
+    ipv6_cidr_block = string
+  }))
   default = [
     {
+      description     = "All egress traffic"
       from_port       = 0
       to_port         = 0
       protocol        = "-1"
@@ -504,10 +533,17 @@ variable "security_group_kafka_egress" {
 
 variable "security_group_node_ingress" {
   description = "Security group for Node - ingress"
-  type        = list(map(string))
+  type = list(object({
+    description     = string
+    from_port       = number
+    to_port         = number
+    protocol        = string
+    cidr_block      = string
+    ipv6_cidr_block = string
+  }))
   default = [
     {
-      description     = "Red5 Pro SM2.0 Nodes - SSH"
+      description     = "SSH"
       from_port       = 22
       to_port         = 22
       protocol        = "tcp"
@@ -515,7 +551,7 @@ variable "security_group_node_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro SM2.0 Nodes - HTTP"
+      description     = "HTTP"
       from_port       = 5080
       to_port         = 5080
       protocol        = "tcp"
@@ -523,7 +559,7 @@ variable "security_group_node_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro SM2.0 Nodes - RTMP (TCP)"
+      description     = "RTMP (TCP)"
       from_port       = 1935
       to_port         = 1935
       protocol        = "tcp"
@@ -531,23 +567,23 @@ variable "security_group_node_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro SM2.0 Nodes - RTMPS (TCP)"
-      port_min        = 1936
-      port_max        = 1936
+      description     = "RTMPS (TCP)"
+      from_port       = 1936
+      to_port         = 1936
       protocol        = "tcp"
-      source          = "0.0.0.0/0"
+      cidr_block      = "0.0.0.0/0"
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro SM2.0 Nodes - Restreamer, SRT (TCP)"
-      port_min        = 8000
-      port_max        = 8100
+      description     = "Restreamer, SRT (TCP)"
+      from_port       = 8000
+      to_port         = 8100
       protocol        = "tcp"
-      source          = "0.0.0.0/0"
+      cidr_block      = "0.0.0.0/0"
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro SM2.0 Nodes - RTSP (TCP)"
+      description     = "RTSP (TCP)"
       from_port       = 8554
       to_port         = 8554
       protocol        = "tcp"
@@ -555,7 +591,7 @@ variable "security_group_node_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro SM2.0 Nodes - Restreamer, SRT (UDP)"
+      description     = "Restreamer, SRT (UDP)"
       from_port       = 8000
       to_port         = 8100
       protocol        = "udp"
@@ -563,7 +599,7 @@ variable "security_group_node_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro SM2.0 Nodes - WebRTC (UDP)"
+      description     = "WebRTC (UDP)"
       from_port       = 40000
       to_port         = 65535
       protocol        = "udp"
@@ -575,9 +611,17 @@ variable "security_group_node_ingress" {
 
 variable "security_group_node_egress" {
   description = "Security group for Node - egress"
-  type        = list(map(string))
+  type = list(object({
+    description     = string
+    from_port       = number
+    to_port         = number
+    protocol        = string
+    cidr_block      = string
+    ipv6_cidr_block = string
+  }))
   default = [
     {
+      description     = "All egress traffic"
       from_port       = 0
       to_port         = 0
       protocol        = "-1"
@@ -589,10 +633,17 @@ variable "security_group_node_egress" {
 
 variable "security_group_standalone_ingress" {
   description = "Security group for standalone Red5Pro server  - ingress"
-  type        = list(map(string))
+  type = list(object({
+    description     = string
+    from_port       = number
+    to_port         = number
+    protocol        = string
+    cidr_block      = string
+    ipv6_cidr_block = string
+  }))
   default = [
     {
-      description     = "Red5 Pro Standalone - SSH"
+      description     = "SSH"
       from_port       = 22
       to_port         = 22
       protocol        = "tcp"
@@ -600,7 +651,7 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro Standalone - HTTP"
+      description     = "HTTP"
       from_port       = 5080
       to_port         = 5080
       protocol        = "tcp"
@@ -608,7 +659,15 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro Standalone - RTMPS (TCP)"
+      description     = "HTTPS"
+      from_port       = 443
+      to_port         = 443
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+    {
+      description     = "RTMPS (TCP)"
       from_port       = 1936
       to_port         = 1936
       protocol        = "tcp"
@@ -616,7 +675,7 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro Standalone - RTSP (TCP)"
+      description     = "RTSP (TCP)"
       from_port       = 8554
       to_port         = 8554
       protocol        = "tcp"
@@ -624,7 +683,7 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro Standalone - Restreamer, SRT (TCP)"
+      description     = "Restreamer, SRT (TCP)"
       from_port       = 8000
       to_port         = 8100
       protocol        = "tcp"
@@ -632,7 +691,7 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro Standalone - RTMP (TCP)"
+      description     = "RTMP (TCP)"
       from_port       = 1935
       to_port         = 1935
       protocol        = "tcp"
@@ -640,15 +699,7 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro Standalone - RTSP (TCP)"
-      from_port       = 8554
-      to_port         = 8554
-      protocol        = "tcp"
-      cidr_block      = "0.0.0.0/0"
-      ipv6_cidr_block = "::/0"
-    },
-    {
-      description     = "Red5 Pro Standalone - Restreamer, SRT (UDP)"
+      description     = "Restreamer, SRT (UDP)"
       from_port       = 8000
       to_port         = 8001
       protocol        = "udp"
@@ -656,21 +707,29 @@ variable "security_group_standalone_ingress" {
       ipv6_cidr_block = "::/0"
     },
     {
-      description     = "Red5 Pro Standalone - WebRTC (UDP)"
+      description     = "WebRTC (UDP)"
       from_port       = 40000
       to_port         = 65535
       protocol        = "udp"
       cidr_block      = "0.0.0.0/0"
       ipv6_cidr_block = "::/0"
-    },
+    }
   ]
 }
 
 variable "security_group_standalone_egress" {
   description = "Security group for standalone Red5Pro server - egress"
-  type        = list(map(string))
+  type = list(object({
+    description     = string
+    from_port       = number
+    to_port         = number
+    protocol        = string
+    cidr_block      = string
+    ipv6_cidr_block = string
+  }))
   default = [
     {
+      description     = "All egress traffic"
       from_port       = 0
       to_port         = 0
       protocol        = "-1"

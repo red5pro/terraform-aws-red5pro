@@ -122,14 +122,14 @@ module "red5pro" {
 
   # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
   # https_ssl_certificate             = "letsencrypt"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_email       = "email@example.com"
+  # https_ssl_certificate_domain_name = "red5pro.example.com" # Replace with your domain name
+  # https_ssl_certificate_email       = "email@example.com"   # Replace with your email
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
-  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"             # Replace with your domain name
+  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem" # Path to cert file or full chain file
+  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"    # Path to privkey file
 
   # Standalone Red5 Pro server EC2 instance configuration
   standalone_instance_type = "t3.medium" # Instance type for Red5 Pro server. Example: t3.medium, c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge
@@ -256,15 +256,15 @@ module "red5pro" {
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
 
   # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
-  # https_ssl_certificate = "letsencrypt"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_email = "email@example.com"
+  # https_ssl_certificate             = "letsencrypt"
+  # https_ssl_certificate_domain_name = "red5pro.example.com" # Replace with your domain name
+  # https_ssl_certificate_email       = "email@example.com"   # Replace with your email
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
-  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"             # Replace with your domain name
+  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem" # Path to cert file or full chain file
+  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"    # Path to privkey file
 
   # Red5 Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
@@ -412,10 +412,11 @@ module "red5pro" {
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, imported - import existing HTTPS/SSL certificate
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
-  # https_ssl_certificate             = "imported"             # Improt local HTTPS/SSL certificate to AWS ACM
-  # https_ssl_certificate_domain_name = "red5pro.example.com"  # Replace with your domain name
-  # https_ssl_certificate_cert_path   = "./fullchain.pem"      # Path to full chain file
-  # https_ssl_certificate_key_path    = "./privkey.pem"        # Path to privkey file
+  # https_ssl_certificate                = "imported"            # Improt local HTTPS/SSL certificate to AWS ACM
+  # https_ssl_certificate_domain_name    = "red5pro.example.com" # Replace with your domain name
+  # https_ssl_certificate_cert_path      = "./cert.pem"          # Path to cert file
+  # https_ssl_certificate_key_path       = "./privkey.pem"       # Path to privkey file
+  # https_ssl_certificate_fullchain_path = "./fullchain.pem"     # Path to full chain file
 
   # Example of existing HTTPS/SSL certificate configuration - please uncomment and provide your domain name
   # https_ssl_certificate             = "existing"             # Use existing HTTPS/SSL certificate from AWS ACM

@@ -72,10 +72,11 @@ module "red5pro" {
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, imported - import existing HTTPS/SSL certificate
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
-  # https_ssl_certificate             = "imported"             # Improt local HTTPS/SSL certificate to AWS ACM
-  # https_ssl_certificate_domain_name = "red5pro.example.com"  # Replace with your domain name
-  # https_ssl_certificate_cert_path   = "./fullchain.pem"      # Path to full chain file
-  # https_ssl_certificate_key_path    = "./privkey.pem"        # Path to privkey file
+  # https_ssl_certificate                = "imported"            # Improt local HTTPS/SSL certificate to AWS ACM
+  # https_ssl_certificate_domain_name    = "red5pro.example.com" # Replace with your domain name
+  # https_ssl_certificate_cert_path      = "./cert.pem"          # Path to cert file
+  # https_ssl_certificate_key_path       = "./privkey.pem"       # Path to privkey file
+  # https_ssl_certificate_fullchain_path = "./fullchain.pem"     # Path to full chain file
 
   # Example of existing HTTPS/SSL certificate configuration - please uncomment and provide your domain name
   # https_ssl_certificate             = "existing"             # Use existing HTTPS/SSL certificate from AWS ACM
