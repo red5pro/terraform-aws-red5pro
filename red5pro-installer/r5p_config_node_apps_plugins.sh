@@ -8,7 +8,16 @@
 # NODE_SOCIALPUSHER_ENABLE=true
 # NODE_SUPPRESSOR_ENABLE=true
 # NODE_HLS_ENABLE=true
+# NODE_HLS_OUTPUT_FORMAT=TS     #(TS,FMP4,SMP4)
+# NODE_HLS_DVR_PLAYLIST=true
 # NODE_CLOUDSTORAGE_ENABLE=true
+# NODE_CLOUDSTORAGE_AWS_ACCESS_KEY
+# NODE_CLOUDSTORAGE_AWS_SECRET_KEY
+# NODE_CLOUDSTORAGE_AWS_BUCKET_NAME=red5pro-bucket
+# NODE_CLOUDSTORAGE_AWS_REGION=us-east-1
+# NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE=true
+# NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY=public-read # none, public-read, authenticated-read, private, public-read-write
+# NODE_STREAM_AUTO_RECORD_ENABLE=true
 
 # NODE_WEBHOOKS_ENABLE=true
 # NODE_WEBHOOKS_ENDPOINT="https://test.webhook.app/api/v1/broadcast/webhook"
@@ -72,7 +81,14 @@ config_node_apps_plugins(){
     fi
     ### Red5Pro HLS
     if [[ "$NODE_HLS_ENABLE" == "true" ]]; then
-        log_i "Red5Pro HLS - enable"
+        log_i "Red5Pro HLS - enable. Output format: $NODE_HLS_OUTPUT_FORMAT, DVR playlist: $NODE_HLS_DVR_PLAYLIST"
+
+        hls_output_format='<property name="outputFormat" value="TS"/>'
+        hls_output_format_new='<property name="outputFormat" value="'$NODE_HLS_OUTPUT_FORMAT'"/>'
+
+        hls_dvr_playlist='<property name="dvrPlaylist" value="false"/>'
+        hls_dvr_playlist_new='<property name="dvrPlaylist" value="'$NODE_HLS_DVR_PLAYLIST'"/>'
+        sed -i -e "s|$hls_output_format|$hls_output_format_new|" -e "s|$hls_dvr_playlist|$hls_dvr_playlist_new|" "$RED5_HOME/conf/hlsconfig.xml"
     else
         log_d "Red5Pro HLS - disable"
         if ls $RED5_HOME/plugins/red5pro-mpegts-plugin* >/dev/null 2>&1; then
@@ -81,18 +97,84 @@ config_node_apps_plugins(){
     fi
     ### Red5Pro Cloudstorage (S3)
     if [[ "$NODE_CLOUDSTORAGE_ENABLE" == "true" ]]; then
-        log_i "Red5Pro OCI Cloudstorage plugin (S3) - enable"
-        log_i "HERE need to add OCI Cloudstorage configuration!!!"
+        log_i "Red5Pro AWS Cloudstorage plugin (S3) - enable"
+        if [ -z "$NODE_CLOUDSTORAGE_AWS_ACCESS_KEY" ]; then
+            log_e "Parameter NODE_CLOUDSTORAGE_AWS_ACCESS_KEY is empty. EXIT."
+            exit 1
+        fi
+        if [ -z "$NODE_CLOUDSTORAGE_AWS_SECRET_KEY" ]; then
+            log_e "Parameter NODE_CLOUDSTORAGE_AWS_ACCESS_KEY is empty. EXIT."
+            exit 1
+        fi
+        if [ -z "$NODE_CLOUDSTORAGE_AWS_BUCKET_NAME" ]; then
+            log_e "Parameter NODE_CLOUDSTORAGE_AWS_BUCKET_NAME is empty. EXIT."
+            exit 1
+        fi
+        if [ -z "$NODE_CLOUDSTORAGE_AWS_REGION" ]; then
+            log_e "Parameter NODE_CLOUDSTORAGE_AWS_REGION is empty. EXIT."
+            exit 1
+        fi
+        if [ -z "$NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY" ]; then
+            log_e "Parameter NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY is empty. EXIT."
+            exit 1
+        fi
+
+        log_i "Config AWS Cloudstorage plugin: $RED5_HOME/conf/cloudstorage-plugin.properties"
+        s3_service="#services=com.red5pro.media.storage.s3.S3Uploader,com.red5pro.media.storage.s3.S3BucketLister"
+        s3_service_new="services=com.red5pro.media.storage.s3.S3Uploader,com.red5pro.media.storage.s3.S3BucketLister"
+
+        stream_dir="streams.dir=.*"
+        stream_dir_new="streams.dir=$RED5_HOME/webapps/"
+
+        max_transcode_min="max.transcode.minutes=.*"
+        max_transcode_min_new="max.transcode.minutes=30"
+
+        aws_access_key="aws.access.key=.*"
+        aws_access_key_new="aws.access.key=${NODE_CLOUDSTORAGE_AWS_ACCESS_KEY}"
+        aws_secret_access_key="aws.secret.access.key=.*"
+        aws_secret_access_key_new="aws.secret.access.key=${NODE_CLOUDSTORAGE_AWS_SECRET_KEY}"
+        aws_bucket_name="aws.bucket.name=.*"
+        aws_bucket_name_new="aws.bucket.name=${NODE_CLOUDSTORAGE_AWS_BUCKET_NAME}"
+        aws_bucket_location="aws.bucket.location=.*"
+        aws_bucket_location_new="aws.bucket.location=${NODE_CLOUDSTORAGE_AWS_REGION}"
+        aws_bucket_acl_policy="aws.acl.policy=.*"
+        aws_bucket_acl_policy_new="aws.acl.policy=${NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY}"
+
+        sed -i -e "s|$s3_service|$s3_service_new|" -e "s|$stream_dir|$stream_dir_new|" -e "s|$max_transcode_min|$max_transcode_min_new|" -e "s|$aws_access_key|$aws_access_key_new|" -e "s|$aws_secret_access_key|$aws_secret_access_key_new|" -e "s|$aws_bucket_name|$aws_bucket_name_new|" -e "s|$aws_bucket_location|$aws_bucket_location_new|" -e "s|$aws_bucket_acl_policy|$aws_bucket_acl_policy_new|" "$RED5_HOME/conf/cloudstorage-plugin.properties"
+
+        if [[ "$NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE" == "true" ]]; then
+            log_i "Config AWS Cloudstorage plugin - PostProcessor to FLV: $RED5_HOME/conf/red5-common.xml"
+
+            STR1='<property name="writerPostProcessors">\n<set>\n<value>com.red5pro.media.processor.S3UploaderPostProcessor</value>\n</set>\n</property>'
+            sed -i "/Writer post-process example/i $STR1" "$RED5_HOME/conf/red5-common.xml"
+        fi
+
+        log_i "Config AWS Cloudstorage plugin - Live app S3FilenameGenerator in: $RED5_HOME/webapps/live/WEB-INF/red5-web.xml ..."
+
+        local filenamegenerator='<bean id="streamFilenameGenerator" class="com.red5pro.media.storage.s3.S3FilenameGenerator"/>'
+        local filenamegenerator_new='-->\n<bean id="streamFilenameGenerator" class="com.red5pro.media.storage.s3.S3FilenameGenerator"/>\n<!--'
+        sed -i -e "s|$filenamegenerator|$filenamegenerator_new|" "$RED5_HOME/webapps/live/WEB-INF/red5-web.xml"
     else
-        log_d "Red5Pro OCI Cloudstorage plugin (S3) - disable"
+        log_d "Red5Pro AWS Cloudstorage plugin (S3) - disable"
+    fi
+    ### Red5Pro Stream Auto Record
+    if [[ "$NODE_STREAM_AUTO_RECORD_ENABLE" == "true" ]]; then
+        log_i "Red5Pro Broadcas Stream Auto Record - enable"
+
+        stream_auto_record="broadcaststream.auto.record=.*"
+        stream_auto_record_new="broadcaststream.auto.record=true"
+        sed -i -e "s|$stream_auto_record|$stream_auto_record_new|" "$RED5_HOME/conf/red5.properties"
+    else
+        log_d "Red5Pro Broadcas Stream Auto Record - disable"
     fi
     ### Red5Pro Restreamer
     if [[ "$NODE_RESTREAMER_ENABLE" == "true" ]]; then
         log_i "Red5Pro Restreamer - enable"
         
-        log_i "Enable Restreamer Servlet in $RED5_HOME/webapps/live/WEB-INF/web.xml"
-        restreamer_servlet="<servlet>\n<servlet-name>RestreamerServlet</servlet-name>\n<servlet-class>com.red5pro.restreamer.servlet.RestreamerServlet</servlet-class>\n</servlet>\n<servlet-mapping>\n<servlet-name>RestreamerServlet</servlet-name>\n<url-pattern>/restream</url-pattern>\n</servlet-mapping>"
-        sed -i "/<\/web-app>/i $restreamer_servlet"  "$RED5_HOME/webapps/live/WEB-INF/web.xml"
+        # In new version of Red5Pro 13.0.0 and above, it is enabled by default in the red5-web.xml
+        # log_i "Enable Restreamer Servlet in $RED5_HOME/webapps/live/WEB-INF/web.xml"
+        # restreamer_servlet="<servlet>\n<servlet-name>RestreamerServlet</servlet-name>\n<servlet-class>com.red5pro.restreamer.servlet.RestreamerServlet</servlet-class>\n</servlet>\n<servlet-mapping>\n<servlet-name>RestreamerServlet</servlet-name>\n<url-pattern>/restream</url-pattern>\n</servlet-mapping>"
+        # sed -i "/<\/web-app>/i $restreamer_servlet"  "$RED5_HOME/webapps/live/WEB-INF/web.xml"
 
         log_i "Set enable.srtingest=true in $RED5_HOME/conf/restreamer-plugin.properties"
         enable_srtingest="enable.srtingest=.*"
@@ -131,6 +213,7 @@ config_node_apps_plugins(){
             log_e "Parameter NODE_WEBHOOKS_ENDPOINT is empty. EXIT."
             exit 1
         fi
+        echo "" >> $RED5_HOME/webapps/live/WEB-INF/red5-web.properties
         echo "webhooks.endpoint=$NODE_WEBHOOKS_ENDPOINT" >> $RED5_HOME/webapps/live/WEB-INF/red5-web.properties
     fi
     ### Red5Pro Round-trip-auth

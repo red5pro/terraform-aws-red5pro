@@ -91,57 +91,92 @@ In the following example, Terraform module will automates the infrastructure pro
 
 ```yaml
 provider "aws" {
-  region     = "us-east-1"
-  access_key = "your_access_key_id"
-  secret_key = "your_secret_access_key"
+  region     = "us-east-1" # AWS region
+  access_key = ""          # AWS IAM Access key
+  secret_key = ""          # AWS IAM Secret key
 }
 
 module "red5pro" {
-  source                = "../../"
-  type                  = "standalone"                            # Deployment type: standalone, cluster, autoscale
-  name                  = "red5pro-standalone"                    # Name to be used on all the resources as identifier
+  source = "red5pro/red5pro/aws"
+  type   = "standalone"         # Deployment type: standalone, cluster, autoscale
+  name   = "red5pro-standalone" # Name to be used on all the resources as identifier
+
+  ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
   path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
 
   # SSH key configuration
-  ssh_key_use_existing              = false                                              # true - use existing SSH key, false - create new SSH key
-  ssh_key_existing_private_key_path = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem" # Path to existing SSH private key
-  ssh_key_existing_public_key_path  = "/PATH/TO/SSH/PUBLIC/KEY/example_pub_key.pem"      # Path to existing SSH Public key
+  ssh_key_use_existing              = false                                               # Use existing SSH key pair or create a new one. true = use existing, false = create new SSH key pair
+  ssh_key_name_existing             = "example_key"                                       # SSH key name existing in AWS
+  ssh_key_private_key_path_existing = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # SSH private key path existing in local machine
 
-  # Red5 Pro general configuration
-  red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
-  red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
-  red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
+  # VPC configuration
+  vpc_use_existing = false       # true - use existing VPC and subnets, false - create new VPC and subnets automatically
+  vpc_id_existing  = "vpc-12345" # VPC ID for existing VPC
 
-    # Standalone Red5 Pro server AWS instance configuration
-  standalone_red5pro_instance_type   = "t3.medium" # Instance type for Red5 Pro server
-  standalone_red5pro_instance_volume = 50         # Volume size in GB for Red5 Pro server instance
-
-  # Standalone Red5 Pro server configuration
-  standalone_red5pro_inspector_enable                    = false                         # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5.net/docs/troubleshooting/inspector/overview/)
-  standalone_red5pro_restreamer_enable                   = false                         # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5.net/docs/special/restreamer/overview/)
-  standalone_red5pro_socialpusher_enable                 = false                         # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5.net/docs/special/social-media-plugin/overview/)
-  standalone_red5pro_suppressor_enable                   = false                         # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
-  standalone_red5pro_hls_enable                          = false                         # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5.net/docs/protocols/hls-plugin/hls-vod/)
-  standalone_red5pro_round_trip_auth_enable              = false                         # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5.net/docs/special/round-trip-auth/overview/)
-  standalone_red5pro_round_trip_auth_host                = "round-trip-auth.example.com" # Round trip authentication server host
-  standalone_red5pro_round_trip_auth_port                = 3000                          # Round trip authentication server port
-  standalone_red5pro_round_trip_auth_protocol            = "http"                        # Round trip authentication server protocol
-  standalone_red5pro_round_trip_auth_endpoint_validate   = "/validateCredentials"        # Round trip authentication server endpoint for validate
-  standalone_red5pro_round_trip_auth_endpoint_invalidate = "/invalidateCredentials"      # Round trip authentication server endpoint for invalidate
+  # Elastic IP configuration
+  standalone_elastic_ip_use_existing = false     # true - use existing elastic IP, false - create new elastic IP automatically
+  standalone_elastic_ip_existing     = "1.2.3.4" # Existing Elastic IP
 
   # Standalone Red5 Pro server HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
 
   # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
-  # https_ssl_certificate = "letsencrypt"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_email = "email@example.com"
+  # https_ssl_certificate             = "letsencrypt"
+  # https_ssl_certificate_domain_name = "red5pro.example.com" # Replace with your domain name
+  # https_ssl_certificate_email       = "email@example.com"   # Replace with your email
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
-  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"             # Replace with your domain name
+  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem" # Path to cert file or full chain file
+  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"    # Path to privkey file
+
+  # Standalone Red5 Pro server EC2 instance configuration
+  standalone_instance_type = "t3.medium" # Instance type for Red5 Pro server. Example: t3.medium, c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge
+  standalone_volume_size   = 16          # Volume size for Red5 Pro server
+
+  # Red5Pro general configuration
+  red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
+  red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
+  red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
+
+  # Standalone Red5pro Server Configuration
+  standalone_red5pro_inspector_enable                    = false                                     # true - enable Red5 Pro server inspector, false - disable Red5 Pro server inspector (https://www.red5.net/docs/troubleshooting/inspector/overview/)
+  standalone_red5pro_restreamer_enable                   = false                                     # true - enable Red5 Pro server restreamer, false - disable Red5 Pro server restreamer (https://www.red5.net/docs/special/restreamer/overview/)
+  standalone_red5pro_socialpusher_enable                 = false                                     # true - enable Red5 Pro server socialpusher, false - disable Red5 Pro server socialpusher (https://www.red5.net/docs/special/social-media-plugin/overview/)
+  standalone_red5pro_suppressor_enable                   = false                                     # true - enable Red5 Pro server suppressor, false - disable Red5 Pro server suppressor
+  standalone_red5pro_hls_enable                          = false                                     # true - enable Red5 Pro server HLS, false - disable Red5 Pro server HLS (https://www.red5.net/docs/protocols/hls-plugin/hls-vod/)
+  standalone_red5pro_hls_output_format                   = "TS"                                      # HLS output format. Options: TS, FMP4, SMP4
+  standalone_red5pro_hls_dvr_playlist                    = "false"                                   # HLS DVR playlist. Options: true, false
+  standalone_red5pro_webhooks_enable                     = false                                     # true - enable Red5 Pro server webhooks, false - disable Red5 Pro server webhooks (https://www.red5.net/docs/special/webhooks/overview/)
+  standalone_red5pro_webhooks_endpoint                   = "https://example.com/red5/status"         # Red5 Pro server webhooks endpoint
+  standalone_red5pro_round_trip_auth_enable              = false                                     # true - enable Red5 Pro server round trip authentication, false - disable Red5 Pro server round trip authentication (https://www.red5.net/docs/special/round-trip-auth/overview/)
+  standalone_red5pro_round_trip_auth_host                = "round-trip-auth.example.com"             # Round trip authentication server host
+  standalone_red5pro_round_trip_auth_port                = 3000                                      # Round trip authentication server port
+  standalone_red5pro_round_trip_auth_protocol            = "http"                                    # Round trip authentication server protocol
+  standalone_red5pro_round_trip_auth_endpoint_validate   = "/validateCredentials"                    # Round trip authentication server endpoint for validate
+  standalone_red5pro_round_trip_auth_endpoint_invalidate = "/invalidateCredentials"                  # Round trip authentication server endpoint for invalidate
+  standalone_red5pro_cloudstorage_enable                 = false                                     # true - enable Red5 Pro server cloud storage, false - disable Red5 Pro server cloud storage (https://www.red5.net/docs/special/cloudstorage-plugin/aws-s3-cloud-storage/)
+  standalone_red5pro_cloudstorage_aws_access_key         = ""                                        # AWS access key for Red5 Pro cloud storage (S3 Bucket)
+  standalone_red5pro_cloudstorage_aws_secret_key         = ""                                        # AWS secret key for Red5 Pro cloud storage (S3 Bucket)
+  standalone_red5pro_cloudstorage_aws_bucket_name        = "s3-bucket-example-name"                  # AWS bucket name for Red5 Pro cloud storage (S3 Bucket)
+  standalone_red5pro_cloudstorage_aws_region             = "us-east-1"                               # AWS region for Red5 Pro cloud storage  (S3 Bucket)
+  standalone_red5pro_cloudstorage_postprocessor_enable   = false                                     # true - enable Red5 Pro server postprocessor, false - disable Red5 Pro server postprocessor (https://www.red5.net/docs/special/cloudstorage-plugin/server-configuration/)
+  standalone_red5pro_cloudstorage_aws_bucket_acl_policy  = "public-read"                             # AWS bucket ACL policy for Red5 Pro cloud storage (S3 Bucket) Example: none, public-read, authenticated-read, private, public-read-write
+  standalone_red5pro_stream_auto_record_enable           = false                                     # true - enable Red5 Pro server broadcast stream auto record, false - disable Red5 Pro server broadcast stream auto record
+  standalone_red5pro_coturn_enable                       = false                                     # true - enable customized Coturn configuration for Red5Pro server, false - disable customized Coturn configuration for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
+  standalone_red5pro_coturn_address                      = "stun:1.2.3.4:3478"                       # Customized coturn address for Red5Pro server (https://www.red5.net/docs/installation/turn-stun/turnstun/)
+  standalone_red5pro_efs_enable                          = false                                     # enable/disable EFS mount to record streams
+  standalone_red5pro_efs_dns_name                        = "example.efs.region.amazonaws.com"        # EFS DNS name
+  standalone_red5pro_efs_mount_point                     = "/usr/local/red5pro/webapps/live/streams" # EFS mount point
+  standalone_red5pro_brew_mixer_enable                   = false                                     # true - enable Red5 Pro server brew mixer, false - disable Red5 Pro server brew mixer
+
+  # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
+  tags = {
+    Terraform   = "true"
+    Environment = "dev"
+    Project     = "red5pro"
+  }
 }
 
 output "module_output" {
@@ -177,59 +212,69 @@ In the following example, Terraform module will automates the infrastructure pro
 
 ```yaml
 provider "aws" {
-  region     = "us-east-1"
-  access_key = "your_access_key_id"
-  secret_key = "your_secret_access_key"
+  region     = "us-east-1" # AWS region
+  access_key = ""          # AWS IAM Access key
+  secret_key = ""          # AWS IAM Secret key
 }
 
 module "red5pro" {
-  source                = "../../"
+  source                = "red5pro/red5pro/aws"
   type                  = "cluster"                               # Deployment type: standalone, cluster, autoscale
   name                  = "red5pro-cluster"                       # Name to be used on all the resources as identifier
   path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
+  ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
 
+  # AWS authetification variables it use for Stream Manager autoscaling configuration
+  aws_region     = "us-east-1" # AWS region 
+  aws_access_key = ""          # AWS IAM Access key
+  aws_secret_key = ""          # AWS IAM Secret key
 
   # SSH key configuration
-  ssh_key_use_existing              = false                                              # true - use existing SSH key, false - create new SSH key
-  ssh_key_existing_private_key_path = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem" # Path to existing SSH private key
-  ssh_key_existing_public_key_path  = "/PATH/TO/SSH/PUBLIC/KEY/example_pub_key.pem"      # Path to existing SSH Public key
-  aws_ssh_key_pair                  =   "red5pro_ssh_key"          # SSH key pair name
-  # Red5 Pro general configuration
-  red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
-  red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
-  red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
+  ssh_key_use_existing              = false                                               # Use existing SSH key pair or create a new one. true = use existing, false = create new SSH key pair
+  ssh_key_name_existing             = "example_key"                                       # SSH key name existing in AWS
+  ssh_key_private_key_path_existing = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # SSH private key path existing in local machine
 
-    # Stream Manager 2.0 Instance Configuration
-  stream_manager_instance_type        = "t3.xlarge"                      # AWS Instance type for Stream Manager
-  stream_manager_instance_volume_size = 50                               # Volume size in GB for Stream Manager
-  stream_manager_auth_user            = "stream_manager_user"            # Authentication username for Stream Manager
-  stream_manager_auth_password        = "stream_manager_password"        # Authentication password for Stream Manager
+  # VPC configuration
+  vpc_use_existing = false       # true - use existing VPC and subnets, false - create new VPC and subnets automatically
+  vpc_id_existing  = "vpc-12345" # VPC ID for existing VPC
 
-  # Kafka Standalone Instance Configuration (Optional)
-  kafka_standalone_instance_create      = true                          # true - create a new Kafka standalone instance, false - use Kafka on Stream Manager
-  kafka_standalone_instance_type        = "t3.medium"                   # AWS Instance type for Kafka standalone
-  kafka_standalone_instance_volume_size = 50                            # Volume size in GB for Kafka standalone
+  # Kafka standalone instance configuration
+  kafka_standalone_instance_create = false
+  kafka_standalone_instance_type   = "c5.2xlarge" # Instance type for Kafka standalone instance
+  kafka_standalone_volume_size     = 16           # Volume size in GB for Kafka standalone instance
 
+  # Stream Manager configuration 
+  stream_manager_instance_type = "c5.2xlarge"       # Instance type for Stream Manager
+  stream_manager_volume_size   = 16                 # Volume size for Stream Manager
+  stream_manager_auth_user     = "example_user"     # Stream Manager 2.0 authentication user name
+  stream_manager_auth_password = "example_password" # Stream Manager 2.0 authentication password
+
+  # Stream Manager Elastic IP configuration
+  stream_manager_elastic_ip_use_existing = false     # true - use existing elastic IP, false - create new elastic IP automatically
+  stream_manager_elastic_ip_existing     = "1.2.3.4" # Existing Elastic IP
 
   # Stream Manager 2.0 server HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
 
   # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
-  # https_ssl_certificate = "letsencrypt"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_email = "email@example.com"
+  # https_ssl_certificate             = "letsencrypt"
+  # https_ssl_certificate_domain_name = "red5pro.example.com" # Replace with your domain name
+  # https_ssl_certificate_email       = "email@example.com"   # Replace with your email
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
-  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+  # https_ssl_certificate_domain_name = "red5pro.example.com"             # Replace with your domain name
+  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem" # Path to cert file or full chain file
+  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"    # Path to privkey file
 
-   # Red5 Pro Autoscaling Node Image Configuration
-  node_image_create          = true                                     # true - create new Red5 Pro Node image, false - do not create new image
-  node_image_instance_type   = "t3.medium"                              # AWS Instance type for Red5 Pro Node image
-  node_image_instance_volume = 20                                       # Volume size in GB for Red5 Pro Node image
+  # Red5 Pro general configuration
+  red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
+  red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
+  red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
+  # Red5 Pro autoscaling Node image configuration
+  node_image_create        = true        # Default: true for Autoscaling and Cluster, true - create new Node image, false - not create new Node image
+  node_image_instance_type = "t3.medium" # Instance type for Node image
 
   # Extra configuration for Red5 Pro autoscaling nodes
   # Webhooks configuration - (Optional) https://www.red5.net/docs/special/webhooks/overview/
@@ -262,26 +307,33 @@ module "red5pro" {
     enable       = false,
     target_nodes = ["origin", "edge", "transcoder"],
   }
-  # Red5 Pro Autoscaling Node Group Configuration
-  node_group_create                    = true                      # true - create new Node group, false - do not create new Node group
-  node_group_origins_min               = 1                         # Number of minimum Origins
-  node_group_origins_max               = 5                         # Number of maximum Origins
-  node_group_origins_instance_type     = "t3.medium"               # AWS Instance Type for Origins
-  node_group_origins_volume_size       = 50                        # Volume size in GB for Origins
-  node_group_edges_min                 = 1                         # Number of minimum Edges
-  node_group_edges_max                 = 10                        # Number of maximum Edges
-  node_group_edges_instance_type       = "t3.medium"               # AWS Instance Type for Edges
-  node_group_edges_volume_size         = 50                        # Volume size in GB for Edges
-  node_group_transcoders_min           = 0                         # Number of minimum Transcoders
-  node_group_transcoders_max           = 5                         # Number of maximum Transcoders
-  node_group_transcoders_instance_type = "t3.medium"               # AWS Instance Type for Transcoders
-  node_group_transcoders_volume_size   = 50                        # Volume size in GB for Transcoders
-  node_group_relays_min                = 0                         # Number of minimum Relays
-  node_group_relays_max                = 5                         # Number of maximum Relays
-  node_group_relays_instance_type      = "t3.medium"               # AWS Instance Type for Relays
-  node_group_relays_volume_size        = 50                        # Volume size in GB for Relays
-}
 
+  # Red5 Pro autoscaling Node group
+  node_group_create                    = true        # Linux or Mac OS only. true - create new Node group, false - not create new Node group
+  node_group_origins_min               = 1           # Number of minimum Origins
+  node_group_origins_max               = 20          # Number of maximum Origins
+  node_group_origins_instance_type     = "t3.medium" # Instance type for Origins
+  node_group_origins_volume_size       = 16          # Volume size for Origins
+  node_group_edges_min                 = 1           # Number of minimum Edges
+  node_group_edges_max                 = 20          # Number of maximum Edges
+  node_group_edges_instance_type       = "t3.medium" # Instance type for Edges
+  node_group_edges_volume_size         = 16          # Volume size for Edges
+  node_group_transcoders_min           = 0           # Number of minimum Transcoders
+  node_group_transcoders_max           = 20          # Number of maximum Transcoders
+  node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
+  node_group_transcoders_volume_size   = 16          # Volume size for Transcoders
+  node_group_relays_min                = 0           # Number of minimum Relays
+  node_group_relays_max                = 20          # Number of maximum Relays
+  node_group_relays_instance_type      = "t3.medium" # Instance type for Relays
+  node_group_relays_volume_size        = 16          # Volume size for Relays
+
+  # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
+  tags = {
+    Terraform   = "true"
+    Environment = "dev"
+    Project     = "red5pro"
+  }
+}
 
 output "module_output" {
   value = module.red5pro
@@ -310,70 +362,77 @@ In the following example, Terraform module will automates the infrastructure pro
 - Application Load Balancer for Stream Manager 2.0 instances.
 - SSL certificate for Application Load Balancer. Options:
   - `none` - Load Balancer without HTTPS and SSL certificate. Only HTTP on port `80`
-  - `imported` - Load Balancer with HTTPS and imported SSL certificate. HTTP on port `80`, HTTPS on port `443`
+  - `imported` - Load Balancer with HTTPS and imported SSL certificate to the AWS Certificate Manager. HTTP on port `80`, HTTPS on port `443`
+  - `existing` - Load Balancer with HTTPS and existing SSL certificate in the AWS Certificate Manager. HTTP on port `80`, HTTPS on port `443`
 - Red5 Pro (SM2.0) node instance image (origins, edges, transcoders, relays)
 - Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
 
 #### Example main.tf (autoscale)
 
 ```yaml
- # AWS Provider Configuration
- provider "aws" {
-   region     = "us-east-1"
-   access_key = "your_access_key_id"
-   secret_key = "your_secret_access_key"
- }
+provider "aws" {
+  region     = "us-east-1" # AWS region
+  access_key = ""          # AWS IAM Access key
+  secret_key = ""          # AWS IAM Secret key
+}
 
+module "red5pro" {
+  source                = "red5pro/red5pro/aws"
+  type                  = "autoscale"                             # Deployment type: standalone, cluster, autoscale
+  name                  = "red5pro-auto"                          # Name to be used on all the resources as identifier
+  path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
+  ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
 
- module "red5pro" {
-   source                = "../../"
-   type                  = "autoscale"                             # Deployment type: s tandalone, cluster, autoscale
-   name                  = "red5pro-auto"                          # Name to be used on  all the resources as identifier
-   path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or r elative path to Red5 Pro server ZIP file
+  # AWS authetification variables it use for Stream Manager autoscaling configuration
+  aws_region     = "us-east-1" # AWS region 
+  aws_access_key = ""          # AWS IAM Access key
+  aws_secret_key = ""          # AWS IAM Secret key
 
-  
   # SSH key configuration
-  ssh_key_use_existing              = false                                              # true - use existing SSH key, false - create new SSH key
-  ssh_key_existing_private_key_path = "/PATH/TO/SSH/PRIVATE/KEY/example_private_key.pem" # Path to existing SSH private key
-  ssh_key_existing_public_key_path  = "/PATH/TO/SSH/PUBLIC/KEY/example_pub_key.pem"      # Path to existing SSH Public key
-  aws_ssh_key_pair                  =   "red5pro_ssh_key"          # SSH key pair name
-  # Red5 Pro general configuration
-  red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
-  red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
-  red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
+  ssh_key_use_existing              = false                                               # Use existing SSH key pair or create a new one. true = use existing, false = create new SSH key pair
+  ssh_key_name_existing             = "example_key"                                       # SSH key name existing in AWS
+  ssh_key_private_key_path_existing = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # SSH private key path existing in local machine
 
-# Stream Manager 2.0 Instance Configuration
-  stream_manager_instance_type                = "t3.xlarge"   # AWS Instance type for Stream Manager
-  stream_manager_instance_volume_size         = 50            # Volume size in GB for Stream Manager
-  stream_manager_autoscaling_desired_capacity = 1             # Desired capacity for Stream Manager autoscaling group
-  stream_manager_autoscaling_minimum_capacity = 1             # Minimum capacity for Stream Manager autoscaling group
-  stream_manager_autoscaling_maximum_capacity = 2             # Maximum capacity for Stream Manager autoscaling group
-  stream_manager_auth_user                    = "example_user" # Stream Manager 2.0 authentication user name
+  # VPC configuration
+  vpc_use_existing = false       # true - use existing VPC and subnets, false - create new VPC and subnets automatically
+  vpc_id_existing  = "vpc-12345" # VPC ID for existing VPC
+
+  # Kafka standalone instance configuration
+  kafka_standalone_instance_type = "c5.2xlarge" # Instance type for Kafka standalone instance
+  kafka_standalone_volume_size   = 16           # Volume size in GB for Kafka standalone instance
+
+  # Stream Manager configuration 
+  stream_manager_instance_type                = "c5.2xlarge"       # Instance type for Stream Manager
+  stream_manager_volume_size                  = 16                 # Volume size for Stream Manager
+  stream_manager_autoscaling_desired_capacity = 1                  # Desired capacity for Stream Manager autoscaling group
+  stream_manager_autoscaling_minimum_capacity = 1                  # Minimum capacity for Stream Manager autoscaling group
+  stream_manager_autoscaling_maximum_capacity = 2                  # Maximum capacity for Stream Manager autoscaling group
+  stream_manager_auth_user                    = "example_user"     # Stream Manager 2.0 authentication user name
   stream_manager_auth_password                = "example_password" # Stream Manager 2.0 authentication password
-
- # Kafka Standalone Instance Configuration
-  kafka_standalone_instance_create      = true                  # true - create new Kafka standalone instance, false - do not create
-  kafka_standalone_instance_type        = "t3.medium"           # AWS Instance type for Kafka standalone instance
-  kafka_standalone_instance_volume_size = 50                    # Volume size in GB for Kafka standalone instance
-
- # Load Balancer Configuration
-
-  load_balancer_reserved_ip_use_existing = false     # true - use existing reserved IP for Load Balancer, false - create new reserved IP for Load Balancer, 
-  load_balancer_reserved_ip_existing     = "1.2.3.4" # Reserved IP for Load Balancer
 
   # Stream Manager 2.0 Load Balancer HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, imported - import existing HTTPS/SSL certificate
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
-  # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"
-  # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem"
-  # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"
+  # https_ssl_certificate                = "imported"            # Improt local HTTPS/SSL certificate to AWS ACM
+  # https_ssl_certificate_domain_name    = "red5pro.example.com" # Replace with your domain name
+  # https_ssl_certificate_cert_path      = "./cert.pem"          # Path to cert file
+  # https_ssl_certificate_key_path       = "./privkey.pem"       # Path to privkey file
+  # https_ssl_certificate_fullchain_path = "./fullchain.pem"     # Path to full chain file
+
+  # Example of existing HTTPS/SSL certificate configuration - please uncomment and provide your domain name
+  # https_ssl_certificate             = "existing"             # Use existing HTTPS/SSL certificate from AWS ACM
+  # https_ssl_certificate_domain_name = "red5pro.example.com"  # Replace with your domain name
+
+  # Red5 Pro general configuration
+  red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)
+  red5pro_api_enable  = true                  # true - enable Red5 Pro server API, false - disable Red5 Pro server API (https://www.red5.net/docs/development/api/overview/)
+  red5pro_api_key     = "example_key"         # Red5 Pro server API key (https://www.red5.net/docs/development/api/overview/)
 
   # Red5 Pro autoscaling Node image configuration
-  node_image_create          = true                  # Default: true for Autoscaling and Cluster, true - create new Red5 Pro Node image, false - do not create new Red5 Pro Node image
-  node_image_instance_type   = "t3.medium" # Instance type for Red5 Pro Node 
-  node_image_instance_volume = 50                     # Volume size in GB for Red5pro node image
+  node_image_create        = true        # Default: true for Autoscaling and Cluster, true - create new Node image, false - not create new Node image
+  node_image_instance_type = "t3.medium" # Instance type for Node image
+
   # Extra configuration for Red5 Pro autoscaling nodes
   # Webhooks configuration - (Optional) https://www.red5.net/docs/special/webhooks/overview/
   node_config_webhooks = {
@@ -406,24 +465,31 @@ In the following example, Terraform module will automates the infrastructure pro
     target_nodes = ["origin", "edge", "transcoder"],
   }
 
-  # Red5 Pro autoscaling Node group - (Optional)
-  node_group_create                    = true                      # Linux or Mac OS only. true - create new Node group, false - not create new Node group
-  node_group_origins_min               = 1                         # Number of minimum Origins
-  node_group_origins_max               = 20                        # Number of maximum Origins
-  node_group_origins_instance_type     = "t3.medium"
-  node_group_origins_volume_size       = 50                        # Volume size in GB for Origins
-  node_group_edges_min                 = 1                         # Number of minimum Edges
-  node_group_edges_max                 = 40                        # Number of maximum Edges
-  node_group_edges_instance_type       = "t3.medium"
-  node_group_edges_volume_size         = 50                        # Volume size in GB for Edges
-  node_group_transcoders_min           = 0                         # Number of minimum Transcoders
-  node_group_transcoders_max           = 20                        # Number of maximum Transcoders
-  node_group_transcoders_instance_type = "t3.medium"
-  node_group_transcoders_volume_size   = 50                        # Volume size in GB for Transcoders
-  node_group_relays_min                = 0                         # Number of minimum Relays
-  node_group_relays_max                = 20                        # Number of maximum Relays
-  node_group_relays_instance_type      = "t3.medium"
-  node_group_relays_volume_size        = 50                        # Volume size in GB for Relays
+  # Red5 Pro autoscaling Node group
+  node_group_create                    = true        # Linux or Mac OS only. true - create new Node group, false - not create new Node group
+  node_group_origins_min               = 1           # Number of minimum Origins
+  node_group_origins_max               = 20          # Number of maximum Origins
+  node_group_origins_instance_type     = "t3.medium" # Instance type for Origins
+  node_group_origins_volume_size       = 16          # Volume size for Origins
+  node_group_edges_min                 = 1           # Number of minimum Edges
+  node_group_edges_max                 = 20          # Number of maximum Edges
+  node_group_edges_instance_type       = "t3.medium" # Instance type for Edges
+  node_group_edges_volume_size         = 16          # Volume size for Edges
+  node_group_transcoders_min           = 0           # Number of minimum Transcoders
+  node_group_transcoders_max           = 20          # Number of maximum Transcoders
+  node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
+  node_group_transcoders_volume_size   = 16          # Volume size for Transcoders
+  node_group_relays_min                = 0           # Number of minimum Relays
+  node_group_relays_max                = 20          # Number of maximum Relays
+  node_group_relays_instance_type      = "t3.medium" # Instance type for Relays
+  node_group_relays_volume_size        = 16          # Volume size for Relays
+
+  # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
+  tags = {
+    Terraform   = "true"
+    Environment = "dev"
+    Project     = "red5pro"
+  }
 }
 
 output "module_output" {

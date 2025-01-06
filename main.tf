@@ -3,41 +3,39 @@ locals {
   cluster                       = var.type == "cluster" ? true : false
   autoscale                     = var.type == "autoscale" ? true : false
   cluster_or_autoscale          = local.cluster || local.autoscale ? true : false
-  vpc                           = var.type == "vpc" ? true : false
-  ssh_key_name                  = local.vpc ? null : var.ssh_key_create ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
-  ssh_private_key               = local.vpc ? null : var.ssh_key_create ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_private_key_path)
-  ssh_private_key_path          = local.vpc ? null : var.ssh_key_create ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_private_key_path
-  vpc_id                        = var.vpc_create ? aws_vpc.red5pro_vpc[0].id : var.vpc_id_existing
-  vpc_name                      = var.vpc_create ? aws_vpc.red5pro_vpc[0].tags.Name : data.aws_vpc.selected[0].tags.Name
-  subnet_ids                    = var.vpc_create ? tolist(aws_subnet.red5pro_subnets[*].id) : data.aws_subnets.all[0].ids
-  subnet_name                   = var.vpc_create ? tolist([for subnet in aws_subnet.red5pro_subnets : lookup(subnet.tags, "Name", "Unnamed-Subnet")]) : [for subnet_id in data.aws_subnets.all[0].ids : lookup(data.aws_subnet.all_subnets[subnet_id].tags, "Name", "Unnamed-Subnet")]
+  ssh_key_name                  = var.ssh_key_use_existing ? data.aws_key_pair.ssh_key_pair[0].key_name : aws_key_pair.red5pro_ssh_key[0].key_name
+  ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_private_key_path_existing) : tls_private_key.red5pro_ssh_key[0].private_key_pem 
+  ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_private_key_path_existing : local_file.red5pro_ssh_key_pem[0].filename
+  vpc_id                        = var.vpc_use_existing ? var.vpc_id_existing : aws_vpc.red5pro_vpc[0].id
+  vpc_name                      = var.vpc_use_existing ? data.aws_vpc.selected[0].tags.Name : aws_vpc.red5pro_vpc[0].tags.Name
+  subnet_ids                    = var.vpc_use_existing ? data.aws_subnets.all[0].ids : tolist(aws_subnet.red5pro_subnets[*].id)
   kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
   kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? aws_instance.red5pro_kafka[0].private_ip : aws_instance.red5pro_sm[0].private_ip : "null"
   kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
   kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
   kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
   kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
-  stream_manager_ip             = local.autoscale ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster && var.stream_manager_elastic_ip_create && length(aws_eip.elastic_ip_sm) > 0 ? aws_eip.elastic_ip_sm[0].public_ip : local.cluster && !var.stream_manager_elastic_ip_create ? var.stream_manager_elastic_ip_existing : "null"
-  stream_manager_ssh_ip         = local.autoscale && length(aws_instance.red5pro_sm) > 0 ? aws_instance.red5pro_sm[0].public_ip : local.cluster && var.stream_manager_elastic_ip_create && length(aws_eip.elastic_ip_sm) > 0 ? aws_eip.elastic_ip_sm[0].public_ip : local.cluster && !var.stream_manager_elastic_ip_create ? var.stream_manager_elastic_ip_existing : "null"
+  stream_manager_ip             = local.autoscale ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster ? var.stream_manager_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_sm[0].public_ip : aws_eip.elastic_ip_sm[0].public_ip : "null"
+  stream_manager_ssh_ip         = local.autoscale ? aws_instance.red5pro_sm[0].public_ip : local.cluster ? var.stream_manager_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_sm[0].public_ip : aws_eip.elastic_ip_sm[0].public_ip : "null"
   stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
   stream_manager_standalone     = local.autoscale ? false : true
   stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
-  standalone_elastic_ip         = local.standalone ? var.standalone_elastic_ip_create ? aws_eip.elastic_ip_standalone[0].public_ip : data.aws_eip.existing_elastic_ip_standalone[0].public_ip : "null"
+  standalone_elastic_ip         = local.standalone ? var.standalone_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_standalone[0].public_ip : aws_eip.elastic_ip_standalone[0].public_ip : "null"
 }
 
 ################################################################################
 # Elastic IP for Standalone Red5 Pro server
 ################################################################################
 
-# Create a new Elastic IP (only if standalone_elastic_ip_create = true)
+# Create a new Elastic IP (only if standalone_elastic_ip_use_existing = true)
 resource "aws_eip" "elastic_ip_standalone" {
-  count = local.standalone && var.standalone_elastic_ip_create ? 1 : 0
+  count = local.standalone && var.standalone_elastic_ip_use_existing == false ? 1 : 0
   tags  = merge({ "Name" = "${var.name}-elastic-ip-standalone" }, var.tags, )
 }
 
-# Use an existing Elastic IP (only if standalone_elastic_ip_create = false)
+# Use an existing Elastic IP (only if standalone_elastic_ip_use_existing = false)
 data "aws_eip" "existing_elastic_ip_standalone" {
-  count     = local.standalone && var.standalone_elastic_ip_create == false ? 1 : 0
+  count     = local.standalone && var.standalone_elastic_ip_use_existing ? 1 : 0
   public_ip = var.standalone_elastic_ip_existing
 }
 
@@ -45,22 +43,22 @@ data "aws_eip" "existing_elastic_ip_standalone" {
 resource "aws_eip_association" "elastic_ip_association_standalone" {
   count         = local.standalone ? 1 : 0
   instance_id   = aws_instance.red5pro_standalone[0].id
-  allocation_id = var.standalone_elastic_ip_create ? aws_eip.elastic_ip_standalone[0].id : data.aws_eip.existing_elastic_ip_standalone[0].id
+  allocation_id = var.standalone_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_standalone[0].id : aws_eip.elastic_ip_standalone[0].id
 }
 
 ################################################################################
 # Elastic IP for Stream Manager 2.0
 ################################################################################
 
-# Create a new Elastic IP (only if stream_manager_elastic_ip_create = true)
+# Create a new Elastic IP (only if stream_manager_elastic_ip_use_existing = true)
 resource "aws_eip" "elastic_ip_sm" {
-  count = local.cluster && var.stream_manager_elastic_ip_create ? 1 : 0
+  count = local.cluster && var.stream_manager_elastic_ip_use_existing == false ? 1 : 0
   tags  = merge({ "Name" = "${var.name}-elastic-ip-sm" }, var.tags)
 }
 
-# Use an existing Elastic IP (only if stream_manager_elastic_ip_create = false)
+# Use an existing Elastic IP (only if stream_manager_elastic_ip_use_existing = false)
 data "aws_eip" "existing_elastic_ip_sm" {
-  count     = local.cluster && var.stream_manager_elastic_ip_create == false ? 1 : 0
+  count     = local.cluster && var.stream_manager_elastic_ip_use_existing ? 1 : 0
   public_ip = var.stream_manager_elastic_ip_existing
 }
 
@@ -68,7 +66,7 @@ data "aws_eip" "existing_elastic_ip_sm" {
 resource "aws_eip_association" "elastic_ip_association_sm" {
   count         = local.cluster ? 1 : 0
   instance_id   = aws_instance.red5pro_sm[0].id
-  allocation_id = var.stream_manager_elastic_ip_create ? aws_eip.elastic_ip_sm[0].id : data.aws_eip.existing_elastic_ip_sm[0].id
+  allocation_id = var.stream_manager_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_sm[0].id : aws_eip.elastic_ip_sm[0].id
 }
 ################################################################################
 # SSH_KEY
@@ -76,35 +74,35 @@ resource "aws_eip_association" "elastic_ip_association_sm" {
 
 # SSH key pair generation
 resource "tls_private_key" "red5pro_ssh_key" {
-  count     = local.vpc ? 0 : var.ssh_key_create ? 1 : 0
+  count     = var.ssh_key_use_existing ? 0 : 1
   algorithm = "RSA"
   rsa_bits  = 2048
 }
 
 # Import SSH key pair to AWS
 resource "aws_key_pair" "red5pro_ssh_key" {
-  count      = local.vpc ? 0 : var.ssh_key_create ? 1 : 0
-  key_name   = var.ssh_key_name
+  count      = var.ssh_key_use_existing ? 0 : 1
+  key_name   = "${var.name}-ssh-key"
   public_key = tls_private_key.red5pro_ssh_key[0].public_key_openssh
 }
 
 # Save SSH key pair files to local folder
 resource "local_file" "red5pro_ssh_key_pem" {
-  count           = local.vpc ? 0 : var.ssh_key_create ? 1 : 0
-  filename        = "./${var.ssh_key_name}.pem"
+  count           = var.ssh_key_use_existing ? 0 : 1
+  filename        = "./${var.name}-ssh-key.pem"
   content         = tls_private_key.red5pro_ssh_key[0].private_key_pem
   file_permission = "0400"
 }
 resource "local_file" "red5pro_ssh_key_pub" {
-  count    = local.vpc ? 0 : var.ssh_key_create ? 1 : 0
-  filename = "./${var.ssh_key_name}.pub"
+  count    = var.ssh_key_use_existing ? 0 : 1
+  filename = "./${var.name}-ssh-key.pub"
   content  = tls_private_key.red5pro_ssh_key[0].public_key_openssh
 }
 
 # Check current SSH key pair on the AWS
 data "aws_key_pair" "ssh_key_pair" {
-  count    = local.vpc ? 0 : var.ssh_key_create ? 0 : 1
-  key_name = var.ssh_key_name
+  count    = var.ssh_key_use_existing ? 1 : 0
+  key_name = var.ssh_key_name_existing
 }
 ################################################################################
 # AWS Cloud Infrastructure
@@ -129,7 +127,7 @@ data "aws_ami" "latest_ubuntu" {
 ################################################################################
 
 data "aws_vpc" "selected" {
-  count = var.vpc_create ? 0 : 1
+  count = var.vpc_use_existing ? 1 : 0
   id    = var.vpc_id_existing
   lifecycle {
     postcondition {
@@ -142,7 +140,7 @@ data "aws_vpc" "selected" {
 }
 
 data "aws_subnets" "all" {
-  count = var.vpc_create ? 0 : 1
+  count = var.vpc_use_existing ? 1 : 0
   filter {
     name   = "vpc-id"
     values = [var.vpc_id_existing]
@@ -156,7 +154,7 @@ data "aws_subnets" "all" {
 }
 
 data "aws_subnet" "all_subnets" {
-  for_each = var.vpc_create ? toset([]) : toset(data.aws_subnets.all[0].ids)
+  for_each = var.vpc_use_existing ? toset(data.aws_subnets.all[0].ids) : toset([])
   id       = each.value
   lifecycle {
     postcondition {
@@ -171,7 +169,7 @@ data "aws_subnet" "all_subnets" {
 ################################################################################
 
 data "aws_availability_zones" "available" {
-  count = var.vpc_create ? 1 : 0
+  count = var.vpc_use_existing ? 0 : 1
   state = "available"
 
   filter {
@@ -188,7 +186,7 @@ data "aws_availability_zones" "available" {
 }
 
 resource "aws_vpc" "red5pro_vpc" {
-  count                = var.vpc_create ? 1 : 0
+  count                = var.vpc_use_existing ? 0 : 1
   cidr_block           = var.vpc_cidr_block
   instance_tenancy     = "default"
   enable_dns_support   = true
@@ -198,14 +196,14 @@ resource "aws_vpc" "red5pro_vpc" {
 }
 
 resource "aws_internet_gateway" "red5pro_igw" {
-  count  = var.vpc_create ? 1 : 0
+  count  = var.vpc_use_existing ? 0 : 1
   vpc_id = aws_vpc.red5pro_vpc[0].id
 
   tags = merge({ "Name" = "${var.name}-igw" }, var.tags, )
 }
 
 resource "aws_subnet" "red5pro_subnets" {
-  count                   = var.vpc_create ? length(data.aws_availability_zones.available[0].names) : 0
+  count                   = var.vpc_use_existing ? 0 : length(data.aws_availability_zones.available[0].names)
   vpc_id                  = aws_vpc.red5pro_vpc[0].id
   cidr_block              = element(var.vpc_public_subnets, count.index)
   map_public_ip_on_launch = true
@@ -215,7 +213,7 @@ resource "aws_subnet" "red5pro_subnets" {
 }
 
 resource "aws_route" "red5pro_route" {
-  count                  = var.vpc_create ? 1 : 0
+  count                  = var.vpc_use_existing ? 0 : 1
   route_table_id         = aws_vpc.red5pro_vpc[0].main_route_table_id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.red5pro_igw[0].id
@@ -223,7 +221,7 @@ resource "aws_route" "red5pro_route" {
 }
 
 resource "aws_route_table_association" "red5pro_subnets_association" {
-  count          = var.vpc_create ? length(aws_subnet.red5pro_subnets) : 0
+  count          = var.vpc_use_existing ? 0 : length(aws_subnet.red5pro_subnets)
   subnet_id      = aws_subnet.red5pro_subnets[count.index].id
   route_table_id = aws_vpc.red5pro_vpc[0].main_route_table_id
 }
@@ -234,148 +232,232 @@ resource "aws_route_table_association" "red5pro_subnets_association" {
 
 # Security group for Red5Pro Stream Manager (AWS VPC)
 resource "aws_security_group" "red5pro_sm_sg" {
-  count       = local.cluster || local.autoscale ? 1 : 0
+  count       = local.cluster_or_autoscale ? 1 : 0
   name        = "${var.name}-sm-sg"
   description = "Allow inbound/outbound traffic for Stream Manager"
   vpc_id      = local.vpc_id
 
-  dynamic "ingress" {
-    for_each = var.security_group_stream_manager_ingress
-    content {
-      from_port        = lookup(ingress.value, "from_port", 0)
-      to_port          = lookup(ingress.value, "to_port", 0)
-      protocol         = lookup(ingress.value, "protocol", "tcp")
-      cidr_blocks      = [lookup(ingress.value, "cidr_block", "0.0.0.0/0")]
-      ipv6_cidr_blocks = [lookup(ingress.value, "ipv6_cidr_block", "::/0")]
-    }
-  }
-  dynamic "egress" {
-    for_each = var.security_group_stream_manager_egress
-    content {
-      from_port        = lookup(egress.value, "from_port", 0)
-      to_port          = lookup(egress.value, "to_port", 0)
-      protocol         = lookup(egress.value, "protocol", "-1")
-      cidr_blocks      = [lookup(egress.value, "cidr_block", "0.0.0.0/0")]
-      ipv6_cidr_blocks = [lookup(egress.value, "ipv6_cidr_block", "::/0")]
-    }
-  }
   tags = merge({ "Name" = "${var.name}-sm-sg" }, var.tags, )
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_ingress_ipv4" {
+  count             = local.cluster_or_autoscale ? length(var.security_group_stream_manager_ingress) : 0
+  security_group_id = aws_security_group.red5pro_sm_sg[0].id
+  cidr_ipv4         = var.security_group_stream_manager_ingress[count.index].cidr_block
+  ip_protocol       = var.security_group_stream_manager_ingress[count.index].protocol
+  from_port         = var.security_group_stream_manager_ingress[count.index].from_port
+  to_port           = var.security_group_stream_manager_ingress[count.index].to_port
+  description       = var.security_group_stream_manager_ingress[count.index].description
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_ingress_ipv6" {
+  count             = local.cluster_or_autoscale ? length(var.security_group_stream_manager_ingress) : 0
+  security_group_id = aws_security_group.red5pro_sm_sg[0].id
+  cidr_ipv6         = var.security_group_stream_manager_ingress[count.index].ipv6_cidr_block
+  ip_protocol       = var.security_group_stream_manager_ingress[count.index].protocol
+  from_port         = var.security_group_stream_manager_ingress[count.index].from_port
+  to_port           = var.security_group_stream_manager_ingress[count.index].to_port
+  description       = var.security_group_stream_manager_ingress[count.index].description
+}
+resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv4" {
+  count             = local.cluster_or_autoscale ? length(var.security_group_stream_manager_egress) : 0
+  security_group_id = aws_security_group.red5pro_sm_sg[0].id
+  cidr_ipv4         = var.security_group_stream_manager_egress[count.index].cidr_block
+  ip_protocol       = var.security_group_stream_manager_egress[count.index].protocol
+  from_port         = var.security_group_stream_manager_egress[count.index].from_port
+  to_port           = var.security_group_stream_manager_egress[count.index].to_port
+  description       = var.security_group_stream_manager_egress[count.index].description
+}
+resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv6" {
+  count             = local.cluster_or_autoscale ? length(var.security_group_stream_manager_egress) : 0
+  security_group_id = aws_security_group.red5pro_sm_sg[0].id
+  cidr_ipv6         = var.security_group_stream_manager_egress[count.index].ipv6_cidr_block
+  ip_protocol       = var.security_group_stream_manager_egress[count.index].protocol
+  from_port         = var.security_group_stream_manager_egress[count.index].from_port
+  to_port           = var.security_group_stream_manager_egress[count.index].to_port
+  description       = var.security_group_stream_manager_egress[count.index].description
 }
 
 # Security group for Red5Pro Nodes (AWS VPC)
 resource "aws_security_group" "red5pro_node_sg" {
-  count       = local.cluster || local.autoscale ? 1 : 0
+  count       = local.cluster_or_autoscale ? 1 : 0
   name        = "${var.name}-node-sg"
   description = "Allow inbound/outbound traffic for Nodes"
   vpc_id      = local.vpc_id
 
-  dynamic "ingress" {
-    for_each = var.security_group_node_ingress
-    content {
-      from_port        = lookup(ingress.value, "from_port", 0)
-      to_port          = lookup(ingress.value, "to_port", 0)
-      protocol         = lookup(ingress.value, "protocol", "tcp")
-      cidr_blocks      = [lookup(ingress.value, "cidr_block", "0.0.0.0/0")]
-      ipv6_cidr_blocks = [lookup(ingress.value, "ipv6_cidr_block", "::/0")]
-    }
-  }
-  dynamic "egress" {
-    for_each = var.security_group_node_egress
-    content {
-      from_port        = lookup(egress.value, "from_port", 0)
-      to_port          = lookup(egress.value, "to_port", 0)
-      protocol         = lookup(egress.value, "protocol", "-1")
-      cidr_blocks      = [lookup(egress.value, "cidr_block", "0.0.0.0/0")]
-      ipv6_cidr_blocks = [lookup(egress.value, "ipv6_cidr_block", "::/0")]
-    }
-  }
   tags = merge({ "Name" = "${var.name}-node-sg" }, var.tags, )
 }
+resource "aws_vpc_security_group_ingress_rule" "red5pro_node_ingress_ipv4" {
+  count             = local.cluster_or_autoscale ? length(var.security_group_node_ingress) : 0
+  security_group_id = aws_security_group.red5pro_node_sg[0].id
+  cidr_ipv4         = var.security_group_node_ingress[count.index].cidr_block
+  ip_protocol       = var.security_group_node_ingress[count.index].protocol
+  from_port         = var.security_group_node_ingress[count.index].from_port
+  to_port           = var.security_group_node_ingress[count.index].to_port
+  description       = var.security_group_node_ingress[count.index].description
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_node_ingress_ipv6" {
+  count             = local.cluster_or_autoscale ? length(var.security_group_node_ingress) : 0
+  security_group_id = aws_security_group.red5pro_node_sg[0].id
+  cidr_ipv6         = var.security_group_node_ingress[count.index].ipv6_cidr_block
+  ip_protocol       = var.security_group_node_ingress[count.index].protocol
+  from_port         = var.security_group_node_ingress[count.index].from_port
+  to_port           = var.security_group_node_ingress[count.index].to_port
+  description       = var.security_group_node_ingress[count.index].description
+}
+resource "aws_vpc_security_group_egress_rule" "red5pro_node_egress_ipv4" {
+  count             = local.cluster_or_autoscale ? length(var.security_group_node_egress) : 0
+  security_group_id = aws_security_group.red5pro_node_sg[0].id
+  cidr_ipv4         = var.security_group_node_egress[count.index].cidr_block
+  ip_protocol       = var.security_group_node_egress[count.index].protocol
+  from_port         = var.security_group_node_egress[count.index].from_port
+  to_port           = var.security_group_node_egress[count.index].to_port
+  description       = var.security_group_node_egress[count.index].description
+}
+resource "aws_vpc_security_group_egress_rule" "red5pro_node_egress_ipv6" {
+  count             = local.cluster_or_autoscale ? length(var.security_group_node_egress) : 0
+  security_group_id = aws_security_group.red5pro_node_sg[0].id
+  cidr_ipv6         = var.security_group_node_egress[count.index].ipv6_cidr_block
+  ip_protocol       = var.security_group_node_egress[count.index].protocol
+  from_port         = var.security_group_node_egress[count.index].from_port
+  to_port           = var.security_group_node_egress[count.index].to_port
+  description       = var.security_group_node_egress[count.index].description
+}
 
-# Security group for Kafka (AWS vpc)
+# Security group for Kafka (AWS VPC)
 resource "aws_security_group" "red5pro_kafka_sg" {
   count       = local.cluster_or_autoscale ? 1 : 0
   name        = "${var.name}-kafka-sg"
   description = "Allow inbound/outbound traffic for Kafka"
   vpc_id      = local.vpc_id
 
-  dynamic "ingress" {
-    for_each = var.security_group_kafka_ingress
-    content {
-      from_port        = lookup(ingress.value, "from_port", 0)
-      to_port          = lookup(ingress.value, "to_port", 0)
-      protocol         = lookup(ingress.value, "protocol", "tcp")
-      cidr_blocks      = [lookup(ingress.value, "cidr_block", "0.0.0.0/0")]
-      ipv6_cidr_blocks = [lookup(ingress.value, "ipv6_cidr_block", "::/0")]
-    }
-  }
-  dynamic "egress" {
-    for_each = var.security_group_kafka_egress
-    content {
-      from_port        = lookup(egress.value, "from_port", 0)
-      to_port          = lookup(egress.value, "to_port", 0)
-      protocol         = lookup(egress.value, "protocol", "-1")
-      cidr_blocks      = [lookup(egress.value, "cidr_block", "0.0.0.0/0")]
-      ipv6_cidr_blocks = [lookup(egress.value, "ipv6_cidr_block", "::/0")]
-    }
-  }
-
   tags = merge({ "Name" = "${var.name}-kafka-sg" }, var.tags, )
 }
+resource "aws_vpc_security_group_ingress_rule" "red5pro_kafka_ingress_ipv4" {
+  count             = local.cluster_or_autoscale ? length(var.security_group_kafka_ingress) : 0
+  security_group_id = aws_security_group.red5pro_kafka_sg[0].id
+  cidr_ipv4         = var.security_group_kafka_ingress[count.index].cidr_block
+  ip_protocol       = var.security_group_kafka_ingress[count.index].protocol
+  from_port         = var.security_group_kafka_ingress[count.index].from_port
+  to_port           = var.security_group_kafka_ingress[count.index].to_port
+  description       = var.security_group_kafka_ingress[count.index].description
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_kafka_ingress_ipv6" {
+  count             = local.cluster_or_autoscale ? length(var.security_group_kafka_ingress) : 0
+  security_group_id = aws_security_group.red5pro_kafka_sg[0].id
+  cidr_ipv6         = var.security_group_kafka_ingress[count.index].ipv6_cidr_block
+  ip_protocol       = var.security_group_kafka_ingress[count.index].protocol
+  from_port         = var.security_group_kafka_ingress[count.index].from_port
+  to_port           = var.security_group_kafka_ingress[count.index].to_port
+  description       = var.security_group_kafka_ingress[count.index].description
+}
+resource "aws_vpc_security_group_egress_rule" "red5pro_kafka_egress_ipv4" {
+  count             = local.cluster_or_autoscale ? length(var.security_group_kafka_egress) : 0
+  security_group_id = aws_security_group.red5pro_kafka_sg[0].id
+  cidr_ipv4         = var.security_group_kafka_egress[count.index].cidr_block
+  ip_protocol       = var.security_group_kafka_egress[count.index].protocol
+  from_port         = var.security_group_kafka_egress[count.index].from_port
+  to_port           = var.security_group_kafka_egress[count.index].to_port
+  description       = var.security_group_kafka_egress[count.index].description
+}
+resource "aws_vpc_security_group_egress_rule" "red5pro_kafka_egress_ipv6" {
+  count             = local.cluster_or_autoscale ? length(var.security_group_kafka_egress) : 0
+  security_group_id = aws_security_group.red5pro_kafka_sg[0].id
+  cidr_ipv6         = var.security_group_kafka_egress[count.index].ipv6_cidr_block
+  ip_protocol       = var.security_group_kafka_egress[count.index].protocol
+  from_port         = var.security_group_kafka_egress[count.index].from_port
+  to_port           = var.security_group_kafka_egress[count.index].to_port
+  description       = var.security_group_kafka_egress[count.index].description
+}
 
-# Security group for StreamManager and Node images (AWS EC2)
+# Security group for StreamManager and Node images (AWS VPC)
 resource "aws_security_group" "red5pro_images_sg" {
   count       = local.cluster || local.autoscale ? 1 : 0
   name        = "${var.name}-images-sg"
   description = "Allow inbound/outbound traffic for SM and Node images"
   vpc_id      = local.vpc_id
 
-  ingress {
-    description = "Access to SSH from 0.0.0.0/0"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = merge({ "Name" = "${var.name}-images-sg" }, var.tags, )
 }
+resource "aws_vpc_security_group_ingress_rule" "red5pro_images_ingress_ipv4" {
+  count             = local.cluster || local.autoscale ? 1 : 0
+  security_group_id = aws_security_group.red5pro_images_sg[0].id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 22
+  to_port           = 22
+  description       = "SSH - IPv4"
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_images_ingress_ipv6" {
+  count             = local.cluster || local.autoscale ? 1 : 0
+  security_group_id = aws_security_group.red5pro_images_sg[0].id
+  cidr_ipv6         = "::/0"
+  ip_protocol       = "tcp"
+  from_port         = 22
+  to_port           = 22
+  description       = "SSH - IPv6"
+}
+resource "aws_vpc_security_group_egress_rule" "red5pro_images_egress_ipv4" {
+  count             = local.cluster || local.autoscale ? 1 : 0
+  security_group_id = aws_security_group.red5pro_images_sg[0].id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+  from_port         = 0
+  to_port           = 0
+  description       = "All egress traffic - IPv4"
+}
+resource "aws_vpc_security_group_egress_rule" "red5pro_images_egress_ipv6" {
+  count             = local.cluster || local.autoscale ? 1 : 0
+  security_group_id = aws_security_group.red5pro_images_sg[0].id
+  cidr_ipv6         = "::/0"
+  ip_protocol       = "-1"
+  from_port         = 0
+  to_port           = 0
+  description       = "All egress traffic - IPv6"
+}
 
-# Security group for standalone Red5Pro server (AWS EC2)
+# Security group for standalone Red5Pro server (AWS VPC)
 resource "aws_security_group" "red5pro_standalone_sg" {
   count       = local.standalone ? 1 : 0
   name        = "${var.name}-standalone-sg"
-  description = "Allow inbound/outbound traffic for standalone Red5Pro server"
+  description = "Allow inbound/outbound traffic for standalone Red5 Pro server"
   vpc_id      = local.vpc_id
 
-  dynamic "ingress" {
-    for_each = var.security_group_standalone_ingress
-    content {
-      from_port        = lookup(ingress.value, "from_port", 0)
-      to_port          = lookup(ingress.value, "to_port", 0)
-      protocol         = lookup(ingress.value, "protocol", "tcp")
-      cidr_blocks      = [lookup(ingress.value, "cidr_block", "0.0.0.0/0")]
-      ipv6_cidr_blocks = [lookup(ingress.value, "ipv6_cidr_block", "::/0")]
-    }
-  }
-  dynamic "egress" {
-    for_each = var.security_group_standalone_egress
-    content {
-      from_port        = lookup(egress.value, "from_port", 0)
-      to_port          = lookup(egress.value, "to_port", 0)
-      protocol         = lookup(egress.value, "protocol", "-1")
-      cidr_blocks      = [lookup(egress.value, "cidr_block", "0.0.0.0/0")]
-      ipv6_cidr_blocks = [lookup(egress.value, "ipv6_cidr_block", "::/0")]
-    }
-  }
-
   tags = merge({ "Name" = "${var.name}-standalone-sg" }, var.tags, )
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_standalone_ingress_ipv4" {
+  count             = local.standalone ? length(var.security_group_standalone_ingress) : 0
+  security_group_id = aws_security_group.red5pro_standalone_sg[0].id
+  cidr_ipv4         = var.security_group_standalone_ingress[count.index].cidr_block
+  ip_protocol       = var.security_group_standalone_ingress[count.index].protocol
+  from_port         = var.security_group_standalone_ingress[count.index].from_port
+  to_port           = var.security_group_standalone_ingress[count.index].to_port
+  description       = var.security_group_standalone_ingress[count.index].description
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_standalone_ingress_ipv6" {
+  count             = local.standalone ? length(var.security_group_standalone_ingress) : 0
+  security_group_id = aws_security_group.red5pro_standalone_sg[0].id
+  cidr_ipv6         = var.security_group_standalone_ingress[count.index].ipv6_cidr_block
+  ip_protocol       = var.security_group_standalone_ingress[count.index].protocol
+  from_port         = var.security_group_standalone_ingress[count.index].from_port
+  to_port           = var.security_group_standalone_ingress[count.index].to_port
+  description       = var.security_group_standalone_ingress[count.index].description
+}
+resource "aws_vpc_security_group_egress_rule" "red5pro_standalone_egress_ipv4" {
+  count             = local.standalone ? length(var.security_group_standalone_egress) : 0
+  security_group_id = aws_security_group.red5pro_standalone_sg[0].id
+  cidr_ipv4         = var.security_group_standalone_egress[count.index].cidr_block
+  ip_protocol       = var.security_group_standalone_egress[count.index].protocol
+  from_port         = var.security_group_standalone_egress[count.index].from_port
+  to_port           = var.security_group_standalone_egress[count.index].to_port
+  description       = var.security_group_standalone_egress[count.index].description
+}
+resource "aws_vpc_security_group_egress_rule" "red5pro_standalone_egress_ipv6" {
+  count             = local.standalone ? length(var.security_group_standalone_egress) : 0
+  security_group_id = aws_security_group.red5pro_standalone_sg[0].id
+  cidr_ipv6         = var.security_group_standalone_egress[count.index].ipv6_cidr_block
+  ip_protocol       = var.security_group_standalone_egress[count.index].protocol
+  from_port         = var.security_group_standalone_egress[count.index].from_port
+  to_port           = var.security_group_standalone_egress[count.index].to_port
+  description       = var.security_group_standalone_egress[count.index].description
 }
 
 ################################################################################
@@ -436,17 +518,38 @@ resource "aws_instance" "red5pro_standalone" {
       "export NODE_SOCIALPUSHER_ENABLE='${var.standalone_red5pro_socialpusher_enable}'",
       "export NODE_SUPPRESSOR_ENABLE='${var.standalone_red5pro_suppressor_enable}'",
       "export NODE_HLS_ENABLE='${var.standalone_red5pro_hls_enable}'",
+      "export NODE_HLS_OUTPUT_FORMAT='${var.standalone_red5pro_hls_output_format}'",
+      "export NODE_HLS_DVR_PLAYLIST='${var.standalone_red5pro_hls_dvr_playlist}'",
+      "export NODE_WEBHOOKS_ENABLE='${var.standalone_red5pro_webhooks_enable}'",
+      "export NODE_WEBHOOKS_ENDPOINT='${var.standalone_red5pro_webhooks_endpoint}'",
       "export NODE_ROUND_TRIP_AUTH_ENABLE='${var.standalone_red5pro_round_trip_auth_enable}'",
       "export NODE_ROUND_TRIP_AUTH_HOST='${var.standalone_red5pro_round_trip_auth_host}'",
       "export NODE_ROUND_TRIP_AUTH_PORT='${var.standalone_red5pro_round_trip_auth_port}'",
       "export NODE_ROUND_TRIP_AUTH_PROTOCOL='${var.standalone_red5pro_round_trip_auth_protocol}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE='${var.standalone_red5pro_round_trip_auth_endpoint_validate}'",
       "export NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE='${var.standalone_red5pro_round_trip_auth_endpoint_invalidate}'",
+      "export NODE_CLOUDSTORAGE_ENABLE='${var.standalone_red5pro_cloudstorage_enable}'",
+      "export NODE_CLOUDSTORAGE_AWS_ACCESS_KEY='${var.standalone_red5pro_cloudstorage_aws_access_key}'",
+      "export NODE_CLOUDSTORAGE_AWS_SECRET_KEY='${var.standalone_red5pro_cloudstorage_aws_secret_key}'",
+      "export NODE_CLOUDSTORAGE_AWS_BUCKET_NAME='${var.standalone_red5pro_cloudstorage_aws_bucket_name}'",
+      "export NODE_CLOUDSTORAGE_AWS_REGION='${var.standalone_red5pro_cloudstorage_aws_region}'",
+      "export NODE_CLOUDSTORAGE_POSTPROCESSOR_ENABLE='${var.standalone_red5pro_cloudstorage_postprocessor_enable}'",
+      "export NODE_CLOUDSTORAGE_AWS_BUCKET_ACL_POLICY='${var.standalone_red5pro_cloudstorage_aws_bucket_acl_policy}'",
+      "export NODE_STREAM_AUTO_RECORD_ENABLE='${var.standalone_red5pro_stream_auto_record_enable}'",
       "cd /home/ubuntu/red5pro-installer/",
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_node_apps_plugins.sh",
-      "sudo systemctl daemon-reload && sudo systemctl start red5pro",
+      "export COTURN_ENABLE='${var.standalone_red5pro_coturn_enable}'",
+      "export COTURN_ADDRESS='${var.standalone_red5pro_coturn_address}'",
+      "sudo -E /home/ubuntu/red5pro-installer/r5p_config_coturn.sh",
+      "export NODE_EFS_ENABLE='${var.standalone_red5pro_efs_enable}'",
+      "export NODE_EFS_DNS_NAME='${var.standalone_red5pro_efs_dns_name}'",
+      "export NODE_EFS_MOUNT_POINT='${var.standalone_red5pro_efs_mount_point}'",
+      "sudo -E /home/ubuntu/red5pro-installer/r5p_config_efs.sh",
+      "export BREW_MIXER_ENABLE='${var.standalone_red5pro_brew_mixer_enable}'",
+      "[ $BREW_MIXER_ENABLE = true ] && echo 'Start Brew Mixer configuration...' && cd /usr/local/red5pro/extras/brewmixer/ && sudo bash ./node-mixer-standalone-deploy.sh",
+      "sudo systemctl daemon-reload && sudo systemctl restart red5pro",
       "sudo mkdir -p /usr/local/red5pro/certs",
       "echo '${try(file(var.https_ssl_certificate_cert_path), "")}' | sudo tee -a /usr/local/red5pro/certs/fullchain.pem",
       "echo '${try(file(var.https_ssl_certificate_key_path), "")}' | sudo tee -a /usr/local/red5pro/certs/privkey.pem",
@@ -659,6 +762,7 @@ resource "null_resource" "red5pro_kafka" {
 ################################################################################
 # Stream manager 2.0 - (AWS EC2 instance)
 ################################################################################
+
 # Generate random password for Red5 Pro Stream Manager 2.0 authentication
 resource "random_password" "r5as_auth_secret" {
   count   = local.cluster_or_autoscale ? 1 : 0
@@ -697,7 +801,7 @@ resource "aws_instance" "red5pro_sm" {
           R5AS_AUTH_PASS=${var.stream_manager_auth_password}
           TF_VAR_aws_access_key=${var.aws_access_key}
           TF_VAR_aws_secret_key=${var.aws_secret_key}
-          TF_VAR_aws_ssh_key_pair=${var.ssh_key_name}
+          TF_VAR_aws_ssh_key_pair=${local.ssh_key_name}
           TF_VAR_r5p_license_key=${var.red5pro_license_key}
           TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}
           TRAEFIK_HOST=${var.https_ssl_certificate_domain_name}
@@ -919,10 +1023,10 @@ resource "aws_autoscaling_attachment" "red5pro_sm_aa" {
 
 
 ################################################################################
-# Red5 Pro Autoscaling Node - Origin/Edge/Transcoders/Relay (AWS Instance)
+# Red5 Pro Autoscaling Node - Origin/Edge/Transcoders/Relay (AWS EC2 Instance)
 ################################################################################
 
-# ORIGIN Node instance for AMI (AWS EC2)
+# Node instance for AMI (AWS EC2)
 resource "aws_instance" "red5pro_node" {
   count                  = local.cluster_or_autoscale && var.node_image_create ? 1 : 0
   ami                    = data.aws_ami.latest_ubuntu.id
@@ -987,7 +1091,6 @@ resource "aws_instance" "red5pro_node" {
   }
 }
 
-
 ################################################################################################
 # Red5 Pro autoscaling nodes create images - Origin/Edge/Transcoders/Relay (AWS Custom Images)
 ################################################################################################
@@ -1044,8 +1147,17 @@ resource "time_sleep" "wait_for_delete_nodegroup" {
     aws_instance.red5pro_sm[0],
     aws_instance.red5pro_kafka[0],
     aws_security_group.red5pro_node_sg[0],
+    aws_vpc_security_group_egress_rule.red5pro_node_egress_ipv4[0],
     aws_security_group.red5pro_kafka_sg[0],
+    aws_vpc_security_group_ingress_rule.red5pro_kafka_ingress_ipv4[0],
+    aws_vpc_security_group_ingress_rule.red5pro_kafka_ingress_ipv4[1],
+    aws_vpc_security_group_egress_rule.red5pro_kafka_egress_ipv4[0],
     aws_security_group.red5pro_sm_sg[0],
+    aws_vpc_security_group_ingress_rule.red5pro_sm_ingress_ipv4[0],
+    aws_vpc_security_group_ingress_rule.red5pro_sm_ingress_ipv4[1],
+    aws_vpc_security_group_ingress_rule.red5pro_sm_ingress_ipv4[2],
+    aws_vpc_security_group_ingress_rule.red5pro_sm_ingress_ipv4[3],
+    aws_vpc_security_group_egress_rule.red5pro_sm_egress_ipv4[0],
     aws_internet_gateway.red5pro_igw[0],
     aws_route.red5pro_route[0],
     aws_route_table_association.red5pro_subnets_association[0],
@@ -1053,6 +1165,7 @@ resource "time_sleep" "wait_for_delete_nodegroup" {
     aws_autoscaling_group.red5pro_sm_ag[0],
     aws_autoscaling_attachment.red5pro_sm_aa[0],
     aws_lb_listener.red5pro_sm_http[0],
+    aws_eip_association.elastic_ip_association_sm[0],
   ]
   destroy_duration = "60s"
 }
