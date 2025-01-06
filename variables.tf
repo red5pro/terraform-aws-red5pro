@@ -35,18 +35,18 @@ variable "aws_secret_key" {
 }
 
 # SSH key configuration
-variable "ssh_key_create" {
-  description = "Create a new SSH key pair or use an existing one. true = create new, false = use existing"
+variable "ssh_key_use_existing" {
+  description = "Use existing SSH key pair or create a new one. true = use existing, false = create new"
   type        = bool
-  default     = true
+  default     = false
 }
-variable "ssh_key_name" {
-  description = "SSH key pair name new/existing"
+variable "ssh_key_name_existing" {
+  description = "SSH key name existing in AWS"
   type        = string
   default     = ""
 }
-variable "ssh_private_key_path" {
-  description = "SSH private key path existing"
+variable "ssh_key_private_key_path_existing" {
+  description = "SSH private key path existing in local machine"
   type        = string
   default     = ""
 }
@@ -67,10 +67,10 @@ variable "vpc_id_existing" {
 }
 
 # Elastic IP configuration for Stream Manager 2.0
-variable "stream_manager_elastic_ip_create" {
-  description = "Stream Manager 2.0 - Create a new Elastic IP or use an existing one. true = create new, false = use existing"
+variable "stream_manager_elastic_ip_use_existing" {
+  description = "Stream Manager 2.0 -  Use existing elastic IP or create a new one. true = use existing, false = create new"
   type        = bool
-  default     = true
+  default     = false
 }
 variable "stream_manager_elastic_ip_existing" {
   description = "Stream Manager 2.0 - Elastic IP Existing"
@@ -79,10 +79,10 @@ variable "stream_manager_elastic_ip_existing" {
 }
 
 # Elastic IP configuration for Kafka
-variable "standalone_elastic_ip_create" {
-  description = "Standalone Red5 Pro - Create a new Elastic IP or use an existing one. true = create new, false = use existing"
+variable "standalone_elastic_ip_use_existing" {
+  description = "Standalone Red5 Pro - Use existing elastic IP or create a new one. true = use existing, false = create new"
   type        = bool
-  default     = true
+  default     = false
 }
 variable "standalone_elastic_ip_existing" {
   description = "Standalone Red5 Pro - Elastic IP Existing"

@@ -3,9 +3,9 @@ locals {
   cluster                       = var.type == "cluster" ? true : false
   autoscale                     = var.type == "autoscale" ? true : false
   cluster_or_autoscale          = local.cluster || local.autoscale ? true : false
-  ssh_key_name                  = var.ssh_key_create ? aws_key_pair.red5pro_ssh_key[0].key_name : data.aws_key_pair.ssh_key_pair[0].key_name
-  ssh_private_key               = var.ssh_key_create ? tls_private_key.red5pro_ssh_key[0].private_key_pem : file(var.ssh_private_key_path)
-  ssh_private_key_path          = var.ssh_key_create ? local_file.red5pro_ssh_key_pem[0].filename : var.ssh_private_key_path
+  ssh_key_name                  = var.ssh_key_use_existing ? data.aws_key_pair.ssh_key_pair[0].key_name : aws_key_pair.red5pro_ssh_key[0].key_name
+  ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_private_key_path_existing) : tls_private_key.red5pro_ssh_key[0].private_key_pem 
+  ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_private_key_path_existing : local_file.red5pro_ssh_key_pem[0].filename
   vpc_id                        = var.vpc_use_existing ? var.vpc_id_existing : aws_vpc.red5pro_vpc[0].id
   vpc_name                      = var.vpc_use_existing ? data.aws_vpc.selected[0].tags.Name : aws_vpc.red5pro_vpc[0].tags.Name
   subnet_ids                    = var.vpc_use_existing ? data.aws_subnets.all[0].ids : tolist(aws_subnet.red5pro_subnets[*].id)
@@ -15,27 +15,27 @@ locals {
   kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
   kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
   kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
-  stream_manager_ip             = local.autoscale ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster ? var.stream_manager_elastic_ip_create ? aws_eip.elastic_ip_sm[0].public_ip : data.aws_eip.existing_elastic_ip_sm[0].public_ip : "null"
-  stream_manager_ssh_ip         = local.autoscale ? aws_instance.red5pro_sm[0].public_ip : local.cluster ? var.stream_manager_elastic_ip_create ? aws_eip.elastic_ip_sm[0].public_ip : data.aws_eip.existing_elastic_ip_sm[0].public_ip : "null"
+  stream_manager_ip             = local.autoscale ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster ? var.stream_manager_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_sm[0].public_ip : aws_eip.elastic_ip_sm[0].public_ip : "null"
+  stream_manager_ssh_ip         = local.autoscale ? aws_instance.red5pro_sm[0].public_ip : local.cluster ? var.stream_manager_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_sm[0].public_ip : aws_eip.elastic_ip_sm[0].public_ip : "null"
   stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
   stream_manager_standalone     = local.autoscale ? false : true
   stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
-  standalone_elastic_ip         = local.standalone ? var.standalone_elastic_ip_create ? aws_eip.elastic_ip_standalone[0].public_ip : data.aws_eip.existing_elastic_ip_standalone[0].public_ip : "null"
+  standalone_elastic_ip         = local.standalone ? var.standalone_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_standalone[0].public_ip : aws_eip.elastic_ip_standalone[0].public_ip : "null"
 }
 
 ################################################################################
 # Elastic IP for Standalone Red5 Pro server
 ################################################################################
 
-# Create a new Elastic IP (only if standalone_elastic_ip_create = true)
+# Create a new Elastic IP (only if standalone_elastic_ip_use_existing = true)
 resource "aws_eip" "elastic_ip_standalone" {
-  count = local.standalone && var.standalone_elastic_ip_create ? 1 : 0
+  count = local.standalone && var.standalone_elastic_ip_use_existing == false ? 1 : 0
   tags  = merge({ "Name" = "${var.name}-elastic-ip-standalone" }, var.tags, )
 }
 
-# Use an existing Elastic IP (only if standalone_elastic_ip_create = false)
+# Use an existing Elastic IP (only if standalone_elastic_ip_use_existing = false)
 data "aws_eip" "existing_elastic_ip_standalone" {
-  count     = local.standalone && var.standalone_elastic_ip_create == false ? 1 : 0
+  count     = local.standalone && var.standalone_elastic_ip_use_existing ? 1 : 0
   public_ip = var.standalone_elastic_ip_existing
 }
 
@@ -43,22 +43,22 @@ data "aws_eip" "existing_elastic_ip_standalone" {
 resource "aws_eip_association" "elastic_ip_association_standalone" {
   count         = local.standalone ? 1 : 0
   instance_id   = aws_instance.red5pro_standalone[0].id
-  allocation_id = var.standalone_elastic_ip_create ? aws_eip.elastic_ip_standalone[0].id : data.aws_eip.existing_elastic_ip_standalone[0].id
+  allocation_id = var.standalone_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_standalone[0].id : aws_eip.elastic_ip_standalone[0].id
 }
 
 ################################################################################
 # Elastic IP for Stream Manager 2.0
 ################################################################################
 
-# Create a new Elastic IP (only if stream_manager_elastic_ip_create = true)
+# Create a new Elastic IP (only if stream_manager_elastic_ip_use_existing = true)
 resource "aws_eip" "elastic_ip_sm" {
-  count = local.cluster && var.stream_manager_elastic_ip_create ? 1 : 0
+  count = local.cluster && var.stream_manager_elastic_ip_use_existing == false ? 1 : 0
   tags  = merge({ "Name" = "${var.name}-elastic-ip-sm" }, var.tags)
 }
 
-# Use an existing Elastic IP (only if stream_manager_elastic_ip_create = false)
+# Use an existing Elastic IP (only if stream_manager_elastic_ip_use_existing = false)
 data "aws_eip" "existing_elastic_ip_sm" {
-  count     = local.cluster && var.stream_manager_elastic_ip_create == false ? 1 : 0
+  count     = local.cluster && var.stream_manager_elastic_ip_use_existing ? 1 : 0
   public_ip = var.stream_manager_elastic_ip_existing
 }
 
@@ -66,7 +66,7 @@ data "aws_eip" "existing_elastic_ip_sm" {
 resource "aws_eip_association" "elastic_ip_association_sm" {
   count         = local.cluster ? 1 : 0
   instance_id   = aws_instance.red5pro_sm[0].id
-  allocation_id = var.stream_manager_elastic_ip_create ? aws_eip.elastic_ip_sm[0].id : data.aws_eip.existing_elastic_ip_sm[0].id
+  allocation_id = var.stream_manager_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_sm[0].id : aws_eip.elastic_ip_sm[0].id
 }
 ################################################################################
 # SSH_KEY
@@ -74,35 +74,35 @@ resource "aws_eip_association" "elastic_ip_association_sm" {
 
 # SSH key pair generation
 resource "tls_private_key" "red5pro_ssh_key" {
-  count     = var.ssh_key_create ? 1 : 0
+  count     = var.ssh_key_use_existing ? 0 : 1
   algorithm = "RSA"
   rsa_bits  = 2048
 }
 
 # Import SSH key pair to AWS
 resource "aws_key_pair" "red5pro_ssh_key" {
-  count      = var.ssh_key_create ? 1 : 0
-  key_name   = var.ssh_key_name
+  count      = var.ssh_key_use_existing ? 0 : 1
+  key_name   = "${var.name}-ssh-key"
   public_key = tls_private_key.red5pro_ssh_key[0].public_key_openssh
 }
 
 # Save SSH key pair files to local folder
 resource "local_file" "red5pro_ssh_key_pem" {
-  count           = var.ssh_key_create ? 1 : 0
-  filename        = "./${var.ssh_key_name}.pem"
+  count           = var.ssh_key_use_existing ? 0 : 1
+  filename        = "./${var.name}-ssh-key.pem"
   content         = tls_private_key.red5pro_ssh_key[0].private_key_pem
   file_permission = "0400"
 }
 resource "local_file" "red5pro_ssh_key_pub" {
-  count    = var.ssh_key_create ? 1 : 0
-  filename = "./${var.ssh_key_name}.pub"
+  count    = var.ssh_key_use_existing ? 0 : 1
+  filename = "./${var.name}-ssh-key.pub"
   content  = tls_private_key.red5pro_ssh_key[0].public_key_openssh
 }
 
 # Check current SSH key pair on the AWS
 data "aws_key_pair" "ssh_key_pair" {
-  count    = var.ssh_key_create ? 0 : 1
-  key_name = var.ssh_key_name
+  count    = var.ssh_key_use_existing ? 1 : 0
+  key_name = var.ssh_key_name_existing
 }
 ################################################################################
 # AWS Cloud Infrastructure
@@ -801,7 +801,7 @@ resource "aws_instance" "red5pro_sm" {
           R5AS_AUTH_PASS=${var.stream_manager_auth_password}
           TF_VAR_aws_access_key=${var.aws_access_key}
           TF_VAR_aws_secret_key=${var.aws_secret_key}
-          TF_VAR_aws_ssh_key_pair=${var.ssh_key_name}
+          TF_VAR_aws_ssh_key_pair=${local.ssh_key_name}
           TF_VAR_r5p_license_key=${var.red5pro_license_key}
           TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}
           TRAEFIK_HOST=${var.https_ssl_certificate_domain_name}

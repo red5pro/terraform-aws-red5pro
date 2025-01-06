@@ -21,12 +21,12 @@ module "red5pro" {
   aws_secret_key = ""          # AWS IAM Secret key
 
   # SSH key configuration
-  ssh_key_create       = true                                              # true - create new SSH key, false - use existing SSH key
-  ssh_key_name         = "example_key.pem"                                 # Name of existing SSH key private key
-  ssh_private_key_path = "/PATH/TO/SSH/PUBLIC/KEY/example_private_key.pem" # Path to existing SSH private key
+  ssh_key_use_existing              = false                                               # Use existing SSH key pair or create a new one. true = use existing, false = create new SSH key pair
+  ssh_key_name_existing             = "example_key"                                       # SSH key name existing in AWS
+  ssh_key_private_key_path_existing = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # SSH private key path existing in local machine
 
   # VPC configuration
-  vpc_use_existing = false       # true - use existing VPC and subnets, false - create new VPC and subnets
+  vpc_use_existing = false       # true - use existing VPC and subnets, false - create new VPC and subnets automatically
   vpc_id_existing  = "vpc-12345" # VPC ID for existing VPC
 
   # Kafka standalone instance configuration
@@ -41,8 +41,8 @@ module "red5pro" {
   stream_manager_auth_password = "example_password" # Stream Manager 2.0 authentication password
 
   # Stream Manager Elastic IP configuration
-  stream_manager_elastic_ip_create   = true      # true - create new elastic IP, false - use existing elastic IP
-  stream_manager_elastic_ip_existing = "1.2.3.4" # Elastic IP for existing elastic IP
+  stream_manager_elastic_ip_use_existing = false     # true - use existing elastic IP, false - create new elastic IP automatically
+  stream_manager_elastic_ip_existing     = "1.2.3.4" # Existing Elastic IP
 
   # Stream Manager 2.0 server HTTPS (SSL) certificate configuration
   https_ssl_certificate = "none" # none - do not use HTTPS/SSL certificate, letsencrypt - create new Let's Encrypt HTTPS/SSL certificate, imported - use existing HTTPS/SSL certificate
