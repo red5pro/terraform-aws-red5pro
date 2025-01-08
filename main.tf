@@ -997,22 +997,6 @@ resource "aws_lb_listener" "red5pro_sm_https" {
     target_group_arn = aws_lb_target_group.red5pro_sm_tg[0].arn
   }
 }
-resource "aws_lb_listener_rule" "red5pro_sm_https" {
-  count        = local.autoscale && (var.https_ssl_certificate == "imported" || var.https_ssl_certificate == "existing") ? 1 : 0
-  listener_arn = aws_lb_listener.red5pro_sm_https[0].arn
-  priority     = 100
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.red5pro_sm_tg[0].arn
-  }
-
-  condition {
-    host_header {
-      values = ["autoscale.ci.red5.net"]
-    }
-  }
-}
 
 # AWS Stream Manager autoscaling - Autoscaling attachment
 resource "aws_autoscaling_attachment" "red5pro_sm_aa" {

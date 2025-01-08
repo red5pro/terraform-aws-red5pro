@@ -41,15 +41,15 @@ output "stream_manager_red5pro_node_image" {
 }
 output "standalone_red5pro_server_ip" {
   description = "Standalone Red5 Pro Server IP"
-  value       = local.standalone ? local.standalone_elastic_ip : null
+  value       = local.standalone ? local.standalone_elastic_ip : ""
 }
 output "standalone_red5pro_server_http_url" {
   description = "Standalone Red5 Pro Server HTTP URL"
-  value       = local.standalone ? "http://${local.standalone_elastic_ip}:5080" : null
+  value       = local.standalone ? "http://${local.standalone_elastic_ip}:5080" : ""
 }
 output "standalone_red5pro_server_https_url" {
   description = "Standalone Red5 Pro Server HTTPS URL"
-  value       = local.standalone && var.https_ssl_certificate != "none" ? "https://${var.https_ssl_certificate_domain_name}:443" : null
+  value       = local.standalone && var.https_ssl_certificate != "none" ? "https://${var.https_ssl_certificate_domain_name}:443" : ""
 }
 output "manual_dns_record" {
   description = "Manual DNS Record"
