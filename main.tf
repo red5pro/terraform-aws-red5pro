@@ -4,7 +4,7 @@ locals {
   autoscale                     = var.type == "autoscale" ? true : false
   cluster_or_autoscale          = local.cluster || local.autoscale ? true : false
   ssh_key_name                  = var.ssh_key_use_existing ? data.aws_key_pair.ssh_key_pair[0].key_name : aws_key_pair.red5pro_ssh_key[0].key_name
-  ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_private_key_path_existing) : tls_private_key.red5pro_ssh_key[0].private_key_pem 
+  ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_private_key_path_existing) : tls_private_key.red5pro_ssh_key[0].private_key_pem
   ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_private_key_path_existing : local_file.red5pro_ssh_key_pem[0].filename
   vpc_id                        = var.vpc_use_existing ? var.vpc_id_existing : aws_vpc.red5pro_vpc[0].id
   vpc_name                      = var.vpc_use_existing ? data.aws_vpc.selected[0].tags.Name : aws_vpc.red5pro_vpc[0].tags.Name
@@ -21,6 +21,8 @@ locals {
   stream_manager_standalone     = local.autoscale ? false : true
   stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
   standalone_elastic_ip         = local.standalone ? var.standalone_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_standalone[0].public_ip : aws_eip.elastic_ip_standalone[0].public_ip : "null"
+  aws_availability_zones_amount = var.vpc_use_existing ? 0 : length(data.aws_availability_zones.available[0].names)
+  aws_subnets_amount            = var.vpc_use_existing ? 0 : length(aws_subnet.red5pro_subnets)
 }
 
 ################################################################################
@@ -203,7 +205,7 @@ resource "aws_internet_gateway" "red5pro_igw" {
 }
 
 resource "aws_subnet" "red5pro_subnets" {
-  count                   = var.vpc_use_existing ? 0 : length(data.aws_availability_zones.available[0].names)
+  count                   = local.aws_availability_zones_amount
   vpc_id                  = aws_vpc.red5pro_vpc[0].id
   cidr_block              = element(var.vpc_public_subnets, count.index)
   map_public_ip_on_launch = true
@@ -221,7 +223,7 @@ resource "aws_route" "red5pro_route" {
 }
 
 resource "aws_route_table_association" "red5pro_subnets_association" {
-  count          = var.vpc_use_existing ? 0 : length(aws_subnet.red5pro_subnets)
+  count          = local.aws_subnets_amount
   subnet_id      = aws_subnet.red5pro_subnets[count.index].id
   route_table_id = aws_vpc.red5pro_vpc[0].main_route_table_id
 }
@@ -244,8 +246,8 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_ingress_ipv4" {
   security_group_id = aws_security_group.red5pro_sm_sg[0].id
   cidr_ipv4         = var.security_group_stream_manager_ingress[count.index].cidr_block
   ip_protocol       = var.security_group_stream_manager_ingress[count.index].protocol
-  from_port         = var.security_group_stream_manager_ingress[count.index].from_port
-  to_port           = var.security_group_stream_manager_ingress[count.index].to_port
+  from_port         = var.security_group_stream_manager_ingress[count.index].protocol == "-1" ? null : var.security_group_stream_manager_ingress[count.index].from_port
+  to_port           = var.security_group_stream_manager_ingress[count.index].protocol == "-1" ? null : var.security_group_stream_manager_ingress[count.index].to_port
   description       = var.security_group_stream_manager_ingress[count.index].description
 }
 resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_ingress_ipv6" {
@@ -253,8 +255,8 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_ingress_ipv6" {
   security_group_id = aws_security_group.red5pro_sm_sg[0].id
   cidr_ipv6         = var.security_group_stream_manager_ingress[count.index].ipv6_cidr_block
   ip_protocol       = var.security_group_stream_manager_ingress[count.index].protocol
-  from_port         = var.security_group_stream_manager_ingress[count.index].from_port
-  to_port           = var.security_group_stream_manager_ingress[count.index].to_port
+  from_port         = var.security_group_stream_manager_ingress[count.index].protocol == "-1" ? null : var.security_group_stream_manager_ingress[count.index].from_port
+  to_port           = var.security_group_stream_manager_ingress[count.index].protocol == "-1" ? null : var.security_group_stream_manager_ingress[count.index].to_port
   description       = var.security_group_stream_manager_ingress[count.index].description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv4" {
@@ -262,8 +264,8 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv4" {
   security_group_id = aws_security_group.red5pro_sm_sg[0].id
   cidr_ipv4         = var.security_group_stream_manager_egress[count.index].cidr_block
   ip_protocol       = var.security_group_stream_manager_egress[count.index].protocol
-  from_port         = var.security_group_stream_manager_egress[count.index].from_port
-  to_port           = var.security_group_stream_manager_egress[count.index].to_port
+  from_port         = var.security_group_stream_manager_egress[count.index].protocol == "-1" ? null : var.security_group_stream_manager_egress[count.index].from_port
+  to_port           = var.security_group_stream_manager_egress[count.index].protocol == "-1" ? null : var.security_group_stream_manager_egress[count.index].to_port
   description       = var.security_group_stream_manager_egress[count.index].description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv6" {
@@ -271,8 +273,8 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv6" {
   security_group_id = aws_security_group.red5pro_sm_sg[0].id
   cidr_ipv6         = var.security_group_stream_manager_egress[count.index].ipv6_cidr_block
   ip_protocol       = var.security_group_stream_manager_egress[count.index].protocol
-  from_port         = var.security_group_stream_manager_egress[count.index].from_port
-  to_port           = var.security_group_stream_manager_egress[count.index].to_port
+  from_port         = var.security_group_stream_manager_egress[count.index].protocol == "-1" ? null : var.security_group_stream_manager_egress[count.index].from_port
+  to_port           = var.security_group_stream_manager_egress[count.index].protocol == "-1" ? null : var.security_group_stream_manager_egress[count.index].to_port
   description       = var.security_group_stream_manager_egress[count.index].description
 }
 
@@ -290,8 +292,8 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_node_ingress_ipv4" {
   security_group_id = aws_security_group.red5pro_node_sg[0].id
   cidr_ipv4         = var.security_group_node_ingress[count.index].cidr_block
   ip_protocol       = var.security_group_node_ingress[count.index].protocol
-  from_port         = var.security_group_node_ingress[count.index].from_port
-  to_port           = var.security_group_node_ingress[count.index].to_port
+  from_port         = var.security_group_node_ingress[count.index].protocol == "-1" ? null : var.security_group_node_ingress[count.index].from_port
+  to_port           = var.security_group_node_ingress[count.index].protocol == "-1" ? null : var.security_group_node_ingress[count.index].to_port
   description       = var.security_group_node_ingress[count.index].description
 }
 resource "aws_vpc_security_group_ingress_rule" "red5pro_node_ingress_ipv6" {
@@ -299,8 +301,8 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_node_ingress_ipv6" {
   security_group_id = aws_security_group.red5pro_node_sg[0].id
   cidr_ipv6         = var.security_group_node_ingress[count.index].ipv6_cidr_block
   ip_protocol       = var.security_group_node_ingress[count.index].protocol
-  from_port         = var.security_group_node_ingress[count.index].from_port
-  to_port           = var.security_group_node_ingress[count.index].to_port
+  from_port         = var.security_group_node_ingress[count.index].protocol == "-1" ? null : var.security_group_node_ingress[count.index].from_port
+  to_port           = var.security_group_node_ingress[count.index].protocol == "-1" ? null : var.security_group_node_ingress[count.index].to_port
   description       = var.security_group_node_ingress[count.index].description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_node_egress_ipv4" {
@@ -308,8 +310,8 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_node_egress_ipv4" {
   security_group_id = aws_security_group.red5pro_node_sg[0].id
   cidr_ipv4         = var.security_group_node_egress[count.index].cidr_block
   ip_protocol       = var.security_group_node_egress[count.index].protocol
-  from_port         = var.security_group_node_egress[count.index].from_port
-  to_port           = var.security_group_node_egress[count.index].to_port
+  from_port         = var.security_group_node_egress[count.index].protocol == "-1" ? null : var.security_group_node_egress[count.index].from_port
+  to_port           = var.security_group_node_egress[count.index].protocol == "-1" ? null : var.security_group_node_egress[count.index].to_port
   description       = var.security_group_node_egress[count.index].description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_node_egress_ipv6" {
@@ -317,8 +319,8 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_node_egress_ipv6" {
   security_group_id = aws_security_group.red5pro_node_sg[0].id
   cidr_ipv6         = var.security_group_node_egress[count.index].ipv6_cidr_block
   ip_protocol       = var.security_group_node_egress[count.index].protocol
-  from_port         = var.security_group_node_egress[count.index].from_port
-  to_port           = var.security_group_node_egress[count.index].to_port
+  from_port         = var.security_group_node_egress[count.index].protocol == "-1" ? null : var.security_group_node_egress[count.index].from_port
+  to_port           = var.security_group_node_egress[count.index].protocol == "-1" ? null : var.security_group_node_egress[count.index].to_port
   description       = var.security_group_node_egress[count.index].description
 }
 
@@ -336,8 +338,8 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_kafka_ingress_ipv4" {
   security_group_id = aws_security_group.red5pro_kafka_sg[0].id
   cidr_ipv4         = var.security_group_kafka_ingress[count.index].cidr_block
   ip_protocol       = var.security_group_kafka_ingress[count.index].protocol
-  from_port         = var.security_group_kafka_ingress[count.index].from_port
-  to_port           = var.security_group_kafka_ingress[count.index].to_port
+  from_port         = var.security_group_kafka_ingress[count.index].protocol == "-1" ? null : var.security_group_kafka_ingress[count.index].from_port
+  to_port           = var.security_group_kafka_ingress[count.index].protocol == "-1" ? null : var.security_group_kafka_ingress[count.index].to_port
   description       = var.security_group_kafka_ingress[count.index].description
 }
 resource "aws_vpc_security_group_ingress_rule" "red5pro_kafka_ingress_ipv6" {
@@ -345,8 +347,8 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_kafka_ingress_ipv6" {
   security_group_id = aws_security_group.red5pro_kafka_sg[0].id
   cidr_ipv6         = var.security_group_kafka_ingress[count.index].ipv6_cidr_block
   ip_protocol       = var.security_group_kafka_ingress[count.index].protocol
-  from_port         = var.security_group_kafka_ingress[count.index].from_port
-  to_port           = var.security_group_kafka_ingress[count.index].to_port
+  from_port         = var.security_group_kafka_ingress[count.index].protocol == "-1" ? null : var.security_group_kafka_ingress[count.index].from_port
+  to_port           = var.security_group_kafka_ingress[count.index].protocol == "-1" ? null : var.security_group_kafka_ingress[count.index].to_port
   description       = var.security_group_kafka_ingress[count.index].description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_kafka_egress_ipv4" {
@@ -354,8 +356,8 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_kafka_egress_ipv4" {
   security_group_id = aws_security_group.red5pro_kafka_sg[0].id
   cidr_ipv4         = var.security_group_kafka_egress[count.index].cidr_block
   ip_protocol       = var.security_group_kafka_egress[count.index].protocol
-  from_port         = var.security_group_kafka_egress[count.index].from_port
-  to_port           = var.security_group_kafka_egress[count.index].to_port
+  from_port         = var.security_group_kafka_egress[count.index].protocol == "-1" ? null : var.security_group_kafka_egress[count.index].from_port
+  to_port           = var.security_group_kafka_egress[count.index].protocol == "-1" ? null : var.security_group_kafka_egress[count.index].to_port
   description       = var.security_group_kafka_egress[count.index].description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_kafka_egress_ipv6" {
@@ -363,9 +365,10 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_kafka_egress_ipv6" {
   security_group_id = aws_security_group.red5pro_kafka_sg[0].id
   cidr_ipv6         = var.security_group_kafka_egress[count.index].ipv6_cidr_block
   ip_protocol       = var.security_group_kafka_egress[count.index].protocol
-  from_port         = var.security_group_kafka_egress[count.index].from_port
-  to_port           = var.security_group_kafka_egress[count.index].to_port
-  description       = var.security_group_kafka_egress[count.index].description
+  from_port         = var.security_group_kafka_egress[count.index].protocol == "-1" ? null : var.security_group_kafka_egress[count.index].from_port
+  to_port           = var.security_group_kafka_egress[count.index].protocol == "-1" ? null : var.security_group_kafka_egress[count.index].to_port
+
+  description = var.security_group_kafka_egress[count.index].description
 }
 
 # Security group for StreamManager and Node images (AWS VPC)
@@ -400,8 +403,6 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_images_egress_ipv4" {
   security_group_id = aws_security_group.red5pro_images_sg[0].id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
-  from_port         = 0
-  to_port           = 0
   description       = "All egress traffic - IPv4"
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_images_egress_ipv6" {
@@ -409,8 +410,6 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_images_egress_ipv6" {
   security_group_id = aws_security_group.red5pro_images_sg[0].id
   cidr_ipv6         = "::/0"
   ip_protocol       = "-1"
-  from_port         = 0
-  to_port           = 0
   description       = "All egress traffic - IPv6"
 }
 
@@ -428,8 +427,8 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_standalone_ingress_ipv4"
   security_group_id = aws_security_group.red5pro_standalone_sg[0].id
   cidr_ipv4         = var.security_group_standalone_ingress[count.index].cidr_block
   ip_protocol       = var.security_group_standalone_ingress[count.index].protocol
-  from_port         = var.security_group_standalone_ingress[count.index].from_port
-  to_port           = var.security_group_standalone_ingress[count.index].to_port
+  from_port         = var.security_group_standalone_ingress[count.index].protocol == "-1" ? null : var.security_group_standalone_ingress[count.index].from_port
+  to_port           = var.security_group_standalone_ingress[count.index].protocol == "-1" ? null : var.security_group_standalone_ingress[count.index].to_port
   description       = var.security_group_standalone_ingress[count.index].description
 }
 resource "aws_vpc_security_group_ingress_rule" "red5pro_standalone_ingress_ipv6" {
@@ -437,8 +436,8 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_standalone_ingress_ipv6"
   security_group_id = aws_security_group.red5pro_standalone_sg[0].id
   cidr_ipv6         = var.security_group_standalone_ingress[count.index].ipv6_cidr_block
   ip_protocol       = var.security_group_standalone_ingress[count.index].protocol
-  from_port         = var.security_group_standalone_ingress[count.index].from_port
-  to_port           = var.security_group_standalone_ingress[count.index].to_port
+  from_port         = var.security_group_standalone_ingress[count.index].protocol == "-1" ? null : var.security_group_standalone_ingress[count.index].from_port
+  to_port           = var.security_group_standalone_ingress[count.index].protocol == "-1" ? null : var.security_group_standalone_ingress[count.index].to_port
   description       = var.security_group_standalone_ingress[count.index].description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_standalone_egress_ipv4" {
@@ -446,8 +445,8 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_standalone_egress_ipv4" {
   security_group_id = aws_security_group.red5pro_standalone_sg[0].id
   cidr_ipv4         = var.security_group_standalone_egress[count.index].cidr_block
   ip_protocol       = var.security_group_standalone_egress[count.index].protocol
-  from_port         = var.security_group_standalone_egress[count.index].from_port
-  to_port           = var.security_group_standalone_egress[count.index].to_port
+  from_port         = var.security_group_standalone_egress[count.index].protocol == "-1" ? null : var.security_group_standalone_egress[count.index].from_port
+  to_port           = var.security_group_standalone_egress[count.index].protocol == "-1" ? null : var.security_group_standalone_egress[count.index].to_port
   description       = var.security_group_standalone_egress[count.index].description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_standalone_egress_ipv6" {
@@ -455,8 +454,8 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_standalone_egress_ipv6" {
   security_group_id = aws_security_group.red5pro_standalone_sg[0].id
   cidr_ipv6         = var.security_group_standalone_egress[count.index].ipv6_cidr_block
   ip_protocol       = var.security_group_standalone_egress[count.index].protocol
-  from_port         = var.security_group_standalone_egress[count.index].from_port
-  to_port           = var.security_group_standalone_egress[count.index].to_port
+  from_port         = var.security_group_standalone_egress[count.index].protocol == "-1" ? null : var.security_group_standalone_egress[count.index].from_port
+  to_port           = var.security_group_standalone_egress[count.index].protocol == "-1" ? null : var.security_group_standalone_egress[count.index].to_port
   description       = var.security_group_standalone_egress[count.index].description
 }
 

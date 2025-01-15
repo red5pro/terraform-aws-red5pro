@@ -13,6 +13,7 @@ PACKAGES_1804=(libva2 libva-drm2 libva-x11-2)
 PACKAGES_2004=(libva2 libva-drm2 libva-x11-2)
 JDK_8=(openjdk-8-jre-headless)
 JDK_11=(openjdk-11-jdk)
+JDK_21=(openjdk-21-jdk)
 
 log_i() {
     log
@@ -43,6 +44,9 @@ check_linux_and_java_versions(){
         if grep -q "java-11-openjdk-amd64" $red5pro_service_file ; then
             log_i "Found required JAVA version: java-11-openjdk-amd64"
             jdk_version="jdk11"
+        elif grep -q "java-21-openjdk-amd64" $red5pro_service_file ; then
+            log_i "Found required JAVA version: java-21-openjdk-amd64"
+            jdk_version="jdk21"
         else
             log_e "Not found JAVA version in the file $red5pro_service_file"
             exit 1
@@ -66,6 +70,7 @@ check_linux_and_java_versions(){
             case "${jdk_version}" in
                 jdk8) PACKAGES=("${PACKAGES_1804[@]}" "${JDK_8[@]}") ;;
                 jdk11) PACKAGES=("${PACKAGES_1804[@]}" "${JDK_11[@]}") ;;
+                jdk21) PACKAGES=("${PACKAGES_1804[@]}" "${JDK_21[@]}") ;;
                 *) log_e "JDK version is not supported $jdk_version"; pause ;;
             esac
         ;;
@@ -73,6 +78,7 @@ check_linux_and_java_versions(){
             case "${jdk_version}" in
                 jdk8) PACKAGES=("${PACKAGES_2004[@]}" "${JDK_8[@]}") ;;
                 jdk11) PACKAGES=("${PACKAGES_2004[@]}" "${JDK_11[@]}") ;;
+                jdk21) PACKAGES=("${PACKAGES_2004[@]}" "${JDK_21[@]}") ;;
                 *) log_e "JDK version is not supported $jdk_version"; pause ;;
             esac
         ;;
@@ -80,6 +86,7 @@ check_linux_and_java_versions(){
             case "${jdk_version}" in
                 jdk8) PACKAGES=("${PACKAGES_2004[@]}" "${JDK_8[@]}") ;;
                 jdk11) PACKAGES=("${PACKAGES_2004[@]}" "${JDK_11[@]}") ;;
+                jdk21) PACKAGES=("${PACKAGES_2004[@]}" "${JDK_21[@]}") ;;
                 *) log_e "JDK version is not supported $jdk_version"; pause ;;
             esac
         ;;

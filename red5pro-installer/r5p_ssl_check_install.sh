@@ -23,12 +23,9 @@ log() {
 }
 
 RED5_HOME="/usr/local/red5pro"
-#CURRENT_DIRECTORY="/home/ubuntu/red5pro-installer"
 
 rpro_ssl_installer() {
     log_i "Update SSL certificate and reload Red5Pro service ..."
-
-    #rm $cert_path/tomcat.cer $cert_path/truststore.jks $cert_path/privkey-rsa.pem $cert_path/keystore.jks $cert_path/fullchain_and_key.p12
 
     local error=false
     rpro_ssl_fullchain="$cert_path/fullchain.pem"
@@ -96,7 +93,6 @@ certbot_install() {
     sudo snap refresh core
     sudo snap install --classic certbot
     sudo ln -s /snap/bin/certbot /usr/bin/certbot
-    #sudo certbot certonly --standalone
 }
 
 rpro_ssl_get() {
@@ -113,31 +109,12 @@ rpro_ssl_get() {
     fi
 }
 
-rpro_ssl_config() {
-    log_i "Red5pro SSL configuration ..."
-
-    log_i "Configuring $RED5_HOME/conf/jee-container.xml"
-
-    local http1='<!-- Non-secured transports for HTTP and WS -->'
-    local http1_new='<!-- Non-secured transports for HTTP and WS --> <!--'
-
-    local http2='<!-- Secure transports for HTTPS and WSS -->'
-    local http2_new='--> <!-- Secure transports for HTTPS and WSS -->'
-
-    sed -i -e "s|$http1|$http1_new|" -e "s|$http2|$http2_new|" "$RED5_HOME/conf/jee-container.xml"
-
-    # Delete 1 line after <!-- Secure transports for HTTPS and WSS -->
-    sed -i '/Secure transports for HTTPS and WSS/{n;d}' "$RED5_HOME/conf/jee-container.xml"
-
-    # Delete first line before </beans>
-    sed -i '$!N;/\n.*beans>/!P;D' "$RED5_HOME/conf/jee-container.xml"
-    # Delete second line before </beans>
-    sed -i '$!N;/\n.*beans>/!P;D' "$RED5_HOME/conf/jee-container.xml"
+rpro_ssl_config(){
+    log_i "Red5pro SSL configuration..."
 
     log_i "Configuring: $RED5_HOME/conf/red5.properties"
     local https_port_pattern="https.port=.*"
     local https_port_replacement_value="https.port=443"
-
     local rtmps_keystorepass_pattern="rtmps.keystorepass=.*"
     local rtmps_keystorepass_replacement_value="rtmps.keystorepass=${SSL_PASSWORD}"
     local rtmps_keystorefile_pattern="rtmps.keystorefile=.*"
@@ -146,8 +123,38 @@ rpro_ssl_config() {
     local rtmps_truststorepass_replacement_value="rtmps.truststorepass=${SSL_PASSWORD}"
     local rtmps_truststorefile_pattern="rtmps.truststorefile=.*"
     local rtmps_truststorefile_replacement_value="rtmps.truststorefile=${cert_path}/truststore.jks"
+    
+    sudo sed -i -e "s|$https_port_pattern|$https_port_replacement_value|" -e "s|$rtmps_keystorepass_pattern|$rtmps_keystorepass_replacement_value|" -e "s|$rtmps_keystorefile_pattern|$rtmps_keystorefile_replacement_value|" -e "s|$rtmps_truststorepass_pattern|$rtmps_truststorepass_replacement_value|" -e "s|$rtmps_truststorefile_pattern|$rtmps_truststorefile_replacement_value|"   "$RED5_HOME/conf/red5.properties"
 
-    sed -i -e "s|$https_port_pattern|$https_port_replacement_value|" -e "s|$rtmps_keystorepass_pattern|$rtmps_keystorepass_replacement_value|" -e "s|$rtmps_keystorefile_pattern|$rtmps_keystorefile_replacement_value|" -e "s|$rtmps_truststorepass_pattern|$rtmps_truststorepass_replacement_value|" -e "s|$rtmps_truststorefile_pattern|$rtmps_truststorefile_replacement_value|" "$RED5_HOME/conf/red5.properties"
+    if grep -q "secure.enabled" "$RED5_HOME/conf/red5.properties"; then
+        log_i "secure.enabled exists in the $RED5_HOME/conf/red5.properties. Enable SSL using new configuration."
+
+        local secure_enabled_pattern='secure.enabled=.*'
+        local secure_enabled_new="secure.enabled=true"
+        
+        local websocket_enabled_pattern='websocket.enabled=.*'
+        local websocket_enabled_new="websocket.enabled=true"
+
+        sed -i -e "s|$secure_enabled_pattern|$secure_enabled_new|" -e "s|$websocket_enabled_pattern|$websocket_enabled_new|" "$RED5_HOME/conf/red5.properties"
+    else
+        log_w "secure.enabled does not exist in the "$RED5_HOME/conf/red5.properties". Enable SSL using old configuration."
+        log_i "Configuring $RED5_HOME/conf/jee-container.xml"
+
+        local http1='<!-- Non-secured transports for HTTP and WS -->'
+        local http1_new='<!-- Non-secured transports for HTTP and WS --> <!--'
+
+        local http2='<!-- Secure transports for HTTPS and WSS -->'
+        local http2_new='--> <!-- Secure transports for HTTPS and WSS -->'
+
+        sed -i -e "s|$http1|$http1_new|" -e "s|$http2|$http2_new|" "$RED5_HOME/conf/jee-container.xml"
+        
+        # Delete 1 line after <!-- Secure transports for HTTPS and WSS -->
+        sed -i '/Secure transports for HTTPS and WSS/{n;d}' "$RED5_HOME/conf/jee-container.xml"
+        # Delete first line before </beans>
+        sed -i '$!N;/\n.*beans>/!P;D' "$RED5_HOME/conf/jee-container.xml"
+        # Delete second line before </beans>
+        sed -i '$!N;/\n.*beans>/!P;D' "$RED5_HOME/conf/jee-container.xml"
+    fi
 }
 
 if [ -z "$SSL" ]; then
