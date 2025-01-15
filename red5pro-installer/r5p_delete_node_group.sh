@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# SM_URL="https://oles-terra-sm2.red5pro.net"
-# R5AS_AUTH_USER="admin"
-# R5AS_AUTH_PASS="xyz123"
+# SM_IP="1.2.3.4"
+# R5AS_AUTH_USER="user"
+# R5AS_AUTH_PASS="password"
 
-SM_URL=$1
+SM_IP=$1
 R5AS_AUTH_USER=$2
 R5AS_AUTH_PASS=$3
 
@@ -28,17 +28,43 @@ log() {
     echo -n "[$(date '+%Y-%m-%d %H:%M:%S')]"
 }
 
+check_sm_url() {
+    if [ -z "$SM_IP" ]; then
+        log_e "SM_IP is empty. EXIT."
+        exit 1
+    fi
+
+    # Check HTTPS
+    https_response=$(curl -s -o /dev/null -w "%{http_code}" --insecure "https://$SM_IP/as/v1/admin/healthz")
+    if [ "$https_response" -eq 200 ]; then
+        SM_URL="https://$SM_IP"
+        log_i "SM URL is accessible over HTTPS: $SM_URL"
+    fi
+
+    # Check HTTP
+    http_response=$(curl -s -o /dev/null -w "%{http_code}" "http://$SM_IP/as/v1/admin/healthz")
+    if [ "$http_response" -eq 200 ]; then
+        SM_URL="http://$SM_IP"
+        log_i "SM URL is accessible over HTTP: $SM_URL"
+    fi
+
+    if [ -z "$SM_URL" ]; then
+        log_e "SM URL is not accessible. EXIT."
+        exit 1
+    fi
+}
+
 create_jwT_token() {
     log_i "Creating JWT token..."
     USER_AND_PASSWORD_IN_BASE64=$(echo -n "$R5AS_AUTH_USER:$R5AS_AUTH_PASS" | base64)
 
     for i in {1..5}; do
-        JVT_TOKEN_JSON=$(curl --insecure -s -X 'PUT' "$SM_URL/as/v1/auth/login" -H 'accept: application/json' -H "Authorization: Basic $USER_AND_PASSWORD_IN_BASE64")
-        JVT_TOKEN=$(jq -r '.token' <<<"$JVT_TOKEN_JSON")
+        JWT_TOKEN_JSON=$(curl --insecure -s -X 'PUT' "$SM_URL/as/v1/auth/login" -H 'accept: application/json' -H "Authorization: Basic $USER_AND_PASSWORD_IN_BASE64" -H 'Content-Length: 0')
+        JWT_TOKEN=$(jq -r '.token' <<<"$JWT_TOKEN_JSON")
 
-        if [ -z "$JVT_TOKEN" ] || [ "$JVT_TOKEN" == "null" ]; then
+        if [ -z "$JWT_TOKEN" ] || [ "$JWT_TOKEN" == "null" ]; then
             log_w "JWT token was not created! - Attempt $i"
-            log_d "JVT_TOKEN_JSON: $JVT_TOKEN_JSON"
+            log_d "JWT_TOKEN_JSON: $JWT_TOKEN_JSON"
         else
             log_i "JWT token created successfully."
             break
@@ -55,12 +81,12 @@ create_jwT_token() {
 delete_node_group(){
     log_i "Checking active node groups ..."
     error=0
-    NODE_GROUPS=$(curl --insecure -s -H "Content-Type: application/json" -H "Authorization: Bearer ${JVT_TOKEN}" "$SM_URL/as/v1/admin/nodegroup" | jq -r '.[]')
+    NODE_GROUPS=$(curl --insecure -s -H "Content-Type: application/json" -H "Authorization: Bearer ${JWT_TOKEN}" "$SM_URL/as/v1/admin/nodegroup" | jq -r '.[]')
     
     for group in $NODE_GROUPS
     do
         log_i "Deleting node group: $group"
-        DELETE_NODE_GROUP=$(curl --insecure -s -o /dev/null -w "%{http_code}" --location --request DELETE "$SM_URL/as/v1/admin/nodegroup/${group}" --header "Authorization: Bearer ${JVT_TOKEN}" --header 'Content-Type: application/json')
+        DELETE_NODE_GROUP=$(curl --insecure -s -o /dev/null -w "%{http_code}" --location --request DELETE "$SM_URL/as/v1/admin/nodegroup/${group}" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json')
         if [[ "$DELETE_NODE_GROUP" == "200" ]]; then
             log_i "Node group deleted successfully."
         else
@@ -75,5 +101,6 @@ delete_node_group(){
     fi
 }
 
+check_sm_url
 create_jwT_token
 delete_node_group

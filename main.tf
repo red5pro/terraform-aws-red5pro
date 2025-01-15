@@ -19,7 +19,6 @@ locals {
   stream_manager_ssh_ip         = local.autoscale ? aws_instance.red5pro_sm[0].public_ip : local.cluster ? var.stream_manager_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_sm[0].public_ip : aws_eip.elastic_ip_sm[0].public_ip : "null"
   stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
   stream_manager_standalone     = local.autoscale ? false : true
-  stream_manager_url            = local.stream_manager_ssl != "none" ? "https://${local.stream_manager_ip}" : "http://${local.stream_manager_ip}"
   standalone_elastic_ip         = local.standalone ? var.standalone_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_standalone[0].public_ip : aws_eip.elastic_ip_standalone[0].public_ip : "null"
   aws_availability_zones_amount = var.vpc_use_existing ? 0 : length(data.aws_availability_zones.available[0].names)
   aws_subnets_amount            = var.vpc_use_existing ? 0 : length(aws_subnet.red5pro_subnets)
@@ -1157,7 +1156,7 @@ resource "null_resource" "node_group" {
   count = local.cluster_or_autoscale && var.node_group_create ? 1 : 0
   triggers = {
     trigger_name   = "node-group-trigger"
-    SM_URL         = "${local.stream_manager_url}"
+    SM_IP          = "${local.stream_manager_ip}"
     R5AS_AUTH_USER = "${var.stream_manager_auth_user}"
     R5AS_AUTH_PASS = "${var.stream_manager_auth_password}"
   }
@@ -1165,7 +1164,7 @@ resource "null_resource" "node_group" {
     when    = create
     command = "bash ${abspath(path.module)}/red5pro-installer/r5p_create_node_group.sh"
     environment = {
-      SM_URL                                   = "${local.stream_manager_url}"
+      SM_IP                                   = "${local.stream_manager_ip}"
       R5AS_AUTH_USER                           = "${var.stream_manager_auth_user}"
       R5AS_AUTH_PASS                           = "${var.stream_manager_auth_password}"
       NODE_GROUP_REGION                        = "${var.aws_region}"
@@ -1212,7 +1211,7 @@ resource "null_resource" "node_group" {
   }
   provisioner "local-exec" {
     when    = destroy
-    command = "bash ${abspath(path.module)}/red5pro-installer/r5p_delete_node_group.sh '${self.triggers.SM_URL}' '${self.triggers.R5AS_AUTH_USER}' '${self.triggers.R5AS_AUTH_PASS}'"
+    command = "bash ${abspath(path.module)}/red5pro-installer/r5p_delete_node_group.sh '${self.triggers.SM_IP}' '${self.triggers.R5AS_AUTH_USER}' '${self.triggers.R5AS_AUTH_PASS}'"
   }
 
   depends_on = [time_sleep.wait_for_delete_nodegroup[0]]

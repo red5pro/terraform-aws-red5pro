@@ -7,7 +7,7 @@
 # Date: 2024-11-07
 ############################################################################################################
 
-# SM_URL="https://red5pro.example.com"
+# SM_IP="1.2.3.4"
 # R5AS_AUTH_USER="user"
 # R5AS_AUTH_PASS="password"
 
@@ -369,23 +369,26 @@ oetr)
 esac
 
 check_stream_manager() {
-    SM_STATUS_URL="$SM_URL/as/v1/admin/healthz"
-
-    log_i "Checking Stream Manager status. URL: $SM_STATUS_URL"
+    log_i "Checking Stream Manager status."
 
     for i in {1..20}; do
-        curl --insecure -s -m 5 -o /dev/null -w "%{http_code}" "$SM_STATUS_URL" >/dev/null
-        if [ $? -eq 0 ]; then
-            code_resp=$(curl --insecure -s -o /dev/null -w "%{http_code}" "$SM_STATUS_URL")
-            if [ "$code_resp" -eq 200 ]; then
-                log_i "Stream Manager is running. Status code: $code_resp"
+        # Check HTTPS
+        https_response=$(curl -s -m 5 -o /dev/null -w "%{http_code}" --insecure "https://$SM_IP/as/v1/admin/healthz")
+        if [ "$https_response" -eq 200 ]; then
+            SM_URL="https://$SM_IP"
+            log_i "SM URL is accessible over HTTPS: $SM_URL"
                 break
-            else
-                log_i "Stream Manager is not running. Status code: $code_resp"
-            fi
-        else
-            log_w "Stream Manager is not running! - Attempt $i"
         fi
+
+        # Check HTTP
+        http_response=$(curl -s -m 5 -o /dev/null -w "%{http_code}" "http://$SM_IP/as/v1/admin/healthz")
+        if [ "$http_response" -eq 200 ]; then
+            SM_URL="http://$SM_IP"
+            log_i "SM URL is accessible over HTTP: $SM_URL"
+            break
+            fi
+
+            log_w "Stream Manager is not running! - Attempt $i"
 
         if [ "$i" -eq 20 ]; then
             log_e "EXIT..."
@@ -400,12 +403,12 @@ create_jwT_token() {
     USER_AND_PASSWORD_IN_BASE64=$(echo -n "$R5AS_AUTH_USER:$R5AS_AUTH_PASS" | base64)
 
     for i in {1..5}; do
-        JVT_TOKEN_JSON=$(curl --insecure -s -X 'PUT' "$SM_URL/as/v1/auth/login" -H 'accept: application/json' -H "Authorization: Basic $USER_AND_PASSWORD_IN_BASE64")
-        JVT_TOKEN=$(jq -r '.token' <<<"$JVT_TOKEN_JSON")
+        JWT_TOKEN_JSON=$(curl --insecure -s -X 'PUT' "$SM_URL/as/v1/auth/login" -H 'accept: application/json' -H "Content-Type: application/json" -H "Authorization: Basic $USER_AND_PASSWORD_IN_BASE64" -d '')
+        JWT_TOKEN=$(jq -r '.token' <<<"$JWT_TOKEN_JSON")
 
-        if [ -z "$JVT_TOKEN" ] || [ "$JVT_TOKEN" == "null" ]; then
+        if [ -z "$JWT_TOKEN" ] || [ "$JWT_TOKEN" == "null" ]; then
             log_w "JWT token was not created! - Attempt $i"
-            log_d "JVT_TOKEN_JSON: $JVT_TOKEN_JSON"
+            log_d "JWT_TOKEN_JSON: $JWT_TOKEN_JSON"
         else
             log_i "JWT token created successfully."
             break
@@ -423,7 +426,7 @@ create_new_node_group() {
     log_i "Creating a new Node Group with name: $nodegroup_config_name"
 
     for i in {1..5}; do
-        node_group_resp=$(curl --insecure -s -o /dev/null -w "%{http_code}" --location --request POST "$SM_URL/as/v1/admin/nodegroup" --header "Authorization: Bearer ${JVT_TOKEN}" --header 'Content-Type: application/json' --data "@$nodegroup_config_json_mod")
+        node_group_resp=$(curl --insecure -s -o /dev/null -w "%{http_code}" --location --request POST "$SM_URL/as/v1/admin/nodegroup" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' --data "@$nodegroup_config_json_mod")
 
         if [[ "$node_group_resp" == "200" ]]; then
             log_i "Node group created successfully."
@@ -433,7 +436,7 @@ create_new_node_group() {
         fi
 
         if [ "$i" -eq 5 ]; then
-            node_group_resp_error=$(curl --insecure -s --request POST "$SM_URL/as/v1/admin/nodegroup" --header "Authorization: Bearer ${JVT_TOKEN}" --header 'Content-Type: application/json' --data "@$nodegroup_config_json_mod")
+            node_group_resp_error=$(curl --insecure -s --request POST "$SM_URL/as/v1/admin/nodegroup" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' --data "@$nodegroup_config_json_mod")
             log_d "Node group response with error: $node_group_resp_error"
             log_e "Node group was not created!!! EXIT..."
             exit 1
@@ -448,7 +451,7 @@ check_node_group() {
     NODES_URL="$SM_URL/as/v1/admin/nodegroup/status/$nodegroup_config_name"
     
     for i in {1..20}; do
-        curl --insecure -s --request GET "$NODES_URL" --header "Authorization: Bearer ${JVT_TOKEN}" | jq -r '.[] | [.scalingEvent.nodeId, .nodeEvent.publicIp // "null", .nodeEvent.privateIp // "null", .nodeEvent.nodeRoleName // "null", .scalingEvent.state, .scalingEvent.test // "null"] | join(" ")' > temp.txt
+        curl --insecure -s --request GET "$NODES_URL" --header "Authorization: Bearer ${JWT_TOKEN}" | jq -r '.[] | [.scalingEvent.nodeId, .nodeEvent.publicIp // "null", .nodeEvent.privateIp // "null", .nodeEvent.nodeRoleName // "null", .scalingEvent.state, .scalingEvent.test // "null"] | join(" ")' > temp.txt
 
         node_bad_state=0
 
