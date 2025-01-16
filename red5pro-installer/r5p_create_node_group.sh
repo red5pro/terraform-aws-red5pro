@@ -483,7 +483,7 @@ check_node_group() {
             break
         fi
 
-        if [[ $i -eq 10 ]]; then
+        if [[ $i -eq 20 ]]; then
             log_e "Something wrong with nodes states. (SM2.0 was not able to create nodes or nodes can't connect to SM). EXIT..."
             exit 1
         fi

@@ -55,7 +55,7 @@ This is a reusable Terraform module that provisions infrastructure on [Amazon Cl
     - Instance Configurations
     - Autoscaling Configurations
     - Load balancers
-    -  Certificates
+    - Certificates
   
   - Obtain the necessary credentials and information:
     - IAM user permissions
