@@ -3,9 +3,6 @@
 # 
 ############################################################################################################
 
-# SM_IP
-# NODE_CLUSTER_KEY
-
 RED5_HOME="/usr/local/red5pro"
 
 log_i() {
@@ -27,30 +24,37 @@ log_e() {
 log() {
     echo -n "[$(date '+%Y-%m-%d %H:%M:%S')]"
 }
-
-config_node(){
+config_node() {
     log_i "Config NODE"
-    
-    if [ -z "$SM_IP" ]; then
-        log_w "Parameter SM_IP is empty, EXIT"
-        exit 1
-    fi
-    if [ -z "$NODE_CLUSTER_KEY" ]; then
-        log_e "Parameter NODE_CLUSTER_KEY is empty. EXIT."
-        exit 1
-    fi
-    
-    local ip_pattern='http://0.0.0.0:5080/streammanager/cloudwatch'
-    local ip_new="http://${SM_IP}:5080/streammanager/cloudwatch"
+
     local autoscale_pattern='<property name="active" value="false"/>'
     local autoscale_true='<property name="active" value="true"/>'
-    
-    sed -i -e "s|$ip_pattern|$ip_new|" -e "s|$autoscale_pattern|$autoscale_true|" "$RED5_HOME/conf/autoscale.xml"
-    
-    local sm_pass_pattern='<property name="password" value="changeme" />'
-    local sm_pass_new='<property name="password" value="'${NODE_CLUSTER_KEY}'" />'
-    
-    sed -i -e "s|$sm_pass_pattern|$sm_pass_new|" "$RED5_HOME/conf/cluster.xml"
+
+    sed -i -e "s|$autoscale_pattern|$autoscale_true|" "$RED5_HOME/conf/autoscale.xml"
+
+    DIR="$RED5_HOME/webapps/secondscreen"
+    if [ -d "$DIR" ]; then
+        log_i "Delete unnecessary webapp ${DIR}..."
+        rm -r $DIR
+    fi
+
+    DIR="$RED5_HOME/webapps/template"
+    if [ -d "$DIR" ]; then
+        log_i "Delete unnecessary webapp ${DIR}..."
+        rm -r $DIR
+    fi
+
+    DIR="$RED5_HOME/webapps/vod"
+    if [ -d "$DIR" ]; then
+        log_i "Delete unnecessary webapp ${DIR}..."
+        rm -r $DIR
+    fi
+
+    DIR="$RED5_HOME/webapps/streammanager"
+    if [ -d "$DIR" ]; then
+        log_i "Delete unnecessary webapp ${DIR}..."
+        rm -r $DIR
+    fi
 }
 
 config_node

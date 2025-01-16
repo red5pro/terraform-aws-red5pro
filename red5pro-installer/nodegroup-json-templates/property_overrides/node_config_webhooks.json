@@ -1,0 +1,8 @@
+[
+    {
+        "fileName": "webapps/live/WEB-INF/red5-web.properties",
+        "properties": {
+            "webhooks.endpoint": "NODE_WEBHOOK_ENDPOINT"
+        }
+    }
+]

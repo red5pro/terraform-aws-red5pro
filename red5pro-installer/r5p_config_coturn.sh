@@ -1,6 +1,6 @@
 #!/bin/bash
 ############################################################################################################
-# Red5 Pro Coturn configuration for single Red5 Pro server and Red5 Pro Stream Manager                     #
+# Red5 Pro Coturn configuration for standalone Red5 Pro server and Red5 Pro Stream Manager                     #
 ############################################################################################################
 
 # COTURN_ENABLE="true"

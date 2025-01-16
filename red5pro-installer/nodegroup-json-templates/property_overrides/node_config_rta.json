@@ -1,0 +1,16 @@
+[
+    {
+      "fileName": "webapps/live/WEB-INF/red5-web.properties",
+      "properties": {
+        "server.validateCredentialsEndPoint": "NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE",
+        "server.invalidateCredentialsEndPoint": "NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE",
+        "server.host": "NODE_ROUND_TRIP_AUTH_HOST",
+        "server.port": "NODE_ROUND_TRIP_AUTH_PORT",
+        "server.protocol": "NODE_ROUND_TRIP_AUTH_PROTOCOL"
+      }
+    },
+    {
+      "fileName": "webapps/live/WEB-INF/red5-web.xml",
+      "blocks": ["R5AS-RTA"]
+    }
+  ]

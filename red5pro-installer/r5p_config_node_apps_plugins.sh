@@ -3,8 +3,6 @@
 # 
 ############################################################################################################
 
-# NODE_API_ENABLE=true
-# NODE_API_KEY
 # NODE_INSPECTOR_ENABLE=true
 # NODE_RESTREAMER_ENABLE=true
 # NODE_SOCIALPUSHER_ENABLE=true
@@ -69,26 +67,6 @@ config_node_apps_plugins(){
         rm -r $RED5_HOME/webapps/videobandwidth
     fi
 
-    if [[ "$NODE_API_ENABLE" == "true" ]]; then
-        log_i "Red5Pro WEBAPP API - enable"
-
-        if [ -z "$NODE_API_KEY" ]; then
-            log_e "Parameter NODE_API_KEY is empty. EXIT."
-            exit 1
-        fi
-        local token_pattern='security.accessToken=.*'
-        local token_new="security.accessToken=${NODE_API_KEY}"
-
-        sed -i -e "s|$token_pattern|$token_new|" "$RED5_HOME/webapps/api/WEB-INF/red5-web.properties"
-        echo " " >> $RED5_HOME/webapps/api/WEB-INF/security/hosts.txt
-        echo "*" >> $RED5_HOME/webapps/api/WEB-INF/security/hosts.txt
-    else
-        log_d "Red5Pro WEBAPP API - disable"
-        if [ -d "$RED5_HOME/webapps/api" ]; then
-            rm -r $RED5_HOME/webapps/api
-        fi
-    fi
-
     ### Inspector
     if [[ "$NODE_INSPECTOR_ENABLE" == "true" ]]; then
         log_i "Red5Pro WEBAPP INSPECTOR - enable"
@@ -101,7 +79,6 @@ config_node_apps_plugins(){
             rm $RED5_HOME/plugins/inspector.jar
         fi
     fi
-    
     ### Red5Pro HLS
     if [[ "$NODE_HLS_ENABLE" == "true" ]]; then
         log_i "Red5Pro HLS - enable. Output format: $NODE_HLS_OUTPUT_FORMAT, DVR playlist: $NODE_HLS_DVR_PLAYLIST"
@@ -194,9 +171,10 @@ config_node_apps_plugins(){
     if [[ "$NODE_RESTREAMER_ENABLE" == "true" ]]; then
         log_i "Red5Pro Restreamer - enable"
         
-        log_i "Enable Restreamer Servlet in $RED5_HOME/webapps/live/WEB-INF/web.xml"
-        restreamer_servlet="<servlet>\n<servlet-name>RestreamerServlet</servlet-name>\n<servlet-class>com.red5pro.restreamer.servlet.RestreamerServlet</servlet-class>\n</servlet>\n<servlet-mapping>\n<servlet-name>RestreamerServlet</servlet-name>\n<url-pattern>/restream</url-pattern>\n</servlet-mapping>"
-        sed -i "/<\/web-app>/i $restreamer_servlet"  "$RED5_HOME/webapps/live/WEB-INF/web.xml"
+        # In new version of Red5Pro 13.0.0 and above, it is enabled by default in the red5-web.xml
+        # log_i "Enable Restreamer Servlet in $RED5_HOME/webapps/live/WEB-INF/web.xml"
+        # restreamer_servlet="<servlet>\n<servlet-name>RestreamerServlet</servlet-name>\n<servlet-class>com.red5pro.restreamer.servlet.RestreamerServlet</servlet-class>\n</servlet>\n<servlet-mapping>\n<servlet-name>RestreamerServlet</servlet-name>\n<url-pattern>/restream</url-pattern>\n</servlet-mapping>"
+        # sed -i "/<\/web-app>/i $restreamer_servlet"  "$RED5_HOME/webapps/live/WEB-INF/web.xml"
 
         log_i "Set enable.srtingest=true in $RED5_HOME/conf/restreamer-plugin.properties"
         enable_srtingest="enable.srtingest=.*"
