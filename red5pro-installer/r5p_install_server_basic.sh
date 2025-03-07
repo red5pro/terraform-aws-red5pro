@@ -7,7 +7,7 @@ RED5_HOME="/usr/local/red5pro"
 CURRENT_DIRECTORY=$(pwd)
 TEMP_FOLDER="$CURRENT_DIRECTORY/tmp"
 
-PACKAGES_DEFAULT=(jsvc ntp git unzip libvdpau1 ffmpeg)
+PACKAGES_DEFAULT=(jsvc ntp git unzip libvdpau1)
 PACKAGES_1604=(default-jre libva1 libva-drm1 libva-x11-1)
 PACKAGES_1804=(libva2 libva-drm2 libva-x11-2)
 PACKAGES_2004=(libva2 libva-drm2 libva-x11-2)
