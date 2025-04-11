@@ -46,13 +46,12 @@ services:
       KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
       KAFKA_LOG4J_TOOLS_LOGLEVEL: ERROR
       KAFKA_LOG4J_LOGGERS: 'kafka=WARN,kafka.controller=WARN,kafka.log.LogCleaner=WARN,state.change.logger=WARN,kafka.producer.async.DefaultEventHandler=WARN'
+      KAFKA_CLUSTER_ID: ${KAFKA_CLUSTER_ID:?should be set for script update_run.sh}
     volumes:
       - kafka-data:/var/lib/kafka/data
       - "./certs:/certs"
-    command: "bash -c 'if [ ! -f /tmp/update_run.sh ]; then echo \"ERROR: Script was not found /tmp/update_run.sh\" && exit 1 ; else bash /tmp/update_run.sh && /etc/confluent/docker/run ; fi'"
-    configs:
-      - source: kafka-update-run
-        target: /tmp/update_run.sh
+      - ./scripts/update_run.sh:/tmp/update_run.sh
+    command: "bash -c 'if [ ! -f /tmp/update_run.sh ]; then echo \"ERROR: Script was not found /tmp/update_run.sh\" && exit 1 ; else /tmp/update_run.sh && /etc/confluent/docker/run ; fi'"
     healthcheck:
       test: nc -z localhost 9092 || exit -1
       start_period: 15s
@@ -61,7 +60,7 @@ services:
       retries: 10
 
   as-admin:
-    image: red5pro/as-admin:latest
+    image: red5pro/as-admin:${AS_VERSION:-latest}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/admin/healthz"]
@@ -97,7 +96,9 @@ services:
       SPRINGDOC_SWAGGER_UI_URLS_3_NAME: autoscale-admin
       R5AS_CLOUD_PLATFORM_TYPE: ${R5AS_CLOUD_PLATFORM_TYPE:-AWS} # GCP, OCI, LINODE
       R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET:?R5AS_AUTH_SECRET is not set}
-      R5AS_AUTH_JWT_TTL_MINUTES: 400
+      R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
+      R5AS_WS_PING_PONG_INTERVAL_S: ${R5AS_WS_PING_PONG_INTERVAL_S:-30}
+      R5AS_WS_PONG_TIMEOUT_S: ${R5AS_WS_PONG_TIMEOUT_S:-50}
     labels:
       traefik.http.routers.config-swagger.rule: "PathPrefix(`/swagger-ui`)"
       traefik.http.routers.config-swagger.entrypoints: "web"
@@ -117,7 +118,7 @@ services:
     restart: unless-stopped
     deploy:
       replicas: 1
-    image: red5pro/as-terraform:latest
+    image: red5pro/as-terraform:${AS_VERSION:-latest}
     depends_on:
       kafka0:
         condition: service_healthy
@@ -133,7 +134,7 @@ services:
       R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
       R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
       R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
-      R5AS_COMMAND_INACTIVITY_GAP_MS: 10000
+      R5AS_COMMAND_INACTIVITY_GAP_MS: ${R5AS_COMMAND_INACTIVITY_GAP_MS:-10000}
       TF_VAR_aws_access_key: ${TF_VAR_aws_access_key}
       TF_VAR_aws_secret_key: ${TF_VAR_aws_secret_key}
       TF_VAR_aws_ssh_key_pair: ${TF_VAR_aws_ssh_key_pair}
@@ -141,10 +142,9 @@ services:
       TF_VAR_r5p_license_key: ${TF_VAR_r5p_license_key}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      
 
   as-proxy:
-    image: red5pro/as-proxy:latest
+    image: red5pro/as-proxy:${AS_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       kafka0:
@@ -153,7 +153,20 @@ services:
       - 9080:8080
     environment:
       # R5AS_AUTOSCALE_DOMAIN: ${R5AS_AUTOSCALE_DOMAIN:-kafka0}
+      R5AS_STATE_DIRECTORY: /root/kafka-streams
+      R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
       R5AS_BOOTSTRAP_SERVERS: ${KAFKA_IP}:9092
+      R5AS_SECURITY_PROTOCOL_CONFIG: SASL_SSL
+      R5AS_SSL_KEYSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_TRUSTSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_CA_CERTIFICATE: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
+      R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
+      R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
+      R5AS_SASL_ENABLED_MECHANISMS: PLAIN
+      R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET}
+      R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
+      R5AS_TRAEFIK_HOST: ${TRAEFIK_HOST:-localhost}
+      R5AS_AUTOSCALE_DOMAIN: ${TRAEFIK_HOST:-localhost}
     labels:
       traefik.enable: true
       traefik.http.routers.asproxy.rule: PathPrefix(`/as/v1/proxy`)
@@ -162,7 +175,7 @@ services:
       traefik.http.middlewares.strip-asproxy.stripprefix.prefixes: /as/v1/proxy
 
   as-autoscale-service:
-    image: red5pro/as-autoscale-service:latest
+    image: red5pro/as-autoscale-service:${AS_VERSION:-latest}
     restart: unless-stopped
     deploy:
       replicas: 1
@@ -190,10 +203,9 @@ services:
       R5AS_AUTOSCALE_PARTITIONS: ${R5AS_AUTOSCALE_PARTITIONS:-1}
       R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
       # R5AS_APPLICATION_HOST: ${R5AS_APPLICATION_HOST}
-      # R5AS_APPLICATION_PORT: ${R5AS_APPLICATION_PORT}
+      # R5AS_APPLICATION_PORT: ${R5AS_APPLICATION_PORT:-9394}
       R5AS_BOOTSTRAP_SERVERS: ${KAFKA_IP}:9092
       R5AS_BOOTSTRAP_SERVERS_FOR_NODES: ${KAFKA_IP}:9092
-      R5AS_AUTOCALE_EVALUATION_INTERVAL: 4000
       R5AS_SECURITY_PROTOCOL_CONFIG: SASL_SSL
       R5AS_SSL_KEYSTORE_TYPE_CONFIG: PEM
       R5AS_SSL_TRUSTSTORE_TYPE_CONFIG: PEM
@@ -201,6 +213,10 @@ services:
       R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
       R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
       R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
+      R5AS_AUTOCALE_EVALUATION_INTERVAL: ${R5AS_AUTOCALE_EVALUATION_INTERVAL:-4000}
+      R5AS_TRAEFIK_HOST: ${TRAEFIK_HOST:-localhost}
+      R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET}
+      R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
     labels:
       traefik.enable: true
       traefik.http.routers.autoscale-springdoc.rule: PathPrefix(`/as/v1/autoscale/v3`)
@@ -213,15 +229,19 @@ services:
       traefik.http.middlewares.strip-m-autoscale.stripprefix.prefixes: /as/v1
 
   as-auth:
-    image: red5pro/as-auth:latest
+    image: red5pro/as-auth:${AS_VERSION:-latest}
     restart: unless-stopped
     ports:
       - 10080:8080
     environment:
       R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET:?R5AS_AUTH_SECRET is not set}
-      R5AS_AUTH_JWT_TTL_MINUTES: 400
+      R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
       R5AS_AUTH_USER: ${R5AS_AUTH_USER:?R5AS_AUTH_USER is not set}
       R5AS_AUTH_PASS: ${R5AS_AUTH_PASS:?R5AS_AUTH_PASS is not set}
+      R5AS_PROXY_USER: ${R5AS_PROXY_USER:?R5AS_PROXY_USER is not set}
+      R5AS_PROXY_PASS: ${R5AS_PROXY_PASS:?R5AS_PROXY_PASS is not set}
+      R5AS_SPATIAL_USER: ${R5AS_SPATIAL_USER:?R5AS_SPATIAL_USER is not set}
+      R5AS_SPATIAL_PASS: ${R5AS_SPATIAL_PASS:?R5AS_SPATIAL_PASS is not set}
     labels:
       traefik.enable: true
       traefik.http.routers.asauth.rule: PathPrefix(`/as/v1/auth`)
@@ -230,7 +250,7 @@ services:
       traefik.http.middlewares.strip-asauth.stripprefix.prefixes: /as/v1
 
   as-streams:
-    image: red5pro/as-streams:latest
+    image: red5pro/as-streams:${AS_VERSION:-latest}
     restart: unless-stopped
     deploy:
       replicas: 1
@@ -243,11 +263,8 @@ services:
     environment:
       R5AS_STATE_DIRECTORY: /root/kafka-streams
       R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET:?R5AS_AUTH_SECRET is not set}
-      R5AS_AUTH_JWT_TTL_MINUTES: 400
+      R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
       R5AS_BOOTSTRAP_SERVERS: ${KAFKA_IP}:9092
-      R5AS_MESSAGE_BUS_CLEAR_STREAMS: false
-      R5AS_AUTOSCALE_PARTITIONS: ${R5AS_AUTOSCALE_PARTITIONS:-1}
-      R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
       R5AS_SECURITY_PROTOCOL_CONFIG: SASL_SSL
       R5AS_SSL_KEYSTORE_TYPE_CONFIG: PEM
       R5AS_SSL_TRUSTSTORE_TYPE_CONFIG: PEM
@@ -255,6 +272,11 @@ services:
       R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
       R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
       R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
+      R5AS_MESSAGE_BUS_CLEAR_STREAMS: ${R5AS_MESSAGE_BUS_CLEAR_STREAMS:-false}
+      R5AS_AUTOSCALE_PARTITIONS: ${R5AS_AUTOSCALE_PARTITIONS:-1}
+      R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
+      R5AS_RESTREAMER_REDISTRIBUTE_SECONDS: ${R5AS_RESTREAMER_REDISTRIBUTE_SECONDS:-60}
+      R5AS_STREAM_TIMEOUT: ${R5AS_STREAM_TIMEOUT:-30}
     labels:
       prometheus.scrape: true
       prometheus.path: /streams/metrics
@@ -291,7 +313,7 @@ services:
         max-file: "3"
 
   as-testbeds:
-     image: red5pro/as-testbed:latest
+     image: red5pro/as-testbed:${AS_VERSION:-latest}
      restart: unless-stopped
      depends_on:
        as-auth:
@@ -323,7 +345,7 @@ services:
        traefik.http.middlewares.strip-prefix-2.stripprefixregex.regex: /[a-z0-9_]+
 
   as-debug-ui:
-    image: "red5pro/as-debug-ui:latest"
+    image: "red5pro/as-debug-ui:${AS_VERSION:-latest}"
     restart: unless-stopped
     labels:
       traefik.enable: true
@@ -332,11 +354,3 @@ services:
 
 volumes:
   kafka-data:
-
-configs:
-  kafka-update-run:
-    content: |
-      #!/bin/sh
-      sed -i '/KAFKA_ZOOKEEPER_CONNECT/d' /etc/confluent/docker/configure
-      echo "export CLUSTER_ID=${KAFKA_CLUSTER_ID:-a1b2c3d4-e5f6-7a8b-9c0d-e1f2a3b4c5d6}" >> /etc/confluent/docker/bash-config
-      sed "s/#max.request.size=/max.request.size=52428800/" -i /etc/kafka/producer.properties

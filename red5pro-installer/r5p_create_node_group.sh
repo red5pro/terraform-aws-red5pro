@@ -1,75 +1,76 @@
 #!/bin/bash
-############################################################################################################
+############################################################################################################################################################
 # Script Name: r5p_create_node_group.sh
-# Description: This script creates a new Node Group in Stream Manager 2.0 and checks the states of the nodes.
+# Description: This script generates node group config json and creates a new Node Group in Stream Manager 2.0 and checks the states of the nodes.
 # AUTHOR: Oles Prykhodko
 # COMPANY: Infrared5, Inc.
-# Date: 2024-11-07
-############################################################################################################
+# Date: 2025-04-08
+############################################################################################################################################################
 
-# SM_IP="1.2.3.4"
-# R5AS_AUTH_USER="user"
-# R5AS_AUTH_PASS="password"
+# SM_IP="sm-ip-address-example"
+# NODE_GROUP_NAME="name-example" # Max 16 characters
+# R5AS_AUTH_USER="sm-auth-user-name-example"
+# R5AS_AUTH_PASS="sm-auth-password-example"
 
-# NODE_GROUP_REGION="us-ashburn-1"
-# NODE_ENVIRONMENT="terra"
-# NODE_VPC_NAME="red5pro-vpc"
-# NODE_SECURITY_GROUP_NAME="red5-ci-deployments-multiregion-node-nsg"
-# NODE_IMAGE_NAME="as-node-b3367-b290"
+# NODE_GROUP_CLOUD_PLATFORM="OCI" # AWS, GCP, LINODE, OCI
+# NODE_GROUP_REGIONS="us-ashburn-1"
+# NODE_GROUP_ENVIRONMENT="environment-name-example"
+# NODE_GROUP_SUBNET_NAME="subnet-name-example" #OCI only
+# NODE_GROUP_VPC_NAME="vpc-name-example"
+# NODE_GROUP_SECURITY_GROUP_NAME="security-group-name-example" # Not used for GCP
 
-# ORIGINS_MIN=1
-# EDGES_MIN=0
-# TRANSCODERS_MIN=0
-# RELAYS_MIN=0
+# NODE_GROUP_IMAGE_NAME="node-image-name-example"
 
-# ORIGINS_MAX=1
-# EDGES_MAX=1
-# TRANSCODERS_MAX=1
-# RELAYS_MAX=1
+# NODE_GROUP_ORIGINS_MIN=1
+# NODE_GROUP_EDGES_MIN=1
+# NODE_GROUP_TRANSCODERS_MIN=0
+# NODE_GROUP_RELAYS_MIN=0
 
-# ORIGIN_INSTANCE_TYPE="VM.Standard.E4.Flex-1-4"
-# EDGE_INSTANCE_TYPE="VM.Standard.E4.Flex-1-4"
-# TRANSCODER_INSTANCE_TYPE="VM.Standard.E4.Flex-1-4"
-# RELAY_INSTANCE_TYPE="VM.Standard.E4.Flex-1-4"
+# NODE_GROUP_ORIGINS_MAX=20
+# NODE_GROUP_EDGES_MAX=40
+# NODE_GROUP_TRANSCODERS_MAX=20
+# NODE_GROUP_RELAYS_MAX=20
 
-# ORIGIN_VOLUME_SIZE="50"
-# EDGE_VOLUME_SIZE="50"
-# TRANSCODER_VOLUME_SIZE="50"
-# RELAY_VOLUME_SIZE="50"
+# NODE_GROUP_ORIGIN_INSTANCE_TYPE="e2-medium"
+# NODE_GROUP_EDGE_INSTANCE_TYPE="e2-medium"
+# NODE_GROUP_TRANSCODER_INSTANCE_TYPE="e2-medium"
+# NODE_GROUP_RELAY_INSTANCE_TYPE="e2-medium"
 
-# PATH_TO_JSON_TEMPLATES="./nodegroup-json-templates"
+# NODE_GROUP_ORIGIN_VOLUME_SIZE="20"
+# NODE_GROUP_EDGE_VOLUME_SIZE="20"
+# NODE_GROUP_TRANSCODER_VOLUME_SIZE="20"
+# NODE_GROUP_RELAY_VOLUME_SIZE="20"
 
-# NODE_ROUND_TRIP_AUTH_ENABLE=true
-# NODE_ROUNT_TRIP_AUTH_TARGET_NODES="origin,edge,transcoder" # origin,edge,transcoder,relay
-# NODE_ROUND_TRIP_AUTH_HOST="rta-host.com.ua"
-# NODE_ROUND_TRIP_AUTH_PORT="443"
-# NODE_ROUND_TRIP_AUTH_PROTOCOL="https://"
-# NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE="/validate"
-# NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE="/invalidate"
+# NODE_GROUP_ORIGINS_CONNECTION_LIMIT="20"
+# NODE_GROUP_EDGES_CONNECTION_LIMIT="200"
+# NODE_GROUP_TRANSCODERS_CONNECTION_LIMIT="20"
 
-# NODE_WEBHOOK_ENABLE=true
-# NODE_WEBHOOK_TARGET_NODES="origin,edge,transcoder"
-# NODE_WEBHOOK_ENDPOINT="https://webhook-endpoint.com.ua"
+# NODE_GROUP_ROUND_TRIP_AUTH_ENABLE=true
+# NODE_GROUP_ROUNT_TRIP_AUTH_TARGET_NODES="origin,edge,transcoder"
+# NODE_GROUP_ROUND_TRIP_AUTH_HOST="rta-host.com.ua"
+# NODE_GROUP_ROUND_TRIP_AUTH_PORT="443"
+# NODE_GROUP_ROUND_TRIP_AUTH_PROTOCOL="https://"
+# NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE="/validate"
+# NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE="/invalidate"
 
-# NODE_SOCIAL_PUSHER_ENABLE=true
-# NODE_SOCIAL_PUSHER_TARGET_NODES="origin,edge,transcoder"
+# NODE_GROUP_WEBHOOK_ENABLE=true
+# NODE_GROUP_WEBHOOK_TARGET_NODES="origin,edge,transcoder"
+# NODE_GROUP_WEBHOOK_ENDPOINT="https://webhook-endpoint.com.ua"
 
-# NODE_RESTREAMER_ENABLE=true
-# NODE_RESTREAMER_TARGET_NODES="origin,edge,transcoder"
-# NODE_RESTREAMER_TSINGEST=true
-# NODE_RESTREAMER_IPCAM=false
-# NODE_RESTREAMER_WHIP=true
-# NODE_RESTREAMER_SRTINGEST=false
+# NODE_GROUP_SOCIAL_PUSHER_ENABLE=true
+# NODE_GROUP_SOCIAL_PUSHER_TARGET_NODES="origin,edge,transcoder"
 
-# Static variables for JSON templates
-node_config_rta_json="$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_rta.json"
-node_config_rta_json_mod="$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_rta_mod.json"
-node_config_webhook_json="$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_webhooks.json"
-node_config_webhook_json_mod="$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_webhooks_mod.json"
-node_config_social_pusher_json="$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_social_pusher.json"
-node_config_social_pusher_json_mod="$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_social_pusher_mod.json"
-node_config_restreamer_json="$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_restreamer.json"
-node_config_restreamer_json_mod="$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_restreamer_mod.json"
+# NODE_GROUP_RESTREAMER_ENABLE=true
+# NODE_GROUP_RESTREAMER_TARGET_NODES="origin,edge,transcoder"
+# NODE_GROUP_RESTREAMER_TSINGEST=true
+# NODE_GROUP_RESTREAMER_IPCAM=true
+# NODE_GROUP_RESTREAMER_WHIP=true
+# NODE_GROUP_RESTREAMER_SRTINGEST=true
+
+################################################################################################################
+NODE_GROUP_ORIGIN_OUT_THRESHOLD="0.6"     # 0.6 = 60%
+NODE_GROUP_EDGE_OUT_THRESHOLD="0.6"       # 0.6 = 60%
+NODE_GROUP_TRANSCODER_OUT_THRESHOLD="0.6" # 0.6 = 60%
 
 log_i() {
     log
@@ -91,285 +92,486 @@ log() {
     echo -n "[$(date '+%Y-%m-%d %H:%M:%S')]"
 }
 
-prepare_json_templates() {
-    log_i "Preparing JSON templates for node group: $NODE_GROUP_TYPE"
-
-    local node_env_pattern='NODE_ENVIRONMENT'
-    local node_env_new="${NODE_ENVIRONMENT}"
-
-    local node_vpc_pattern='NODE_VPC_NAME'
-    local node_vpc_new="${NODE_VPC_NAME}"
-
-    local node_security_group_pattern='NODE_SECURITY_GROUP_NAME'
-    local node_security_group_new="${NODE_SECURITY_GROUP_NAME}"
-
-    local node_image_name_pattern='NODE_IMAGE_NAME'
-    local node_image_name_new="${NODE_IMAGE_NAME}"
-
-    local node_group_region_pattern='NODE_GROUP_REGION'
-    local node_group_region_new="${NODE_GROUP_REGION}"
-
-    local origins_volume_size_pattern='ORIGIN_VOLUME_SIZE'
-    local origins_volume_size_new="${ORIGIN_VOLUME_SIZE}"
-    local origins_instance_type_pattern='ORIGIN_INSTANCE_TYPE'
-    local origins_instance_type_new="${ORIGIN_INSTANCE_TYPE}"
-    local origins_min_pattern='ORIGINS_MIN'
-    local origins_min_new="${ORIGINS_MIN}"
-    local origins_max_pattern='ORIGINS_MAX'
-    local origins_max_new="${ORIGINS_MAX}"
-
-    local edges_volume_size_pattern='EDGE_VOLUME_SIZE'
-    local edges_volume_size_new="${EDGE_VOLUME_SIZE}"
-    local edges_instance_type_pattern='EDGE_INSTANCE_TYPE'
-    local edges_instance_type_new="${EDGE_INSTANCE_TYPE}"
-    local edges_min_pattern='EDGES_MIN'
-    local edges_min_new="${EDGES_MIN}"
-    local edges_max_pattern='EDGES_MAX'
-    local edges_max_new="${EDGES_MAX}"
-
-    local transcoders_volume_size_pattern='TRANSCODER_VOLUME_SIZE'
-    local transcoders_volume_size_new="${TRANSCODER_VOLUME_SIZE}"
-    local transcoders_instance_type_pattern='TRANSCODER_INSTANCE_TYPE'
-    local transcoders_instance_type_new="${TRANSCODER_INSTANCE_TYPE}"
-    local transcoders_min_pattern='TRANSCODERS_MIN'
-    local transcoders_min_new="${TRANSCODERS_MIN}"
-    local transcoders_max_pattern='TRANSCODERS_MAX'
-    local transcoders_max_new="${TRANSCODERS_MAX}"
-
-    local relays_volume_size_pattern='RELAY_VOLUME_SIZE'
-    local relays_volume_size_new="${RELAY_VOLUME_SIZE}"
-    local relays_instance_type_pattern='RELAY_INSTANCE_TYPE'
-    local relays_instance_type_new="${RELAY_INSTANCE_TYPE}"
-    local relays_min_pattern='RELAYS_MIN'
-    local relays_min_new="${RELAYS_MIN}"
-    local relays_max_pattern='RELAYS_MAX'
-    local relays_max_new="${RELAYS_MAX}"
-
-    sed -e "s|$node_env_pattern|$node_env_new|" \
-        -e "s|$node_vpc_pattern|$node_vpc_new|" \
-        -e "s|$node_security_group_pattern|$node_security_group_new|" \
-        -e "s|$node_image_name_pattern|$node_image_name_new|" \
-        -e "s|$node_group_region_pattern|$node_group_region_new|" \
-        -e "s|$origins_volume_size_pattern|$origins_volume_size_new|" \
-        -e "s|$origins_instance_type_pattern|$origins_instance_type_new|" \
-        -e "s|$origins_min_pattern|$origins_min_new|" \
-        -e "s|$origins_max_pattern|$origins_max_new|" \
-        -e "s|$edges_volume_size_pattern|$edges_volume_size_new|" \
-        -e "s|$edges_instance_type_pattern|$edges_instance_type_new|" \
-        -e "s|$edges_min_pattern|$edges_min_new|" \
-        -e "s|$edges_max_pattern|$edges_max_new|" \
-        -e "s|$transcoders_volume_size_pattern|$transcoders_volume_size_new|" \
-        -e "s|$transcoders_instance_type_pattern|$transcoders_instance_type_new|" \
-        -e "s|$transcoders_min_pattern|$transcoders_min_new|" \
-        -e "s|$transcoders_max_pattern|$transcoders_max_new|" \
-        -e "s|$relays_volume_size_pattern|$relays_volume_size_new|" \
-        -e "s|$relays_instance_type_pattern|$relays_instance_type_new|" \
-        -e "s|$relays_min_pattern|$relays_min_new|" \
-        -e "s|$relays_max_pattern|$relays_max_new|" \
-        "$nodegroup_config_json" >"$nodegroup_config_json_mod"
-}
-
-prepare_node_config_json() {
-    log_i "Preparing Node config JSON template for node group: $NODE_GROUP_TYPE"
-    
-    # Node config - Round Trip Auth
-    if [ "$NODE_ROUND_TRIP_AUTH_ENABLE" == "true" ]; then
-        log_i "Node Round Trip Auth is enabled"
-        local node_rta_host_pattern='NODE_ROUND_TRIP_AUTH_HOST'
-        local node_rta_host_new="${NODE_ROUND_TRIP_AUTH_HOST}"
-
-        local node_rta_port_pattern='NODE_ROUND_TRIP_AUTH_PORT'
-        local node_rta_port_new="${NODE_ROUND_TRIP_AUTH_PORT}"
-
-        local node_rta_protocol_pattern='NODE_ROUND_TRIP_AUTH_PROTOCOL'
-        local node_rta_protocol_new="${NODE_ROUND_TRIP_AUTH_PROTOCOL}"
-
-        local node_rta_endpoint_validate_pattern='NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE'
-        local node_rta_endpoint_validate_new="${NODE_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE}"
-
-        local node_rta_endpoint_invalidate_pattern='NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE'
-        local node_rta_endpoint_invalidate_new="${NODE_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE}"
-
-        sed -e "s|$node_rta_host_pattern|$node_rta_host_new|" \
-            -e "s|$node_rta_port_pattern|$node_rta_port_new|" \
-            -e "s|$node_rta_protocol_pattern|$node_rta_protocol_new|" \
-            -e "s|$node_rta_endpoint_validate_pattern|$node_rta_endpoint_validate_new|" \
-            -e "s|$node_rta_endpoint_invalidate_pattern|$node_rta_endpoint_invalidate_new|" \
-            "$node_config_rta_json" >"$node_config_rta_json_mod"
-    else
-        log_i "Node Round Trip Auth is disabled"
-        echo "[]" >"$node_config_rta_json_mod"
-    fi
-
-    # Node config - Webhook    
-    if [ "$NODE_WEBHOOK_ENABLE" == "true" ]; then
-        log_i "Node Webhook is enabled"
-
-        local node_webhook_pattern='NODE_WEBHOOK_ENDPOINT'
-        local node_webhook_new="${NODE_WEBHOOK_ENDPOINT}"
-
-        sed -e "s|$node_webhook_pattern|$node_webhook_new|" "$node_config_webhook_json" >"$node_config_webhook_json_mod"
-
-    else
-        log_i "Node Webhook is disabled"
-        echo "[]" >"$node_config_webhook_json_mod"
-    fi
-
-    # Node config - Social Pusher
-    if [ "$NODE_SOCIAL_PUSHER_ENABLE" == "true" ]; then
-        log_i "Node Social Pusher is enabled"
-        cp "$node_config_social_pusher_json" "$node_config_social_pusher_json_mod"
-    else
-        log_i "Node Social Pusher is disabled"
-        echo "[]" >"$node_config_social_pusher_json_mod"
-    fi
-
-    # Node config - Restreamer
-    if [ "$NODE_RESTREAMER_ENABLE" == "true" ]; then
-        log_i "Node Restreamer is enabled"
-        local node_restreamer_tsingest_pattern='NODE_RESTREAMER_TSINGEST'
-        local node_restreamer_tsingest_new="${NODE_RESTREAMER_TSINGEST}"
-
-        local node_restreamer_ipcam_pattern='NODE_RESTREAMER_IPCAM'
-        local node_restreamer_ipcam_new="${NODE_RESTREAMER_IPCAM}"
-
-        local node_restreamer_whip_pattern='NODE_RESTREAMER_WHIP'
-        local node_restreamer_whip_new="${NODE_RESTREAMER_WHIP}"
-
-        local node_restreamer_srtingest_pattern='NODE_RESTREAMER_SRTINGEST'
-        local node_restreamer_srtingest_new="${NODE_RESTREAMER_SRTINGEST}"
-
-        sed -e "s|$node_restreamer_tsingest_pattern|$node_restreamer_tsingest_new|" \
-            -e "s|$node_restreamer_ipcam_pattern|$node_restreamer_ipcam_new|" \
-            -e "s|$node_restreamer_whip_pattern|$node_restreamer_whip_new|" \
-            -e "s|$node_restreamer_srtingest_pattern|$node_restreamer_srtingest_new|" \
-            "$node_config_restreamer_json" >"$node_config_restreamer_json_mod"
-    else
-        log_i "Node Restreamer is disabled"
-        echo "[]" >"$node_config_restreamer_json_mod"
-    fi
-
-    # Create empty node config JSONs
-    echo "[]" >"$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_origin.json"
-    echo "[]" >"$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_edge.json"
-    echo "[]" >"$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_transcoder.json"
-    echo "[]" >"$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_relay.json"
-
-    # Generate node config JSONs
-    generate_node_config_json "$NODE_ROUNT_TRIP_AUTH_TARGET_NODES" "$node_config_rta_json_mod"
-    generate_node_config_json "$NODE_WEBHOOK_TARGET_NODES" "$node_config_webhook_json_mod"
-    generate_node_config_json "$NODE_SOCIAL_PUSHER_TARGET_NODES" "$node_config_social_pusher_json_mod"
-    generate_node_config_json "$NODE_RESTREAMER_TARGET_NODES" "$node_config_restreamer_json_mod"
-
-    # Read the node config JSONs
-    origin_list=$(cat "$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_origin.json")
-    edge_list=$(cat "$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_edge.json")
-    transcoder_list=$(cat "$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_transcoder.json")
-    relay_list=$(cat "$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_relay.json")
-    
-    # Inject the node config JSON into the nodegroup JSON depending on the node group type
-    case $NODE_GROUP_TYPE in
-    o)  jq --argjson list1 "$origin_list" '.roles.origin.propertyOverrides = $list1' "$nodegroup_config_json_mod" > "$PATH_TO_JSON_TEMPLATES/property_overrides/temp.json" ;;
-    oe) jq --argjson list1 "$origin_list" --argjson list2 "$edge_list" '.roles.origin.propertyOverrides = $list1 | .roles.edge.propertyOverrides = $list2' "$nodegroup_config_json_mod" > "$PATH_TO_JSON_TEMPLATES/property_overrides/temp.json" ;;
-    oer) jq --argjson list1 "$origin_list" --argjson list2 "$edge_list" --argjson list3 "$relay_list" '.roles.origin.propertyOverrides = $list1 | .roles.edge.propertyOverrides = $list2 | .roles.relay.propertyOverrides = $list3' "$nodegroup_config_json_mod" > "$PATH_TO_JSON_TEMPLATES/property_overrides/temp.json" ;;
-    oet) jq --argjson list1 "$origin_list" --argjson list2 "$edge_list" --argjson list3 "$transcoder_list" '.roles.origin.propertyOverrides = $list1 | .roles.edge.propertyOverrides = $list2 | .roles.transcoder.propertyOverrides = $list3' "$nodegroup_config_json_mod" > "$PATH_TO_JSON_TEMPLATES/property_overrides/temp.json" ;;
-    oetr) jq --argjson list1 "$origin_list" --argjson list2 "$edge_list" --argjson list3 "$transcoder_list" --argjson list4 "$relay_list" '.roles.origin.propertyOverrides = $list1 | .roles.edge.propertyOverrides = $list2 | .roles.transcoder.propertyOverrides = $list3 | .roles.relay.propertyOverrides = $list4' "$nodegroup_config_json_mod" > "$PATH_TO_JSON_TEMPLATES/property_overrides/temp.json" ;;
-    esac
-
-    # Move the modified nodegroup JSON to the original file
-    mv "$PATH_TO_JSON_TEMPLATES/property_overrides/temp.json" "$nodegroup_config_json_mod"
-
-    log_d "JSON template: $nodegroup_config_json_mod"
-    cat "$nodegroup_config_json_mod"
-
-    # Delete temporary files
-    rm -f "$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_origin.json"
-    rm -f "$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_edge.json"
-    rm -f "$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_transcoder.json"
-    rm -f "$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_relay.json"
-}
-
-generate_node_config_json() {
-    target_nodes="$1"
-    node_config_json="$2"
-
-    IFS=',' read -r -a target_nodes_nodes_array <<< "$target_nodes"
-
-    for i in "${target_nodes_nodes_array[@]}"
-    do
-        # log_i "TARGET_NODE=$i"
-        jq -s '.[0] + .[1]' "$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_$i.json" "$node_config_json" > "$PATH_TO_JSON_TEMPLATES/property_overrides/temp.json"
-        mv "$PATH_TO_JSON_TEMPLATES/property_overrides/temp.json" "$PATH_TO_JSON_TEMPLATES/property_overrides/node_config_$i.json"
-    done
-    rm "$node_config_json"
-}
-
-# Check if the minimum number of nodes is set
-if [ -z "$ORIGINS_MIN" ]; then
-    ORIGINS_MIN=0
-fi
-if [ -z "$EDGES_MIN" ]; then
-    EDGES_MIN=0
-fi
-if [ -z "$RELAYS_MIN" ]; then
-    RELAYS_MIN=0
-fi
-if [ -z "$TRANSCODERS_MIN" ]; then
-    TRANSCODERS_MIN=0
-fi
-
-# Check the node group type. Supported types: o, oe, oer, oet, oetr
-if [ "$ORIGINS_MIN" -gt 0 ] && [ "$EDGES_MIN" -gt 0 ] && [ "$RELAYS_MIN" -gt 0 ] && [ "$TRANSCODERS_MIN" -gt 0 ]; then
-    NODE_GROUP_TYPE="oetr"
-elif [ "$ORIGINS_MIN" -gt 0 ] && [ "$EDGES_MIN" -gt 0 ] && [ "$RELAYS_MIN" -gt 0 ]; then
-    NODE_GROUP_TYPE="oer"
-elif [ "$ORIGINS_MIN" -gt 0 ] && [ "$EDGES_MIN" -gt 0 ] && [ "$TRANSCODERS_MIN" -gt 0 ]; then
-    NODE_GROUP_TYPE="oet"
-elif [ "$ORIGINS_MIN" -gt 0 ] && [ "$EDGES_MIN" -gt 0 ]; then
-    NODE_GROUP_TYPE="oe"
-elif [ "$ORIGINS_MIN" -gt 0 ]; then
-    NODE_GROUP_TYPE="o"
-else
-    log_e "Node group type was not found: $NODE_GROUP_TYPE, EXIT..."
+if [ "$NODE_GROUP_ORIGINS_MIN" -eq 0 ]; then
+    log_e "At least one Origin node is required. Exiting."
     exit 1
 fi
 
-log_i "NODE_GROUP_TYPE: $NODE_GROUP_TYPE"
+# Generate Node group description
+NODE_GROUP_DESCRIPTION="Stream Manager 2.0 Node group"
 
-case $NODE_GROUP_TYPE in
-o)
-    nodegroup_config_name="nodegroup-o"
-    nodegroup_config_json="$PATH_TO_JSON_TEMPLATES/nodegroup_config_o.json"
-    nodegroup_config_json_mod="$PATH_TO_JSON_TEMPLATES/nodegroup_config_o_mod.json"
+if [ "$NODE_GROUP_ORIGINS_MIN" -gt 0 ]; then
+    NODE_GROUP_DESCRIPTION="${NODE_GROUP_DESCRIPTION} with Origin"
+fi
+if [ "$NODE_GROUP_EDGES_MIN" -gt 0 ]; then
+    NODE_GROUP_DESCRIPTION="${NODE_GROUP_DESCRIPTION}, Edge"
+fi
+if [ "$NODE_GROUP_TRANSCODERS_MIN" -gt 0 ]; then
+    NODE_GROUP_DESCRIPTION="${NODE_GROUP_DESCRIPTION}, Transcoder"
+fi
+if [ "$NODE_GROUP_RELAYS_MIN" -gt 0 ]; then
+    NODE_GROUP_DESCRIPTION="${NODE_GROUP_DESCRIPTION}, Relay"
+fi
+
+NODE_GROUP_DESCRIPTION="${NODE_GROUP_DESCRIPTION} in ${NODE_GROUP_CLOUD_PLATFORM} cloud platform"
+
+# Generate Cloud properties based on the cloud platform
+CLOUD_PROPERTIES_OCI="environment=$NODE_GROUP_ENVIRONMENT;subnet=$NODE_GROUP_SUBNET_NAME;security_group=$NODE_GROUP_SECURITY_GROUP_NAME"
+CLOUD_PROPERTIES_AWS="environment=$NODE_GROUP_ENVIRONMENT;vpc=$NODE_GROUP_VPC_NAME;security_group=$NODE_GROUP_SECURITY_GROUP_NAME"
+CLOUD_PROPERTIES_GCP="environment=$NODE_GROUP_ENVIRONMENT;vpc=$NODE_GROUP_VPC_NAME"
+CLOUD_PROPERTIES_LINODE="environment=$NODE_GROUP_ENVIRONMENT;vpc=$NODE_GROUP_VPC_NAME;security_group=$NODE_GROUP_SECURITY_GROUP_NAME"
+
+# Select cloud properties based on the cloud platform
+case $NODE_GROUP_CLOUD_PLATFORM in
+"OCI")
+    CLOUD_PROPERTIES=$CLOUD_PROPERTIES_OCI
     ;;
-oe)
-    nodegroup_config_name="nodegroup-oe"
-    nodegroup_config_json="$PATH_TO_JSON_TEMPLATES/nodegroup_config_oe.json"
-    nodegroup_config_json_mod="$PATH_TO_JSON_TEMPLATES/nodegroup_config_oe_mod.json"
+"AWS")
+    CLOUD_PROPERTIES=$CLOUD_PROPERTIES_AWS
     ;;
-oer)
-    nodegroup_config_name="nodegroup-oer"
-    nodegroup_config_json="$PATH_TO_JSON_TEMPLATES/nodegroup_config_oer.json"
-    nodegroup_config_json_mod="$PATH_TO_JSON_TEMPLATES/nodegroup_config_oer_mod.json"
+"GCP")
+    CLOUD_PROPERTIES=$CLOUD_PROPERTIES_GCP
     ;;
-oet)
-    nodegroup_config_name="nodegroup-oet"
-    nodegroup_config_json="$PATH_TO_JSON_TEMPLATES/nodegroup_config_oet.json"
-    nodegroup_config_json_mod="$PATH_TO_JSON_TEMPLATES/nodegroup_config_oet_mod.json"
-    ;;
-oetr)
-    nodegroup_config_name="nodegroup-oetr"
-    nodegroup_config_json="$PATH_TO_JSON_TEMPLATES/nodegroup_config_oetr.json"
-    nodegroup_config_json_mod="$PATH_TO_JSON_TEMPLATES/nodegroup_config_oetr_mod.json"
+"LINODE")
+    CLOUD_PROPERTIES=$CLOUD_PROPERTIES_LINODE
     ;;
 *)
-    log_e "Node group type was not found: $NODE_GROUP_TYPE, EXIT..."
+    log_e "Unknown cloud platform: $NODE_GROUP_CLOUD_PLATFORM. Exiting."
     exit 1
     ;;
 esac
 
+# JSON for top level
+node_group_json_top_level=$(
+    cat <<EOF
+{
+    "name": "$NODE_GROUP_NAME",
+    "description": "$NODE_GROUP_DESCRIPTION",
+    "cloudProperties": "$CLOUD_PROPERTIES",
+    "cloudPlatform": "$NODE_GROUP_CLOUD_PLATFORM",
+    "isScalingPaused": false,
+    "internalVersionCount": 0,
+    "images": {},
+    "roles": {},
+    "groups": {}
+}
+EOF
+)
+
+# JSON for Origin image
+node_group_json_images_origin=$(
+    cat <<EOF
+{
+    "origin_image": {
+        "name": "origin_image",
+        "image": "$NODE_GROUP_IMAGE_NAME",
+        "cloudProperties": "instance_type=$NODE_GROUP_ORIGIN_INSTANCE_TYPE;volume_size=$NODE_GROUP_ORIGIN_VOLUME_SIZE"
+    }
+}
+EOF
+)
+# JSON for Edge image
+node_group_json_images_edge=$(
+    cat <<EOF
+{
+    "edge_image": {
+        "name": "edge_image",
+        "image": "$NODE_GROUP_IMAGE_NAME",
+        "cloudProperties": "instance_type=$NODE_GROUP_EDGE_INSTANCE_TYPE;volume_size=$NODE_GROUP_EDGE_VOLUME_SIZE"
+    }
+}
+EOF
+)
+# JSON for Transcoder image
+node_group_json_images_transcoder=$(
+    cat <<EOF
+{
+    "transcoder_image": {
+        "name": "transcoder_image",
+        "image": "$NODE_GROUP_IMAGE_NAME",
+        "cloudProperties": "instance_type=$NODE_GROUP_TRANSCODER_INSTANCE_TYPE;volume_size=$NODE_GROUP_TRANSCODER_VOLUME_SIZE"
+    }
+}
+EOF
+)
+# JSON for Relay image
+node_group_json_images_relay=$(
+    cat <<EOF
+{
+    "relay_image": {
+        "name": "relay_image",
+        "image": "$NODE_GROUP_IMAGE_NAME",
+        "cloudProperties": "instance_type=$NODE_GROUP_RELAY_INSTANCE_TYPE;volume_size=$NODE_GROUP_RELAY_VOLUME_SIZE"
+    }
+}
+EOF
+)
+
+# Merge JSON for images with top level JSON
+if [ "$NODE_GROUP_ORIGINS_MIN" -gt 0 ]; then
+    combined_json=$(jq --argjson origin "$(echo "$node_group_json_images_origin" | jq .)" '.images = .images + $origin' <<<"$node_group_json_top_level")
+fi
+if [ "$NODE_GROUP_EDGES_MIN" -gt 0 ]; then
+    combined_json=$(jq --argjson edge "$(echo "$node_group_json_images_edge" | jq .)" '.images = .images + $edge' <<<"$combined_json")
+fi
+if [ "$NODE_GROUP_TRANSCODERS_MIN" -gt 0 ]; then
+    combined_json=$(jq --argjson transcoder "$(echo "$node_group_json_images_transcoder" | jq .)" '.images = .images + $transcoder' <<<"$combined_json")
+fi
+if [ "$NODE_GROUP_RELAYS_MIN" -gt 0 ]; then
+    combined_json=$(jq --argjson relay "$(echo "$node_group_json_images_relay" | jq .)" '.images = .images + $relay' <<<"$combined_json")
+fi
+
+# JSON for Origin (all in one) role
+node_group_json_roles_origin_allinone=$(
+    cat <<EOF
+{
+    "origin": {
+        "name": "origin",
+        "imageName": "origin_image",
+        "capabilities": ["PUBLISH", "SUBSCRIBE", "TRANSCODE"],
+        "propertyOverrides": []
+    }
+}
+EOF
+)
+# JSON for Origin role
+node_group_json_roles_origin=$(
+    cat <<EOF
+{
+    "origin": {
+        "name": "origin",
+        "imageName": "origin_image",
+        "capabilities": ["PUBLISH"],
+        "propertyOverrides": []
+    }
+}
+EOF
+)
+# JSON for Edge role with parent Origin
+node_group_json_roles_edge_parent_origin=$(
+    cat <<EOF
+{
+    "edge": {
+        "name": "edge",
+        "imageName": "edge_image",
+        "parentRoleName": "origin",
+		"parentCardinality": "GLOBAL",
+        "capabilities": ["SUBSCRIBE"],
+        "propertyOverrides": []
+    }
+}
+EOF
+)
+# JSON for Edge role with parent Relay
+node_group_json_roles_edge_parent_relay=$(
+    cat <<EOF
+{
+    "edge": {
+        "name": "edge",
+        "imageName": "edge_image",
+        "parentRoleName": "relay",
+		"parentCardinality": "AUTOGROUP",
+        "capabilities": ["SUBSCRIBE"],
+        "propertyOverrides": []
+    }
+}
+EOF
+)
+
+# JSON for Transcoder role
+node_group_json_roles_transcoder=$(
+    cat <<EOF
+{
+    "transcoder": {
+        "name": "transcoder",
+        "imageName": "transcoder_image",
+        "capabilities": ["TRANSCODE"],
+        "propertyOverrides": []
+    }
+}
+EOF
+)
+# JSON for Relay role
+node_group_json_roles_relay=$(
+    cat <<EOF
+{
+    "relay": {
+        "name": "relay",
+        "imageName": "relay_image",
+        "parentRoleName": "origin",
+        "parentCardinality": "GLOBAL",
+        "capabilities": [],
+        "propertyOverrides": []
+    }
+}
+EOF
+)
+
+# Merge JSON for roles with top level JSON
+if [ "$NODE_GROUP_ORIGINS_MIN" -gt 0 ] && [ "$NODE_GROUP_EDGES_MIN" -eq 0 ] && [ "$NODE_GROUP_TRANSCODERS_MIN" -eq 0 ] && [ "$NODE_GROUP_RELAYS_MIN" -eq 0 ]; then
+    combined_json=$(jq --argjson origin "$(echo "$node_group_json_roles_origin_allinone" | jq .)" '.roles = .roles + $origin' <<<"$combined_json")
+elif [ "$NODE_GROUP_ORIGINS_MIN" -gt 0 ]; then
+    combined_json=$(jq --argjson origin "$(echo "$node_group_json_roles_origin" | jq .)" '.roles = .roles + $origin' <<<"$combined_json")
+fi
+if [ "$NODE_GROUP_EDGES_MIN" -gt 0 ]; then
+    if [ "$NODE_GROUP_RELAYS_MIN" -gt 0 ]; then
+        combined_json=$(jq --argjson edge "$(echo "$node_group_json_roles_edge_parent_relay" | jq .)" '.roles = .roles + $edge' <<<"$combined_json")
+    else
+        combined_json=$(jq --argjson edge "$(echo "$node_group_json_roles_edge_parent_origin" | jq .)" '.roles = .roles + $edge' <<<"$combined_json")
+    fi
+fi
+if [ "$NODE_GROUP_TRANSCODERS_MIN" -gt 0 ]; then
+    combined_json=$(jq --argjson transcoder "$(echo "$node_group_json_roles_transcoder" | jq .)" '.roles = .roles + $transcoder' <<<"$combined_json")
+fi
+if [ "$NODE_GROUP_RELAYS_MIN" -gt 0 ]; then
+    combined_json=$(jq --argjson relay "$(echo "$node_group_json_roles_relay" | jq .)" '.roles = .roles + $relay' <<<"$combined_json")
+fi
+
+# Generate JSON for groups for each region
+IFS=',' read -r -a regions <<<"$NODE_GROUP_REGIONS"
+
+for region in "${regions[@]}"; do
+    log_i "Generating JSON for region: $region"
+
+    # JSON for subgroups - top level
+    node_group_json_subgroup_top_level=$(
+        cat <<EOF
+{
+    "$region": {
+        "nodeGroupName": "$NODE_GROUP_NAME",
+        "subGroupName": "$region",
+        "groupType": "main",
+        "cloudProperties": "region=$region",
+        "rulesByRole": {}
+    }
+}
+EOF
+    )
+    # JSON for subgroups - Origin
+    origin_out_limit=$(echo "$NODE_GROUP_ORIGINS_CONNECTION_LIMIT * $NODE_GROUP_ORIGIN_OUT_THRESHOLD" | bc | awk '{printf "%.0f", $0}')
+    node_group_json_subgroup_origin=$(
+        cat <<EOF
+{
+    "origin": {
+        "nodeGroupName": "$NODE_GROUP_NAME",
+        "subGroupName": "$region",
+        "nodeRoleName": "origin",
+        "min": "$NODE_GROUP_ORIGINS_MIN",
+        "max": "$NODE_GROUP_ORIGINS_MAX",
+        "increment": 1,
+        "outExpression": "avg(connections.publisher) > $origin_out_limit",
+        "inExpression": "avg(connections.publisher) < 2",
+        "capacityRankingExpression": "connections.publisher",
+        "capacityLimitExpression": "$NODE_GROUP_ORIGINS_CONNECTION_LIMIT"
+    }
+}
+EOF
+    )
+    # JSON for subgroups - Edge
+    edge_out_limit=$(echo "$NODE_GROUP_EDGES_CONNECTION_LIMIT * $NODE_GROUP_EDGE_OUT_THRESHOLD" | bc | awk '{printf "%.0f", $0}')
+    node_group_json_subgroup_edge=$(
+        cat <<EOF
+{
+    "edge": {
+        "nodeGroupName": "$NODE_GROUP_NAME",
+        "subGroupName": "$region",
+        "nodeRoleName": "edge",
+        "min": "$NODE_GROUP_EDGES_MIN",
+        "max": "$NODE_GROUP_EDGES_MAX",
+        "increment": 1,
+        "outExpression": "avg(connections.subscriber) > $edge_out_limit",
+        "inExpression": "avg(connections.subscriber) < 20",
+        "capacityRankingExpression": "connections.subscriber",
+        "capacityLimitExpression": "$NODE_GROUP_EDGES_CONNECTION_LIMIT"
+    }
+}
+EOF
+    )
+    # JSON for subgroups - Transcoder
+    transcoder_out_limit=$(echo "$NODE_GROUP_TRANSCODERS_CONNECTION_LIMIT * $NODE_GROUP_TRANSCODER_OUT_THRESHOLD" | bc | awk '{printf "%.0f", $0}')
+    node_group_json_subgroup_transcoder=$(
+        cat <<EOF
+{
+    "transcoder": {
+        "nodeGroupName": "$NODE_GROUP_NAME",
+        "subGroupName": "$region",
+        "nodeRoleName": "transcoder",
+        "min": "$NODE_GROUP_TRANSCODERS_MIN",
+        "max": "$NODE_GROUP_TRANSCODERS_MAX",
+        "increment": 1,
+        "outExpression": "avg(connections.publisher) > $transcoder_out_limit",
+        "inExpression": "avg(connections.publisher) < 2",
+        "capacityRankingExpression": "connections.publisher",
+        "capacityLimitExpression": "$NODE_GROUP_TRANSCODERS_CONNECTION_LIMIT"
+    }
+}
+EOF
+    )
+    # JSON for subgroups - Relay
+    node_group_json_subgroup_relay=$(
+        cat <<EOF
+{
+    "relay": {
+        "nodeGroupName": "$NODE_GROUP_NAME",
+        "subGroupName": "$region",
+        "nodeRoleName": "relay",
+        "min": "$NODE_GROUP_RELAYS_MIN",
+        "max": "$NODE_GROUP_RELAYS_MAX",
+        "increment": 1,
+        "outExpression": "avg(connections.clusterchildren) > 8",
+        "inExpression": "avg(connections.clusterchildren) < 2",
+        "capacityRankingExpression": "0",
+        "capacityLimitExpression": "0"
+    }
+}
+EOF
+    )
+    # Merge JSON for subgroups
+    if [ "$NODE_GROUP_ORIGINS_MIN" -gt 0 ]; then
+        group_combined_json=$(echo "$node_group_json_subgroup_top_level" | jq --argjson origin "$(echo "$node_group_json_subgroup_origin" | jq .)" '.[].rulesByRole = $origin')
+    fi
+    if [ "$NODE_GROUP_EDGES_MIN" -gt 0 ]; then
+        group_combined_json=$(echo "$group_combined_json" | jq --argjson edge "$(echo "$node_group_json_subgroup_edge" | jq .)" '.[].rulesByRole = .[].rulesByRole + $edge')
+    fi
+    if [ "$NODE_GROUP_TRANSCODERS_MIN" -gt 0 ]; then
+        group_combined_json=$(echo "$group_combined_json" | jq --argjson transcoder "$(echo "$node_group_json_subgroup_transcoder" | jq .)" '.[].rulesByRole = .[].rulesByRole + $transcoder')
+    fi
+    if [ "$NODE_GROUP_RELAYS_MIN" -gt 0 ]; then
+        group_combined_json=$(echo "$group_combined_json" | jq --argjson relay "$(echo "$node_group_json_subgroup_relay" | jq .)" '.[].rulesByRole = .[].rulesByRole + $relay')
+    fi
+
+    # Merge JSON for subgroups with top level JSON
+    combined_json=$(jq --argjson group "$(echo "$group_combined_json" | jq .)" '.groups = .groups + $group' <<<"$combined_json")
+
+done
+
+############################################################################################################
+# Property overrides - extra configurations for each role
+############################################################################################################
+
+# Round Trip Auth
+node_group_json_property_round_trip_auth=$(
+    cat <<EOF
+{
+    "fileName": "webapps/live/WEB-INF/red5-web.properties",
+    "properties": {
+        "server.validateCredentialsEndPoint": "$NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE",
+        "server.invalidateCredentialsEndPoint": "$NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE",
+        "server.host": "$NODE_GROUP_ROUND_TRIP_AUTH_HOST",
+        "server.port": "$NODE_GROUP_ROUND_TRIP_AUTH_PORT",
+        "server.protocol": "$NODE_GROUP_ROUND_TRIP_AUTH_PROTOCOL"
+    }
+}
+EOF
+)
+# Webhooks
+node_group_json_property_webhooks=$(
+    cat <<EOF
+{
+    "fileName": "webapps/live/WEB-INF/red5-web.properties",
+    "properties": {
+        "webhooks.endpoint": "$NODE_GROUP_WEBHOOK_ENDPOINT"
+    }
+}
+EOF
+)
+# Social Pusher
+node_group_json_property_social_pusher=$(
+    cat <<EOF
+{
+    "fileName": "webapps/root/WEB-INF/web.xml",
+    "blocks": ["R5AS-SOCIAL-PUSHER"]
+}
+EOF
+)
+# Restreamer
+node_group_json_property_restreamer=$(
+    cat <<EOF
+{
+    "fileName": "conf/restreamer-plugin.properties",
+    "properties": {
+        "enable.tsingest": "$NODE_GROUP_RESTREAMER_TSINGEST",
+        "enable.ipcam": "$NODE_GROUP_RESTREAMER_IPCAM",
+        "enable.whip": "$NODE_GROUP_RESTREAMER_WHIP",
+        "enable.srtingest": "$NODE_GROUP_RESTREAMER_SRTINGEST"
+    }
+}
+EOF
+)
+
+# Generate property overrides for each node type
+generate_json_property_for_nodes() {
+    target_nodes="$1"
+    node_config_json="$2"
+
+    IFS=',' read -r -a target_nodes_nodes_array <<<"$target_nodes"
+
+    for i in "${target_nodes_nodes_array[@]}"; do
+        # Combine the property property overrides (JSON objects) for each node type
+        case $i in
+        origin)
+            node_group_json_property_origin=$(jq --argjson property "$node_config_json" '. + [$property]' <<<"$node_group_json_property_origin")
+            ;;
+        edge)
+            node_group_json_property_edge=$(jq --argjson property "$node_config_json" '. + [$property]' <<<"$node_group_json_property_edge")
+            ;;
+        transcoder)
+            node_group_json_property_transcoder=$(jq --argjson property "$node_config_json" '. + [$property]' <<<"$node_group_json_property_transcoder")
+            ;;
+        relay)
+            node_group_json_property_relay=$(jq --argjson property "$node_config_json" '. + [$property]' <<<"$node_group_json_property_relay")
+            ;;
+        esac
+    done
+}
+
+node_group_json_property_origin="[]"
+node_group_json_property_edge="[]"
+node_group_json_property_transcoder="[]"
+node_group_json_property_relay="[]"
+
+# Generate property overrides for each node type. List of JSON objects
+if [ "$NODE_GROUP_ROUND_TRIP_AUTH_ENABLE" = true ]; then
+    log_i "Round Trip Auth enabled"
+    generate_json_property_for_nodes "$NODE_GROUP_ROUNT_TRIP_AUTH_TARGET_NODES" "$node_group_json_property_round_trip_auth"
+fi
+if [ "$NODE_GROUP_WEBHOOK_ENABLE" = true ]; then
+    log_i "Webhooks enabled"
+    generate_json_property_for_nodes "$NODE_GROUP_WEBHOOK_TARGET_NODES" "$node_group_json_property_webhooks"
+fi
+if [ "$NODE_GROUP_SOCIAL_PUSHER_ENABLE" = true ]; then
+    log_i "Social Pusher enabled"
+    generate_json_property_for_nodes "$NODE_GROUP_SOCIAL_PUSHER_TARGET_NODES" "$node_group_json_property_social_pusher"
+fi
+if [ "$NODE_GROUP_RESTREAMER_ENABLE" = true ]; then
+    log_i "Restreamer enabled"
+    generate_json_property_for_nodes "$NODE_GROUP_RESTREAMER_TARGET_NODES" "$node_group_json_property_restreamer"
+fi
+
+# Merge property overrides with top level JSON
+if [ "$NODE_GROUP_ORIGINS_MIN" -gt 0 ]; then
+    combined_json=$(echo "$combined_json" | jq --argjson origin "$(echo "$node_group_json_property_origin" | jq .)" '.roles.origin.propertyOverrides = $origin')
+fi
+if [ "$NODE_GROUP_EDGES_MIN" -gt 0 ]; then
+    combined_json=$(echo "$combined_json" | jq --argjson edge "$(echo "$node_group_json_property_edge" | jq .)" '.roles.edge.propertyOverrides = $edge')
+fi
+if [ "$NODE_GROUP_TRANSCODERS_MIN" -gt 0 ]; then
+    combined_json=$(echo "$combined_json" | jq --argjson transcoder "$(echo "$node_group_json_property_transcoder" | jq .)" '.roles.transcoder.propertyOverrides = $transcoder')
+fi
+if [ "$NODE_GROUP_RELAYS_MIN" -gt 0 ]; then
+    combined_json=$(echo "$combined_json" | jq --argjson relay "$(echo "$node_group_json_property_relay" | jq .)" '.roles.relay.propertyOverrides = $relay')
+fi
+
+log_d "Generated JSON:"
+echo "$combined_json" | jq -r
+
+############################################################################################################
+# Create Node Group in Stream Manager 2.0 (API calls)
+############################################################################################################
+
 check_stream_manager() {
     log_i "Checking Stream Manager status."
+    log_i "Stream Manager HTTPS: https://$SM_IP/as/v1/admin/healthz or HTTP: http://$SM_IP/as/v1/admin/healthz"
 
     for i in {1..20}; do
         # Check HTTPS
@@ -377,7 +579,7 @@ check_stream_manager() {
         if [ "$https_response" -eq 200 ]; then
             SM_URL="https://$SM_IP"
             log_i "SM URL is accessible over HTTPS: $SM_URL"
-                break
+            break
         fi
 
         # Check HTTP
@@ -386,9 +588,9 @@ check_stream_manager() {
             SM_URL="http://$SM_IP"
             log_i "SM URL is accessible over HTTP: $SM_URL"
             break
-            fi
+        fi
 
-            log_w "Stream Manager is not running! - Attempt $i"
+        log_w "Stream Manager is not running! - Attempt $i"
 
         if [ "$i" -eq 20 ]; then
             log_e "EXIT..."
@@ -403,12 +605,12 @@ create_jwT_token() {
     USER_AND_PASSWORD_IN_BASE64=$(echo -n "$R5AS_AUTH_USER:$R5AS_AUTH_PASS" | base64)
 
     for i in {1..5}; do
-        JWT_TOKEN_JSON=$(curl --insecure -s -X 'PUT' "$SM_URL/as/v1/auth/login" -H 'accept: application/json' -H "Content-Type: application/json" -H "Authorization: Basic $USER_AND_PASSWORD_IN_BASE64" -d '')
-        JWT_TOKEN=$(jq -r '.token' <<<"$JWT_TOKEN_JSON")
+        JVT_TOKEN_JSON=$(curl --insecure -s -X 'PUT' "$SM_URL/as/v1/auth/login" -H 'accept: application/json' -H "Authorization: Basic $USER_AND_PASSWORD_IN_BASE64")
+        JVT_TOKEN=$(jq -r '.token' <<<"$JVT_TOKEN_JSON")
 
-        if [ -z "$JWT_TOKEN" ] || [ "$JWT_TOKEN" == "null" ]; then
+        if [ -z "$JVT_TOKEN" ] || [ "$JVT_TOKEN" == "null" ]; then
             log_w "JWT token was not created! - Attempt $i"
-            log_d "JWT_TOKEN_JSON: $JWT_TOKEN_JSON"
+            log_d "JVT_TOKEN_JSON: $JVT_TOKEN_JSON"
         else
             log_i "JWT token created successfully."
             break
@@ -423,10 +625,10 @@ create_jwT_token() {
 }
 
 create_new_node_group() {
-    log_i "Creating a new Node Group with name: $nodegroup_config_name"
+    log_i "Creating a new Node Group with name: $NODE_GROUP_NAME"
 
     for i in {1..5}; do
-        node_group_resp=$(curl --insecure -s -o /dev/null -w "%{http_code}" --location --request POST "$SM_URL/as/v1/admin/nodegroup" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' --data "@$nodegroup_config_json_mod")
+        node_group_resp=$(curl --insecure -s -o /dev/null -w "%{http_code}" --location --request POST "$SM_URL/as/v1/admin/nodegroup" --header "Authorization: Bearer ${JVT_TOKEN}" --header 'Content-Type: application/json' --data-raw "$combined_json")
 
         if [[ "$node_group_resp" == "200" ]]; then
             log_i "Node group created successfully."
@@ -436,7 +638,7 @@ create_new_node_group() {
         fi
 
         if [ "$i" -eq 5 ]; then
-            node_group_resp_error=$(curl --insecure -s --request POST "$SM_URL/as/v1/admin/nodegroup" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' --data "@$nodegroup_config_json_mod")
+            node_group_resp_error=$(curl --insecure -s --request POST "$SM_URL/as/v1/admin/nodegroup" --header "Authorization: Bearer ${JVT_TOKEN}" --header 'Content-Type: application/json' --data-raw "$combined_json")
             log_d "Node group response with error: $node_group_resp_error"
             log_e "Node group was not created!!! EXIT..."
             exit 1
@@ -446,12 +648,12 @@ create_new_node_group() {
 }
 
 check_node_group() {
-    log_i "Checking states of nodes in new node group, Name: $nodegroup_config_name"
+    log_i "Checking states of nodes in new node group, Name: $NODE_GROUP_NAME"
 
-    NODES_URL="$SM_URL/as/v1/admin/nodegroup/status/$nodegroup_config_name"
-    
+    NODES_URL="$SM_URL/as/v1/admin/nodegroup/status/$NODE_GROUP_NAME"
+
     for i in {1..20}; do
-        curl --insecure -s --request GET "$NODES_URL" --header "Authorization: Bearer ${JWT_TOKEN}" | jq -r '.[] | [.scalingEvent.nodeId, .nodeEvent.publicIp // "null", .nodeEvent.privateIp // "null", .nodeEvent.nodeRoleName // "null", .scalingEvent.state, .scalingEvent.test // "null"] | join(" ")' > temp.txt
+        curl --insecure -s --request GET "$NODES_URL" --header "Authorization: Bearer ${JVT_TOKEN}" | jq -r '.[] | [.scalingEvent.nodeId, .nodeEvent.publicIp // "null", .nodeEvent.privateIp // "null", .nodeEvent.nodeRoleName // "null", .scalingEvent.state, .scalingEvent.test // "null"] | join(" ")' >temp.txt
 
         node_bad_state=0
 
@@ -484,19 +686,16 @@ check_node_group() {
         fi
 
         if [[ $i -eq 20 ]]; then
-            log_e "Something wrong with nodes states. (SM2.0 was not able to create nodes or nodes can't connect to SM). EXIT..."
-            exit 1
+            log_e "Something wrong with nodes states. (Stream Manager 2.0 was not able to create nodes or nodes can't connect to Stream Manager 2.0)."
+            log_e "Please check the nodes in Stream Manager 2.0 and delete/create node group config manually."
+            log_e "Stream Manager 2.0 URL: $SM_URL/debug"
+            log_e "Documentation: https://www.red5.net/docs/red5-pro/users-guide/stream-manager-2-0/stream-manager-2-node-group-config/"
         fi
-        sleep 30
+        sleep 20
     done
 }
 
-prepare_json_templates
-prepare_node_config_json
 check_stream_manager
 create_jwT_token
 create_new_node_group
 check_node_group
-
-# Delete temporary file
-rm -f "$nodegroup_config_json_mod"
