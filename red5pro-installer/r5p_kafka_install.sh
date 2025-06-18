@@ -113,7 +113,7 @@ install_kafka() {
         # Set Kafka log directory to /var/log/kafka/kafka-logs
         sed 's/log.dirs=.*/log.dirs=\/var\/log\/kafka\/kafka-logs/' -i "$kafka_config_file"
 
-        # Comment out the advertised.listeners setting. It will be copied from /home/ubuntu/red5pro-installer/server.properties.
+        # Comment out the advertised.listeners setting. It will be copied from ${CURRENT_DIRECTORY}/server.properties.
         sed -i 's/^advertised.listeners/#&/' "$kafka_config_file"
 
         # Set the listeners to BROKER and CONTROLLER
@@ -160,11 +160,11 @@ install_kafka() {
         set_config max.request.size 52428800
         set_config initial.broker.registration.timeout.ms 240000
 
-        # Copy extra kafka configuration properties from /home/ubuntu/red5pro-installer/server.properties to "$kafka_config_file"
-        if [[ -f "/home/ubuntu/red5pro-installer/server.properties" ]]; then
-            cat /home/ubuntu/red5pro-installer/server.properties >>"$kafka_config_file"
+        # Copy extra kafka configuration properties from ${CURRENT_DIRECTORY}/server.properties to "$kafka_config_file"
+        if [[ -f "${CURRENT_DIRECTORY}/server.properties" ]]; then
+            cat "${CURRENT_DIRECTORY}/server.properties" >>"$kafka_config_file"
         else
-            log_e "Extra kafka configuration properties file /home/ubuntu/red5pro-installer/server.properties does not exists"
+            log_e "Extra kafka configuration properties file ${CURRENT_DIRECTORY}/server.properties does not exists"
             exit 1
         fi
 
