@@ -205,7 +205,7 @@ config_red5pro_api(){
         echo " " >> $RED5_HOME/webapps/api/WEB-INF/security/hosts.txt
         echo "*" >> $RED5_HOME/webapps/api/WEB-INF/security/hosts.txt
     else
-        log_d "Red5Pro WEBAPP API - disable"
+        log_i "Red5Pro WEBAPP API - disable"
         if [ -d "$RED5_HOME/webapps/api" ]; then
             rm -r $RED5_HOME/webapps/api
         fi
