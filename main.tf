@@ -22,6 +22,7 @@ locals {
   standalone_elastic_ip         = local.standalone ? var.standalone_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_standalone[0].public_ip : aws_eip.elastic_ip_standalone[0].public_ip : "null"
   aws_availability_zones_amount = var.vpc_use_existing ? 0 : length(data.aws_availability_zones.available[0].names)
   aws_subnets_amount            = var.vpc_use_existing ? 0 : length(aws_subnet.red5pro_subnets)
+  r5as_traefik_host             = local.autoscale ? local.stream_manager_ip : var.https_ssl_certificate_domain_name
 }
 
 ################################################################################
@@ -780,7 +781,7 @@ resource "aws_instance" "red5pro_sm" {
     volume_size = var.stream_manager_volume_size
   }
   # Metadata for the instance
-  user_data = base64gzip(<<-EOF
+  user_data_base64 = base64gzip(<<-EOF
           #!/bin/bash
           mkdir -p /usr/local/stream-manager/keys
           mkdir -p /usr/local/stream-manager/certs
@@ -807,7 +808,7 @@ resource "aws_instance" "red5pro_sm" {
           TF_VAR_aws_ssh_key_pair=${local.ssh_key_name}
           TF_VAR_r5p_license_key=${var.red5pro_license_key}
           TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}
-          TRAEFIK_HOST=${var.https_ssl_certificate_domain_name}
+          TRAEFIK_HOST=${local.r5as_traefik_host}
           TRAEFIK_SSL_EMAIL=${var.https_ssl_certificate_email}
           TRAEFIK_CMD=${local.stream_manager_ssl == "imported" ? "--providers.file.filename=/scripts/traefik.yaml" : ""}
         EOF
@@ -837,7 +838,7 @@ resource "null_resource" "red5pro_sm" {
       "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
       "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_IP=${local.stream_manager_ssh_ip}' | sudo tee -a /usr/local/stream-manager/.env",
+      "echo 'TRAEFIK_IP=${local.stream_manager_ssh_ip}' | sudo tee -a /usr/local/stream-manager/.env", # Use only in Cluster deployment
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
       "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
