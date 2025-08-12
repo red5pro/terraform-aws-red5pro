@@ -86,6 +86,42 @@ services:
       retries: 18  # 3 mins
       start_period: 300s  # grace period, not minimum
 
+  as-kafka-init:
+    deploy:
+      replicas: ${AS_KAFKA_INIT_REPLICAS:-1}
+    image: red5pro/as-kafka-init:${AS_VERSION:-latest}
+    depends_on:
+      kafka0:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/kafka-init/healthz"]
+      interval: 2s
+      timeout: 10s
+      retries: 150  
+      start_period: 300s 
+    environment:
+      R5AS_AUTOSCALE_PARTITIONS: ${R5AS_AUTOSCALE_PARTITIONS:-1}
+      R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
+      R5AS_BOOTSTRAP_SERVERS: ${KAFKA_IP}:9092
+      R5AS_SECURITY_PROTOCOL_CONFIG: SASL_SSL
+      R5AS_SSL_KEYSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_TRUSTSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_CA_CERTIFICATE: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
+      R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
+      R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
+      R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
+      R5AS_APPLICATION_PORT: ${R5AS_APPLICATION_PORT:-8080}
+      R5AS_CLUSTER_AVAILABILITY_TIMEOUT: ${R5AS_CLUSTER_AVAILABILITY_TIMEOUT:-300000}
+      R5AS_CLUSTER_CONNECTION_RETRY_INITIAL: ${R5AS_CLUSTER_CONNECTION_RETRY_INITIAL:-1000}
+      R5AS_CLUSTER_CONNECTION_RETRY_MAX: ${R5AS_CLUSTER_CONNECTION_RETRY_MAX:-30000}
+      R5AS_CLUSTER_CONNECTION_RETRY_MULTIPLIER: ${R5AS_CLUSTER_CONNECTION_RETRY_MULTIPLIER:-2.0}
+      R5AS_TOPIC_READINESS_TIMEOUT: ${R5AS_TOPIC_READINESS_TIMEOUT:-120000}
+      R5AS_TOPIC_READINESS_CHECK_INTERVAL: ${R5AS_TOPIC_READINESS_CHECK_INTERVAL:-5000}
+      R5AS_TOPIC_CREATION_TIMEOUT: ${R5AS_TOPIC_CREATION_TIMEOUT:-30000}
+      R5AS_KAFKA_CLIENT_TIMEOUT: ${R5AS_KAFKA_CLIENT_TIMEOUT:-10000}
+      R5AS_HEALTH_CHECK_INTERVAL: ${R5AS_HEALTH_CHECK_INTERVAL:-30000}
+      R5AS_PRODUCE_CONSUME_TEST_TIMEOUT: ${R5AS_PRODUCE_CONSUME_TEST_TIMEOUT:-15000}
+
   as-admin:
     image: red5pro/as-admin:${AS_VERSION:-latest}
     restart: unless-stopped
@@ -93,7 +129,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8080/admin/healthz"]
       start_period: 10s
     depends_on:
-      kafka0:
+      as-kafka-init:
         condition: service_healthy
       as-autoscale-service:
         condition: service_healthy
@@ -157,7 +193,7 @@ services:
       replicas: 1
     image: red5pro/as-terraform:${AS_VERSION:-latest}
     depends_on:
-      kafka0:
+      as-kafka-init:
         condition: service_healthy
     environment:
       R5AS_STATE_DIRECTORY: /root/kafka-streams
@@ -193,7 +229,7 @@ services:
     image: red5pro/as-proxy:${AS_VERSION:-latest}
     restart: unless-stopped
     depends_on:
-      kafka0:
+      as-kafka-init:
         condition: service_healthy
     ports:
       - 9080:8080
@@ -226,7 +262,7 @@ services:
     deploy:
       replicas: 1
     depends_on:
-      kafka0:
+      as-kafka-init:
         condition: service_healthy
       as-terraform:
         condition: service_started
@@ -335,7 +371,7 @@ services:
     deploy:
       replicas: 1
     depends_on:
-      kafka0:
+      as-kafka-init:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/streams/stream/healthz"]
