@@ -904,9 +904,10 @@ resource "aws_launch_template" "red5pro_sm_lt" {
   }
   user_data = base64encode(<<-EOF
     #!/bin/bash
-    RANDOM_SUFFIX=$(tr -dc 'a-z0-9' < /dev/urandom | head -c4)
+    HOSTNAME=$(hostname)
+    INSTANCE_NUMBER=$(echo $HOSTNAME | sed 's/.*-//')
     # Append the R5AS_GROUP_INSTANCE_ID to the .env file
-    echo "R5AS_GROUP_INSTANCE_ID=$RANDOM_SUFFIX" >> /usr/local/stream-manager/.env
+    echo "R5AS_GROUP_INSTANCE_ID=$INSTANCE_NUMBER" >> /usr/local/stream-manager/.env
     # Start SM2.0 service
     systemctl enable sm.service
     systemctl start sm.service
