@@ -25,14 +25,6 @@ variable "aws_region" {
   description = "AWS region to deploy the resources"
   default     = ""
 }
-variable "aws_access_key" {
-  description = "AWS access key"
-  default     = ""
-}
-variable "aws_secret_key" {
-  description = "AWS secret key"
-  default     = ""
-}
 
 # SSH key configuration
 variable "ssh_key_use_existing" {

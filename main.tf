@@ -759,6 +759,125 @@ resource "null_resource" "red5pro_kafka" {
 }
 
 ################################################################################
+# IAM Role for Stream Manager Terraform Operations
+################################################################################
+
+# IAM role for Stream Manager to run Terraform operations
+resource "aws_iam_role" "stream_manager_terraform_role" {
+  count = local.cluster_or_autoscale ? 1 : 0
+  name  = "${var.name}-stream-manager-terraform-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = merge({ "Name" = "${var.name}-stream-manager-terraform-role" }, var.tags)
+}
+
+# IAM policy for Terraform EC2 operations - Read and Write access
+resource "aws_iam_policy" "stream_manager_terraform_policy" {
+  count = local.cluster_or_autoscale ? 1 : 0
+  name  = "${var.name}-stream-manager-terraform-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          # Authentication
+          "sts:GetCallerIdentity",
+          # EC2 Instance Management
+          "ec2:RunInstances",
+          "ec2:TerminateInstances",
+          "ec2:StartInstances",
+          "ec2:StopInstances",
+          "ec2:RebootInstances",
+          "ec2:ModifyInstanceAttribute",
+          # EC2 Describe Operations
+          "ec2:DescribeInstances",
+          "ec2:DescribeImages",
+          "ec2:DescribeInstanceTypes",
+          "ec2:DescribeInstanceStatus",
+          "ec2:DescribeAvailabilityZones",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeVpcs",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeKeyPairs",
+          "ec2:DescribeInstanceAttribute",
+          "ec2:DescribeVpcAttribute",
+          "ec2:DescribeInstanceTypeOfferings",
+          "ec2:DescribeInstanceCreditSpecifications",
+          "ec2:DescribeRegions",
+          "ec2:DescribeAccountAttributes",
+          # Tagging
+          "ec2:CreateTags",
+          "ec2:DeleteTags",
+          "ec2:DescribeTags",
+          # Volume Management
+          "ec2:DescribeVolumes",
+          "ec2:AttachVolume",
+          "ec2:DetachVolume",
+          "ec2:CreateVolume",
+          "ec2:DeleteVolume",
+          "ec2:ModifyVolume",
+          "ec2:DescribeSnapshots",
+          "ec2:CreateSnapshot",
+          "ec2:DeleteSnapshot",
+          # Network Interface Management
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:CreateNetworkInterface",
+          "ec2:DeleteNetworkInterface",
+          "ec2:AttachNetworkInterface",
+          "ec2:DetachNetworkInterface",
+          "ec2:ModifyNetworkInterfaceAttribute",
+          # Placement Groups
+          "ec2:DescribePlacementGroups",
+          "ec2:CreatePlacementGroup",
+          "ec2:DeletePlacementGroup",
+          # Spot Instances
+          "ec2:DescribeSpotInstanceRequests",
+          "ec2:RequestSpotInstances",
+          "ec2:CancelSpotInstanceRequests",
+          "ec2:DescribeSpotPriceHistory",
+          # Reserved Instances
+          "ec2:DescribeReservedInstances",
+          "ec2:DescribeReservedInstancesOfferings"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = merge({ "Name" = "${var.name}-stream-manager-terraform-policy" }, var.tags)
+}
+
+# Attach policy to role
+resource "aws_iam_role_policy_attachment" "stream_manager_terraform_policy_attachment" {
+  count      = local.cluster_or_autoscale ? 1 : 0
+  role       = aws_iam_role.stream_manager_terraform_role[0].name
+  policy_arn = aws_iam_policy.stream_manager_terraform_policy[0].arn
+}
+
+# Instance profile for the Stream Manager
+resource "aws_iam_instance_profile" "stream_manager_terraform_profile" {
+  count = local.cluster_or_autoscale ? 1 : 0
+  name  = "${var.name}-stream-manager-terraform-profile"
+  role  = aws_iam_role.stream_manager_terraform_role[0].name
+
+  tags = merge({ "Name" = "${var.name}-stream-manager-terraform-profile" }, var.tags)
+}
+
+################################################################################
 # Stream manager 2.0 - (AWS EC2 instance)
 ################################################################################
 
@@ -768,6 +887,7 @@ resource "random_password" "r5as_auth_secret" {
   length  = 32
   special = false
 }
+
 # Stream Manager instance 
 resource "aws_instance" "red5pro_sm" {
   count                  = local.cluster || local.autoscale ? 1 : 0
@@ -776,6 +896,9 @@ resource "aws_instance" "red5pro_sm" {
   key_name               = local.ssh_key_name
   subnet_id              = element(local.subnet_ids, 0)
   vpc_security_group_ids = [aws_security_group.red5pro_sm_sg[0].id]
+  
+  # Add IAM instance profile for Terraform operations
+  iam_instance_profile   = aws_iam_instance_profile.stream_manager_terraform_profile[0].name
 
   root_block_device {
     volume_size = var.stream_manager_volume_size
@@ -803,8 +926,6 @@ resource "aws_instance" "red5pro_sm" {
           R5AS_SPATIAL_USER=${var.stream_manager_spatial_user}
           R5AS_SPATIAL_PASS=${var.stream_manager_spatial_password}
           AS_VERSION=${var.stream_manager_version}
-          TF_VAR_aws_access_key=${var.aws_access_key}
-          TF_VAR_aws_secret_key=${var.aws_secret_key}
           TF_VAR_aws_ssh_key_pair=${local.ssh_key_name}
           TF_VAR_r5p_license_key=${var.red5pro_license_key}
           TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}
@@ -884,6 +1005,11 @@ resource "aws_launch_template" "red5pro_sm_lt" {
   instance_type          = var.stream_manager_instance_type
   key_name               = local.ssh_key_name
   update_default_version = true
+  
+  # Add IAM instance profile for Terraform operations
+  iam_instance_profile {
+    name = aws_iam_instance_profile.stream_manager_terraform_profile[0].name
+  }
 
   network_interfaces {
     associate_public_ip_address = true
@@ -1116,10 +1242,6 @@ resource "null_resource" "stop_stream_manager" {
   count = local.autoscale ? 1 : 0
   provisioner "local-exec" {
     command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_sm[0].id} --region ${var.aws_region}"
-    environment = {
-      AWS_ACCESS_KEY_ID     = "${var.aws_access_key}"
-      AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
-    }
   }
   depends_on = [aws_ami_from_instance.red5pro_sm_image[0]]
 }
@@ -1129,10 +1251,6 @@ resource "null_resource" "stop_node" {
   count = local.cluster_or_autoscale && var.node_image_create ? 1 : 0
   provisioner "local-exec" {
     command = "aws ec2 stop-instances --instance-ids ${aws_instance.red5pro_node[0].id} --region ${var.aws_region}"
-    environment = {
-      AWS_ACCESS_KEY_ID     = "${var.aws_access_key}"
-      AWS_SECRET_ACCESS_KEY = "${var.aws_secret_key}"
-    }
   }
   depends_on = [aws_ami_from_instance.red5pro_node_image[0]]
 }

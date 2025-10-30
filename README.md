@@ -53,21 +53,32 @@ This is a reusable Terraform module that provisions infrastructure on [Amazon Cl
 
 - [Installing the CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
+> Install the AWS CLI on the same machine/instance where you run this Terraform module and ensure it is configured:
+> - If running on AWS EC2 with an IAM instance profile, no explicit credentials are required (the CLI and providers will use the instance role automatically).
+> - If running outside AWS or without an instance profile, configure a profile:
+>   - `aws configure --profile myprofile`
+>   - Then set `AWS_PROFILE=myprofile` (or pass `profile` in your provider if using examples).
+
 ### Prepare AWS account
 
-- Create a User for Terraform module. User must have permission to create and manage the following services:
-  - Identity and Access Management Rights
-    - Virtual Private Cloud
-    - Compute Instances
-    - Instance Configurations
-    - Autoscaling Configurations
-    - Load balancers
-    - Certificates
-  
-  - Obtain the necessary credentials and information:
-    - IAM user permissions
-    - Access Key
-    - Secret Key
+- Preferred: Use IAM roles (instance profile for EC2, task role for ECS) for all Terraform and runtime operations. This module supports running entirely with instance profiles and does not require static access keys when executed on AWS.
+
+- If static AWS access keys must be used, they must comply with the following requirements (per AWS security guidance):
+  - Must only be used by humans to access AWS services and stored securely.
+  - If used by a service, ALL of the conditions below must be met:
+    - Not feasible to use EC2 instance role, ECS task role, or a similar mechanism.
+    - Keys must be rotated at least weekly.
+    - IAM policies must be tightly scoped to the minimum required permissions.
+    - Access must be restricted by source IPs (deny all except Partner-approved IP addresses).
+  - We strongly recommend migrating to IAM roles wherever possible to remove static credentials.
+
+- Minimum AWS permissions this module may require (depending on selected features):
+  - VPC, Subnets, Route Tables, Internet Gateways
+  - EC2 Instances, AMIs, Security Groups, Key Pairs, EBS Volumes/Snapshots, Placement Groups
+  - IAM to create and attach Role/Policy for Stream Manager (instance profile)
+  - Autoscaling (if autoscale features are enabled)
+  - Elastic Load Balancing and ACM (if HTTPS/ALB is enabled)
+  - Route53 (if DNS automation is enabled)
 
 ## This module supports three variants of Red5 Pro deployments
 
@@ -214,27 +225,25 @@ In the following example, Terraform module will automates the infrastructure pro
   - `imported` - Stream Manager 2.0 with HTTPS and imported SSL certificate. HTTP on port `80`, HTTPS on port `443`
 - Red5 Pro (SM2.0) node instance image (origins, edges, transcoders, relays)
 - Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
+  
+> Note: For cluster deployments, this module also deploys an AWS IAM Role and IAM Policy that are attached to the Stream Manager EC2 instance via an instance profile. This enables the Stream Manager to authenticate to AWS (without static keys) and run Terraform operations as needed.
 
 #### Example main.tf (cluster)
 
 ```yaml
 provider "aws" {
-  region     = "us-east-1" # AWS region
-  access_key = ""          # AWS IAM Access key
-  secret_key = ""          # AWS IAM Secret key
+  region = "us-east-1" # AWS region
 }
 
 module "red5pro" {
-  source                = "red5pro/red5pro/aws"
+  source                = "../../"
   type                  = "cluster"                               # Deployment type: standalone, cluster, autoscale
   name                  = "red5pro-cluster"                       # Name to be used on all the resources as identifier
   path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
   ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
 
   # AWS authetification variables it use for Stream Manager autoscaling configuration
-  aws_region     = "us-east-1" # AWS region 
-  aws_access_key = ""          # AWS IAM Access key
-  aws_secret_key = ""          # AWS IAM Secret key
+  aws_region = "us-east-1" # AWS region 
 
   # SSH key configuration
   ssh_key_use_existing              = false                                               # Use existing SSH key pair or create a new one. true = use existing, false = create new SSH key pair
@@ -247,15 +256,15 @@ module "red5pro" {
 
   # Kafka standalone instance configuration
   kafka_standalone_instance_create = false
-  kafka_standalone_instance_type   = "c5.2xlarge" # Instance type for Kafka standalone instance
-  kafka_standalone_volume_size     = 16           # Volume size in GB for Kafka standalone instance
+  kafka_standalone_instance_type   = "m5.xlarge" # Instance type for Kafka standalone instance
+  kafka_standalone_volume_size     = 16          # Volume size in GB for Kafka standalone instance
 
   # Stream Manager configuration 
-  stream_manager_instance_type = "c5.2xlarge"       # Instance type for Stream Manager
-  stream_manager_volume_size   = 16                 # Volume size for Stream Manager
-  stream_manager_auth_user     = "example_user"     # Stream Manager 2.0 authentication user name
-  stream_manager_auth_password = "example_password" # Stream Manager 2.0 authentication password
-  stream_manager_proxy_user    = "example_proxy_user"       # Stream Manager 2.0 proxy user name
+  stream_manager_instance_type    = "m5.xlarge"                # Instance type for Stream Manager
+  stream_manager_volume_size      = 16                         # Volume size for Stream Manager
+  stream_manager_auth_user        = "example_user"             # Stream Manager 2.0 authentication user name
+  stream_manager_auth_password    = "example_password"         # Stream Manager 2.0 authentication password
+  stream_manager_proxy_user       = "example_proxy_user"       # Stream Manager 2.0 proxy user name
   stream_manager_proxy_password   = "example_proxy_password"   # Stream Manager 2.0 proxy password
   stream_manager_spatial_user     = "example_spatial_user"     # Stream Manager 2.0 spatial user name
   stream_manager_spatial_password = "example_spatial_password" # Stream Manager 2.0 spatial password
@@ -321,26 +330,26 @@ module "red5pro" {
   }
 
   # Red5 Pro autoscaling Node group
-  node_group_create                    = true        # Linux or Mac OS only. true - create new Node group, false - not create new Node group
-  node_group_origins_min               = 1           # Number of minimum Origins
-  node_group_origins_max               = 20          # Number of maximum Origins
-  node_group_origins_instance_type     = "t3.medium" # Instance type for Origins
-  node_group_origins_volume_size       = 16          # Volume size for Origins
-  node_group_origins_connection_limit  = 20          # Maximum number of publishers to the origin server
-  node_group_edges_min                 = 1           # Number of minimum Edges
-  node_group_edges_max                 = 20          # Number of maximum Edges
-  node_group_edges_instance_type       = "t3.medium" # Instance type for Edges
-  node_group_edges_volume_size         = 16          # Volume size for Edges
-  node_group_edges_connection_limit    = 200         # Maximum number of subscribers to the edge server
-  node_group_transcoders_min           = 0           # Number of minimum Transcoders
-  node_group_transcoders_max           = 20          # Number of maximum Transcoders
-  node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
-  node_group_transcoders_volume_size   = 16          # Volume size for Transcoders
-  node_group_transcoders_connection_limit = 20       # Maximum number of publishers to the transcoder server
-  node_group_relays_min                = 0           # Number of minimum Relays
-  node_group_relays_max                = 20          # Number of maximum Relays
-  node_group_relays_instance_type      = "t3.medium" # Instance type for Relays
-  node_group_relays_volume_size        = 16          # Volume size for Relays
+  node_group_create                       = true        # Linux or Mac OS only. true - create new Node group, false - not create new Node group
+  node_group_origins_min                  = 1           # Number of minimum Origins
+  node_group_origins_max                  = 20          # Number of maximum Origins
+  node_group_origins_instance_type        = "t3.medium" # Instance type for Origins
+  node_group_origins_volume_size          = 16          # Volume size for Origins
+  node_group_origins_connection_limit     = 20          # Maximum number of publishers to the origin server
+  node_group_edges_min                    = 1           # Number of minimum Edges
+  node_group_edges_max                    = 20          # Number of maximum Edges
+  node_group_edges_instance_type          = "t3.medium" # Instance type for Edges
+  node_group_edges_volume_size            = 16          # Volume size for Edges
+  node_group_edges_connection_limit       = 200         # Maximum number of subscribers to the edge server
+  node_group_transcoders_min              = 0           # Number of minimum Transcoders
+  node_group_transcoders_max              = 20          # Number of maximum Transcoders
+  node_group_transcoders_instance_type    = "t3.medium" # Instance type for Transcoders
+  node_group_transcoders_volume_size      = 16          # Volume size for Transcoders
+  node_group_transcoders_connection_limit = 20          # Maximum number of publishers to the transcoder server
+  node_group_relays_min                   = 0           # Number of minimum Relays
+  node_group_relays_max                   = 20          # Number of maximum Relays
+  node_group_relays_instance_type         = "t3.medium" # Instance type for Relays
+  node_group_relays_volume_size           = 16          # Volume size for Relays
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {
@@ -348,6 +357,10 @@ module "red5pro" {
     Environment = "dev"
     Project     = "red5pro"
   }
+}
+
+output "module_output" {
+  value = module.red5pro
 }
 ```
 
@@ -377,27 +390,25 @@ In the following example, Terraform module will automates the infrastructure pro
   - `existing` - Load Balancer with HTTPS and existing SSL certificate in the AWS Certificate Manager. HTTP on port `80`, HTTPS on port `443`
 - Red5 Pro (SM2.0) node instance image (origins, edges, transcoders, relays)
 - Red5 Pro (SM2.0) Autoscaling node group (origins, edges, transcoders, relays)
+  
+> Note: For autoscale deployments, this module also deploys an AWS IAM Role and IAM Policy. The role is attached to the initial Stream Manager instance and included in the Launch Template for autoscaled Stream Managers via an instance profile. This allows Terraform operations to run using IAM role credentials inside the Stream Manager containers, eliminating static access keys.
 
 #### Example main.tf (autoscale)
 
 ```yaml
 provider "aws" {
-  region     = "us-east-1" # AWS region
-  access_key = ""          # AWS IAM Access key
-  secret_key = ""          # AWS IAM Secret key
+  region = "us-east-1" # AWS region
 }
 
 module "red5pro" {
-  source                = "red5pro/red5pro/aws"
+  source                = "../../"
   type                  = "autoscale"                             # Deployment type: standalone, cluster, autoscale
   name                  = "red5pro-auto"                          # Name to be used on all the resources as identifier
   path_to_red5pro_build = "./red5pro-server-0.0.0.b0-release.zip" # Absolute path or relative path to Red5 Pro server ZIP file
   ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
 
   # AWS authetification variables it use for Stream Manager autoscaling configuration
-  aws_region     = "us-east-1" # AWS region 
-  aws_access_key = ""          # AWS IAM Access key
-  aws_secret_key = ""          # AWS IAM Secret key
+  aws_region = "us-east-1" # AWS region 
 
   # SSH key configuration
   ssh_key_use_existing              = false                                               # Use existing SSH key pair or create a new one. true = use existing, false = create new SSH key pair
@@ -409,17 +420,17 @@ module "red5pro" {
   vpc_id_existing  = "vpc-12345" # VPC ID for existing VPC
 
   # Kafka standalone instance configuration
-  kafka_standalone_instance_type = "c5.2xlarge" # Instance type for Kafka standalone instance
-  kafka_standalone_volume_size   = 16           # Volume size in GB for Kafka standalone instance
+  kafka_standalone_instance_type = "m5.xlarge" # Instance type for Kafka standalone instance
+  kafka_standalone_volume_size   = 16          # Volume size in GB for Kafka standalone instance
 
   # Stream Manager configuration 
-  stream_manager_instance_type                = "c5.2xlarge"       # Instance type for Stream Manager
-  stream_manager_volume_size                  = 16                 # Volume size for Stream Manager
-  stream_manager_autoscaling_desired_capacity = 1                  # Desired capacity for Stream Manager autoscaling group
-  stream_manager_autoscaling_minimum_capacity = 1                  # Minimum capacity for Stream Manager autoscaling group
-  stream_manager_autoscaling_maximum_capacity = 2                  # Maximum capacity for Stream Manager autoscaling group
-  stream_manager_auth_user                    = "example_user"     # Stream Manager 2.0 authentication user name
-  stream_manager_auth_password                = "example_password" # Stream Manager 2.0 authentication password
+  stream_manager_instance_type                = "m5.xlarge"                # Instance type for Stream Manager
+  stream_manager_volume_size                  = 16                         # Volume size for Stream Manager
+  stream_manager_autoscaling_desired_capacity = 1                          # Desired capacity for Stream Manager autoscaling group
+  stream_manager_autoscaling_minimum_capacity = 1                          # Minimum capacity for Stream Manager autoscaling group
+  stream_manager_autoscaling_maximum_capacity = 2                          # Maximum capacity for Stream Manager autoscaling group
+  stream_manager_auth_user                    = "example_user"             # Stream Manager 2.0 authentication user name
+  stream_manager_auth_password                = "example_password"         # Stream Manager 2.0 authentication password
   stream_manager_proxy_user                   = "example_proxy_user"       # Stream Manager 2.0 proxy user name
   stream_manager_proxy_password               = "example_proxy_password"   # Stream Manager 2.0 proxy password
   stream_manager_spatial_user                 = "example_spatial_user"     # Stream Manager 2.0 spatial user name
@@ -482,26 +493,26 @@ module "red5pro" {
   }
 
   # Red5 Pro autoscaling Node group
-  node_group_create                    = true        # Linux or Mac OS only. true - create new Node group, false - not create new Node group
-  node_group_origins_min               = 1           # Number of minimum Origins
-  node_group_origins_max               = 20          # Number of maximum Origins
-  node_group_origins_instance_type     = "t3.medium" # Instance type for Origins
-  node_group_origins_volume_size       = 16          # Volume size for Origins
-  node_group_origins_connection_limit  = 20          # Maximum number of publishers to the origin server
-  node_group_edges_min                 = 1           # Number of minimum Edges
-  node_group_edges_max                 = 20          # Number of maximum Edges
-  node_group_edges_instance_type       = "t3.medium" # Instance type for Edges
-  node_group_edges_volume_size         = 16          # Volume size for Edges
-  node_group_edges_connection_limit    = 200         # Maximum number of subscribers to the edge server
-  node_group_transcoders_min           = 0           # Number of minimum Transcoders
-  node_group_transcoders_max           = 20          # Number of maximum Transcoders
-  node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
-  node_group_transcoders_volume_size   = 16          # Volume size for Transcoders
-  node_group_transcoders_connection_limit = 20       # Maximum number of publishers to the transcoder server
-  node_group_relays_min                = 0           # Number of minimum Relays
-  node_group_relays_max                = 20          # Number of maximum Relays
-  node_group_relays_instance_type      = "t3.medium" # Instance type for Relays
-  node_group_relays_volume_size        = 16          # Volume size for Relays
+  node_group_create                       = true        # Linux or Mac OS only. true - create new Node group, false - not create new Node group
+  node_group_origins_min                  = 1           # Number of minimum Origins
+  node_group_origins_max                  = 20          # Number of maximum Origins
+  node_group_origins_instance_type        = "t3.medium" # Instance type for Origins
+  node_group_origins_volume_size          = 16          # Volume size for Origins
+  node_group_origins_connection_limit     = 20          # Maximum number of publishers to the origin server
+  node_group_edges_min                    = 1           # Number of minimum Edges
+  node_group_edges_max                    = 20          # Number of maximum Edges
+  node_group_edges_instance_type          = "t3.medium" # Instance type for Edges
+  node_group_edges_volume_size            = 16          # Volume size for Edges
+  node_group_edges_connection_limit       = 200         # Maximum number of subscribers to the edge server
+  node_group_transcoders_min              = 0           # Number of minimum Transcoders
+  node_group_transcoders_max              = 20          # Number of maximum Transcoders
+  node_group_transcoders_instance_type    = "t3.medium" # Instance type for Transcoders
+  node_group_transcoders_volume_size      = 16          # Volume size for Transcoders
+  node_group_transcoders_connection_limit = 20          # Maximum number of publishers to the transcoder server
+  node_group_relays_min                   = 0           # Number of minimum Relays
+  node_group_relays_max                   = 20          # Number of maximum Relays
+  node_group_relays_instance_type         = "t3.medium" # Instance type for Relays
+  node_group_relays_volume_size           = 16          # Volume size for Relays
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {
@@ -509,6 +520,10 @@ module "red5pro" {
     Environment = "dev"
     Project     = "red5pro"
   }
+}
+
+output "module_output" {
+  value = module.red5pro
 }
 ```
 

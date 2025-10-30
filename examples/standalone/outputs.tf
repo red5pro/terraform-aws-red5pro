@@ -38,3 +38,7 @@ output "standalone_red5pro_server_brew_mixer_controller_page_url" {
   description = "Standalone Red5 Pro Server Brew Mixer Controller Page URL"
   value       = module.red5pro.standalone_red5pro_server_brew_mixer_controller_page_url
 }
+output "security_group_name_standalone" {
+  description = "Security group name Standalone Red5 Pro server"
+  value       = module.red5pro.security_group_name_standalone
+}
