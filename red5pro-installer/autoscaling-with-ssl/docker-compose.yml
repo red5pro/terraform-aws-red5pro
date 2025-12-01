@@ -22,10 +22,17 @@ services:
       KAFKA_LISTENER_NAME_BROKER_PLAIN_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required username="${KAFKA_ADMIN_USERNAME:-admin}" password="${KAFKA_ADMIN_PASSWORD}" user_${KAFKA_ADMIN_USERNAME:-admin}="${KAFKA_ADMIN_PASSWORD}" user_${KAFKA_CLIENT_USERNAME:-client}="${KAFKA_CLIENT_PASSWORD}";
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: BROKER:SASL_SSL,CONTROLLER:SASL_SSL
       KAFKA_ADVERTISED_LISTENERS: BROKER://${KAFKA_IP}:9092
-      KAFKA_MAX_REQUEST_SIZE: 52428800
-      KAFKA_INITIAL_BROKER_REGISTRATION_TIMEOUT_MS: 240000
-      # KAFKA_HEAP_OPTS: "-Xmx2g -Xms1g"
       KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
+      # This sets the maximum size (in bytes) of a request that Kafka can receive. 50 MB
+      KAFKA_MAX_REQUEST_SIZE: 52428800
+      # This sets the timeout for a broker to register with the controller during startup. 4 minutes
+      KAFKA_INITIAL_BROKER_REGISTRATION_TIMEOUT_MS: 240000
+      KAFKA_HEAP_OPTS: "-Xmx4g -Xms2g"
+      # KAFKA_JVM_PERFORMANCE_OPTS: sets performance tuning options for the JVM.
+      # -XX:+UseG1GC enables the G1 garbage collector, which works well for large heaps.
+      # -XX:MaxGCPauseMillis=20 tells the JVM to try to keep garbage collection pauses under 20 milliseconds.
+      # -XX:InitiatingHeapOccupancyPercent=35 makes the G1 GC start collecting when 35% of the heap is used.
+      KAFKA_JVM_PERFORMANCE_OPTS: "-XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35"
       KAFKA_SSL_KEYSTORE_TYPE: PEM
       KAFKA_SSL_TRUSTSTORE_TYPE: PEM
       KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM:
@@ -80,7 +87,7 @@ services:
       - ./scripts/update_run.sh:/tmp/update_run.sh
     command: "bash -c 'if [ ! -f /tmp/update_run.sh ]; then echo \"ERROR: Script was not found /tmp/update_run.sh\" && exit 1 ; else /tmp/update_run.sh && /etc/confluent/docker/run ; fi'"
     healthcheck:
-      test: nc -z localhost 9092 || exit -1
+      test: ["CMD", "bash", "-c", "timeout 10 bash -c '</dev/tcp/localhost/9092' || exit 1"]
       interval: 10s
       timeout: 60s
       retries: 18  # 3 mins
@@ -219,8 +226,6 @@ services:
       R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL:-600000}
       R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
       R5AS_PRODUCER_REQUEST_TIMEOUT: ${R5AS_PRODUCER_REQUEST_TIMEOUT:-300000}
-      TF_VAR_aws_access_key: ${TF_VAR_aws_access_key}
-      TF_VAR_aws_secret_key: ${TF_VAR_aws_secret_key}
       TF_VAR_aws_ssh_key_pair: ${TF_VAR_aws_ssh_key_pair}
       TF_VAR_aws_enable_root_volume_block_encryption: ${TF_VAR_aws_enable_root_volume_block_encryption:-true}
       TF_VAR_r5p_license_key: ${TF_VAR_r5p_license_key}  

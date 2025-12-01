@@ -20,9 +20,7 @@ This module automates the infrastructure provisioning of the [Red5 Pro standalon
 
 ```yaml
 provider "aws" {
-  region     = "us-east-1" # AWS region
-  access_key = ""          # AWS IAM Access key
-  secret_key = ""          # AWS IAM Secret key
+  region = "us-east-1" # AWS region
 }
 
 module "red5pro" {

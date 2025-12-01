@@ -3,9 +3,7 @@
 ####################################################
 
 provider "aws" {
-  region     = "us-east-1" # AWS region
-  access_key = ""          # AWS IAM Access key
-  secret_key = ""          # AWS IAM Secret key
+  region = "us-east-1" # AWS region
 }
 
 module "red5pro" {
@@ -89,4 +87,8 @@ module "red5pro" {
     Environment = "dev"
     Project     = "red5pro"
   }
+}
+
+output "module_output" {
+  value = module.red5pro
 }

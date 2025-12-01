@@ -38,3 +38,15 @@ output "manual_dns_record" {
   description = "Manual DNS Record"
   value       = module.red5pro.manual_dns_record
 }
+output "security_group_name_node" {
+  description = "Security group name Red5 Pro (SM2.0) Autoscaling nodes"
+  value       = module.red5pro.security_group_name_node
+}
+output "security_group_name_kafka" {
+  description = "Security group name standalone Kafka instance"
+  value       = module.red5pro.security_group_name_kafka
+}
+output "security_group_name_sm" {
+  description = "Security group name Stream Manager 2.0"
+  value       = module.red5pro.security_group_name_sm
+}

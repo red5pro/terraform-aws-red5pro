@@ -3,9 +3,7 @@
 ##########################################################
 
 provider "aws" {
-  region     = "us-east-1" # AWS region
-  access_key = ""          # AWS IAM Access key
-  secret_key = ""          # AWS IAM Secret key
+  region = "us-east-1" # AWS region
 }
 
 module "red5pro" {
@@ -16,9 +14,7 @@ module "red5pro" {
   ubuntu_version        = "22.04"                                 # Ubuntu version for Red5 Pro servers
 
   # AWS authetification variables it use for Stream Manager autoscaling configuration
-  aws_region     = "us-east-1" # AWS region 
-  aws_access_key = ""          # AWS IAM Access key
-  aws_secret_key = ""          # AWS IAM Secret key
+  aws_region = "us-east-1" # AWS region 
 
   # SSH key configuration
   ssh_key_use_existing              = false                                               # Use existing SSH key pair or create a new one. true = use existing, false = create new SSH key pair
@@ -31,15 +27,15 @@ module "red5pro" {
 
   # Kafka standalone instance configuration
   kafka_standalone_instance_create = false
-  kafka_standalone_instance_type   = "c5.2xlarge" # Instance type for Kafka standalone instance
-  kafka_standalone_volume_size     = 16           # Volume size in GB for Kafka standalone instance
+  kafka_standalone_instance_type   = "m5.xlarge" # Instance type for Kafka standalone instance
+  kafka_standalone_volume_size     = 16          # Volume size in GB for Kafka standalone instance
 
   # Stream Manager configuration 
-  stream_manager_instance_type = "c5.2xlarge"       # Instance type for Stream Manager
-  stream_manager_volume_size   = 16                 # Volume size for Stream Manager
-  stream_manager_auth_user     = "example_user"     # Stream Manager 2.0 authentication user name
-  stream_manager_auth_password = "example_password" # Stream Manager 2.0 authentication password
-  stream_manager_proxy_user    = "example_proxy_user"       # Stream Manager 2.0 proxy user name
+  stream_manager_instance_type    = "m5.xlarge"                # Instance type for Stream Manager
+  stream_manager_volume_size      = 16                         # Volume size for Stream Manager
+  stream_manager_auth_user        = "example_user"             # Stream Manager 2.0 authentication user name
+  stream_manager_auth_password    = "example_password"         # Stream Manager 2.0 authentication password
+  stream_manager_proxy_user       = "example_proxy_user"       # Stream Manager 2.0 proxy user name
   stream_manager_proxy_password   = "example_proxy_password"   # Stream Manager 2.0 proxy password
   stream_manager_spatial_user     = "example_spatial_user"     # Stream Manager 2.0 spatial user name
   stream_manager_spatial_password = "example_spatial_password" # Stream Manager 2.0 spatial password
@@ -105,26 +101,26 @@ module "red5pro" {
   }
 
   # Red5 Pro autoscaling Node group
-  node_group_create                    = true        # Linux or Mac OS only. true - create new Node group, false - not create new Node group
-  node_group_origins_min               = 1           # Number of minimum Origins
-  node_group_origins_max               = 20          # Number of maximum Origins
-  node_group_origins_instance_type     = "t3.medium" # Instance type for Origins
-  node_group_origins_volume_size       = 16          # Volume size for Origins
-  node_group_origins_connection_limit  = 20          # Maximum number of publishers to the origin server
-  node_group_edges_min                 = 1           # Number of minimum Edges
-  node_group_edges_max                 = 20          # Number of maximum Edges
-  node_group_edges_instance_type       = "t3.medium" # Instance type for Edges
-  node_group_edges_volume_size         = 16          # Volume size for Edges
-  node_group_edges_connection_limit    = 200         # Maximum number of subscribers to the edge server
-  node_group_transcoders_min           = 0           # Number of minimum Transcoders
-  node_group_transcoders_max           = 20          # Number of maximum Transcoders
-  node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
-  node_group_transcoders_volume_size   = 16          # Volume size for Transcoders
-  node_group_transcoders_connection_limit = 20       # Maximum number of publishers to the transcoder server
-  node_group_relays_min                = 0           # Number of minimum Relays
-  node_group_relays_max                = 20          # Number of maximum Relays
-  node_group_relays_instance_type      = "t3.medium" # Instance type for Relays
-  node_group_relays_volume_size        = 16          # Volume size for Relays
+  node_group_create                       = true        # Linux or Mac OS only. true - create new Node group, false - not create new Node group
+  node_group_origins_min                  = 1           # Number of minimum Origins
+  node_group_origins_max                  = 20          # Number of maximum Origins
+  node_group_origins_instance_type        = "t3.medium" # Instance type for Origins
+  node_group_origins_volume_size          = 16          # Volume size for Origins
+  node_group_origins_connection_limit     = 20          # Maximum number of publishers to the origin server
+  node_group_edges_min                    = 1           # Number of minimum Edges
+  node_group_edges_max                    = 20          # Number of maximum Edges
+  node_group_edges_instance_type          = "t3.medium" # Instance type for Edges
+  node_group_edges_volume_size            = 16          # Volume size for Edges
+  node_group_edges_connection_limit       = 200         # Maximum number of subscribers to the edge server
+  node_group_transcoders_min              = 0           # Number of minimum Transcoders
+  node_group_transcoders_max              = 20          # Number of maximum Transcoders
+  node_group_transcoders_instance_type    = "t3.medium" # Instance type for Transcoders
+  node_group_transcoders_volume_size      = 16          # Volume size for Transcoders
+  node_group_transcoders_connection_limit = 20          # Maximum number of publishers to the transcoder server
+  node_group_relays_min                   = 0           # Number of minimum Relays
+  node_group_relays_max                   = 20          # Number of maximum Relays
+  node_group_relays_instance_type         = "t3.medium" # Instance type for Relays
+  node_group_relays_volume_size           = 16          # Volume size for Relays
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {
@@ -132,4 +128,8 @@ module "red5pro" {
     Environment = "dev"
     Project     = "red5pro"
   }
+}
+
+output "module_output" {
+  value = module.red5pro
 }

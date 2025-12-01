@@ -59,3 +59,19 @@ output "standalone_red5pro_server_brew_mixer_controller_page_url" {
   description = "Standalone Red5 Pro Server Brew Mixer Controller Page URL"
   value       = local.standalone && var.standalone_red5pro_brew_mixer_enable ? var.https_ssl_certificate == "none" ? "http://${local.standalone_elastic_ip}:5080/brewmixer/rtController.html" : "https://${var.https_ssl_certificate_domain_name}/brewmixer/rtController.html" : null
 }
+output "security_group_name_node" {
+  description = "Security group name Red5 Pro (SM2.0) Autoscaling nodes"
+  value       = try(aws_security_group.red5pro_node_sg[0].name, "")
+}
+output "security_group_name_kafka" {
+  description = "Security group name standalone Kafka instance"
+  value       = try(aws_security_group.red5pro_kafka_sg[0].name, "")
+}
+output "security_group_name_sm" {
+  description = "Security group name Stream Manager 2.0"
+  value       = try(aws_security_group.red5pro_sm_sg[0].name, "")
+}
+output "security_group_name_standalone" {
+  description = "Security group name Standalone Red5 Pro server"
+  value       = try(aws_security_group.red5pro_standalone_sg[0].name, "")
+}
