@@ -900,6 +900,11 @@ resource "aws_instance" "red5pro_sm" {
   # Add IAM instance profile for Terraform operations
   iam_instance_profile   = aws_iam_instance_profile.stream_manager_terraform_profile[0].name
 
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"  # Enforce IMDSv2, disable IMDSv1
+  }
+
   root_block_device {
     volume_size = var.stream_manager_volume_size
   }
@@ -1009,6 +1014,11 @@ resource "aws_launch_template" "red5pro_sm_lt" {
   # Add IAM instance profile for Terraform operations
   iam_instance_profile {
     name = aws_iam_instance_profile.stream_manager_terraform_profile[0].name
+  }
+
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"  # Enforce IMDSv2, disable IMDSv1
   }
 
   network_interfaces {

@@ -200,6 +200,7 @@ services:
     deploy:
       replicas: 1
     image: red5pro/as-terraform:${AS_VERSION:-latest}
+    network_mode: host  # Required for IMDSv2 access from container
     depends_on:
       as-kafka-init:
         condition: service_healthy
