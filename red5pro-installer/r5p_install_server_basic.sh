@@ -240,9 +240,6 @@ install_red5pro() {
         fi
     fi
     
-    log_i "Install DEVELOP license key"
-    echo "$LICENSE_KEY_DEV" > "$RED5_HOME/LICENSE.KEY" #DEV
-    sed -i -e "/\[Service\]/a Environment=license_host=${LICENSE_HOST_DEV}" "$RED5_HOME/red5pro.service"
 }
 
 install_red5pro_service(){
