@@ -2,6 +2,12 @@
 version: '3.8'
 name: autoscaling
 
+x-logging-config: &logging-config
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   kafka0:
     image: confluentinc/cp-kafka:${KAFKA_VERSION:-latest}
@@ -92,6 +98,7 @@ services:
       timeout: 60s
       retries: 18  # 3 mins
       start_period: 300s  # grace period, not minimum
+    logging: *logging-config
 
   as-kafka-init:
     deploy:
@@ -128,6 +135,7 @@ services:
       R5AS_KAFKA_CLIENT_TIMEOUT: ${R5AS_KAFKA_CLIENT_TIMEOUT:-10000}
       R5AS_HEALTH_CHECK_INTERVAL: ${R5AS_HEALTH_CHECK_INTERVAL:-30000}
       R5AS_PRODUCE_CONSUME_TEST_TIMEOUT: ${R5AS_PRODUCE_CONSUME_TEST_TIMEOUT:-15000}
+    logging: *logging-config
 
   as-admin:
     image: red5pro/as-admin:${AS_VERSION:-latest}
@@ -194,6 +202,7 @@ services:
       traefik.http.routers.as-admin.entrypoints: "websecure"
       traefik.http.routers.as-admin.middlewares: "strip-admin@docker"
       traefik.http.middlewares.strip-admin.stripprefix.prefixes: "/as/v1/"
+    logging: *logging-config
 
   as-terraform:
     restart: unless-stopped
@@ -232,6 +241,7 @@ services:
       TF_VAR_r5p_license_key: ${TF_VAR_r5p_license_key}  
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    logging: *logging-config
 
   as-proxy:
     image: red5pro/as-proxy:${AS_VERSION:-latest}
@@ -264,6 +274,7 @@ services:
       traefik.http.routers.asproxy.entrypoints: websecure
       traefik.http.routers.asproxy.middlewares: strip-asproxy@docker
       traefik.http.middlewares.strip-asproxy.stripprefix.prefixes: /as/v1/proxy
+    logging: *logging-config
 
   as-autoscale-service:
     image: red5pro/as-autoscale-service:${AS_VERSION:-latest}
@@ -353,6 +364,7 @@ services:
       traefik.http.routers.autoscale.entrypoints: websecure
       traefik.http.routers.autoscale.middlewares: strip-m-autoscale@docker
       traefik.http.middlewares.strip-m-autoscale.stripprefix.prefixes: /as/v1
+    logging: *logging-config
 
   as-auth:
     image: red5pro/as-auth:${AS_VERSION:-latest}
@@ -374,6 +386,7 @@ services:
       traefik.http.routers.asauth.entrypoints: websecure
       traefik.http.routers.asauth.middlewares: strip-asauth@docker
       traefik.http.middlewares.strip-asauth.stripprefix.prefixes: /as/v1
+    logging: *logging-config
 
   as-streams:
     image: red5pro/as-streams:${AS_VERSION:-latest}
@@ -433,6 +446,7 @@ services:
       traefik.http.routers.asstreams.entrypoints: websecure
       traefik.http.routers.asstreams.middlewares: strip-asstreams@docker
       traefik.http.middlewares.strip-asstreams.stripprefix.prefixes: /as/v1
+    logging: *logging-config
 
   reverse-proxy:
     image: traefik
@@ -468,11 +482,7 @@ services:
       traefik.http.routers.traefik-ui.tls.certresolver: myresolver
       traefik.http.routers.traefik-ui.rule: (PathPrefix(`/dashboard`) || PathPrefix(`/api`)) && Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`)
       traefik.http.services.traefik-ui.loadbalancer.server.port: 8080
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *logging-config
 
   as-testbeds:
      image: red5pro/as-testbed:${AS_VERSION:-latest}
@@ -506,6 +516,8 @@ services:
        traefik.http.middlewares.strip-prefix-1.redirectregex.replacement: $${1}/
        traefik.http.middlewares.strip-prefix-1.redirectregex.permanent: true
        traefik.http.middlewares.strip-prefix-2.stripprefixregex.regex: /[a-z0-9_]+
+     logging:
+      driver: none # disable logging
 
   as-debug-ui:
     image: "red5pro/as-debug-ui:${AS_VERSION:-latest}"
@@ -515,6 +527,8 @@ services:
       traefik.http.routers.caddy.entrypoints: websecure
       #traefik.http.routers.caddy.tls.certresolver: myresolver
       traefik.http.routers.caddy.rule: PathPrefix(`/`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+    logging:
+      driver: none # disable logging
 
 volumes:
   kafka-data:
