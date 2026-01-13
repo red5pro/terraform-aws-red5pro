@@ -251,13 +251,17 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_ingress_ipv4" {
   description       = var.security_group_stream_manager_ingress[count.index].description
 }
 resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_ingress_ipv6" {
-  count             = local.cluster_or_autoscale ? length(var.security_group_stream_manager_ingress) : 0
+  for_each = local.cluster_or_autoscale ? {
+    for idx, rule in var.security_group_stream_manager_ingress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+  
   security_group_id = aws_security_group.red5pro_sm_sg[0].id
-  cidr_ipv6         = var.security_group_stream_manager_ingress[count.index].ipv6_cidr_block
-  ip_protocol       = var.security_group_stream_manager_ingress[count.index].protocol
-  from_port         = var.security_group_stream_manager_ingress[count.index].protocol == "-1" ? null : var.security_group_stream_manager_ingress[count.index].from_port
-  to_port           = var.security_group_stream_manager_ingress[count.index].protocol == "-1" ? null : var.security_group_stream_manager_ingress[count.index].to_port
-  description       = var.security_group_stream_manager_ingress[count.index].description
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv4" {
   count             = local.cluster_or_autoscale ? length(var.security_group_stream_manager_egress) : 0
@@ -269,13 +273,17 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv4" {
   description       = var.security_group_stream_manager_egress[count.index].description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv6" {
-  count             = local.cluster_or_autoscale ? length(var.security_group_stream_manager_egress) : 0
+  for_each = local.cluster_or_autoscale ? {
+    for idx, rule in var.security_group_stream_manager_egress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+  
   security_group_id = aws_security_group.red5pro_sm_sg[0].id
-  cidr_ipv6         = var.security_group_stream_manager_egress[count.index].ipv6_cidr_block
-  ip_protocol       = var.security_group_stream_manager_egress[count.index].protocol
-  from_port         = var.security_group_stream_manager_egress[count.index].protocol == "-1" ? null : var.security_group_stream_manager_egress[count.index].from_port
-  to_port           = var.security_group_stream_manager_egress[count.index].protocol == "-1" ? null : var.security_group_stream_manager_egress[count.index].to_port
-  description       = var.security_group_stream_manager_egress[count.index].description
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
 }
 
 # Security group for Red5Pro Nodes (AWS VPC)
@@ -297,13 +305,17 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_node_ingress_ipv4" {
   description       = var.security_group_node_ingress[count.index].description
 }
 resource "aws_vpc_security_group_ingress_rule" "red5pro_node_ingress_ipv6" {
-  count             = local.cluster_or_autoscale ? length(var.security_group_node_ingress) : 0
+  for_each = local.cluster_or_autoscale ? {
+    for idx, rule in var.security_group_node_ingress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+  
   security_group_id = aws_security_group.red5pro_node_sg[0].id
-  cidr_ipv6         = var.security_group_node_ingress[count.index].ipv6_cidr_block
-  ip_protocol       = var.security_group_node_ingress[count.index].protocol
-  from_port         = var.security_group_node_ingress[count.index].protocol == "-1" ? null : var.security_group_node_ingress[count.index].from_port
-  to_port           = var.security_group_node_ingress[count.index].protocol == "-1" ? null : var.security_group_node_ingress[count.index].to_port
-  description       = var.security_group_node_ingress[count.index].description
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_node_egress_ipv4" {
   count             = local.cluster_or_autoscale ? length(var.security_group_node_egress) : 0
@@ -315,13 +327,17 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_node_egress_ipv4" {
   description       = var.security_group_node_egress[count.index].description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_node_egress_ipv6" {
-  count             = local.cluster_or_autoscale ? length(var.security_group_node_egress) : 0
+  for_each = local.cluster_or_autoscale ? {
+    for idx, rule in var.security_group_node_egress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+  
   security_group_id = aws_security_group.red5pro_node_sg[0].id
-  cidr_ipv6         = var.security_group_node_egress[count.index].ipv6_cidr_block
-  ip_protocol       = var.security_group_node_egress[count.index].protocol
-  from_port         = var.security_group_node_egress[count.index].protocol == "-1" ? null : var.security_group_node_egress[count.index].from_port
-  to_port           = var.security_group_node_egress[count.index].protocol == "-1" ? null : var.security_group_node_egress[count.index].to_port
-  description       = var.security_group_node_egress[count.index].description
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
 }
 
 # Security group for Kafka (AWS VPC)
@@ -343,13 +359,17 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_kafka_ingress_ipv4" {
   description       = var.security_group_kafka_ingress[count.index].description
 }
 resource "aws_vpc_security_group_ingress_rule" "red5pro_kafka_ingress_ipv6" {
-  count             = local.cluster_or_autoscale ? length(var.security_group_kafka_ingress) : 0
+  for_each = local.cluster_or_autoscale ? {
+    for idx, rule in var.security_group_kafka_ingress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+  
   security_group_id = aws_security_group.red5pro_kafka_sg[0].id
-  cidr_ipv6         = var.security_group_kafka_ingress[count.index].ipv6_cidr_block
-  ip_protocol       = var.security_group_kafka_ingress[count.index].protocol
-  from_port         = var.security_group_kafka_ingress[count.index].protocol == "-1" ? null : var.security_group_kafka_ingress[count.index].from_port
-  to_port           = var.security_group_kafka_ingress[count.index].protocol == "-1" ? null : var.security_group_kafka_ingress[count.index].to_port
-  description       = var.security_group_kafka_ingress[count.index].description
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_kafka_egress_ipv4" {
   count             = local.cluster_or_autoscale ? length(var.security_group_kafka_egress) : 0
@@ -361,14 +381,17 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_kafka_egress_ipv4" {
   description       = var.security_group_kafka_egress[count.index].description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_kafka_egress_ipv6" {
-  count             = local.cluster_or_autoscale ? length(var.security_group_kafka_egress) : 0
+  for_each = local.cluster_or_autoscale ? {
+    for idx, rule in var.security_group_kafka_egress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+  
   security_group_id = aws_security_group.red5pro_kafka_sg[0].id
-  cidr_ipv6         = var.security_group_kafka_egress[count.index].ipv6_cidr_block
-  ip_protocol       = var.security_group_kafka_egress[count.index].protocol
-  from_port         = var.security_group_kafka_egress[count.index].protocol == "-1" ? null : var.security_group_kafka_egress[count.index].from_port
-  to_port           = var.security_group_kafka_egress[count.index].protocol == "-1" ? null : var.security_group_kafka_egress[count.index].to_port
-
-  description = var.security_group_kafka_egress[count.index].description
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
 }
 
 # Security group for StreamManager and Node images (AWS VPC)
@@ -432,13 +455,17 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_standalone_ingress_ipv4"
   description       = var.security_group_standalone_ingress[count.index].description
 }
 resource "aws_vpc_security_group_ingress_rule" "red5pro_standalone_ingress_ipv6" {
-  count             = local.standalone ? length(var.security_group_standalone_ingress) : 0
+  for_each = local.standalone ? {
+    for idx, rule in var.security_group_standalone_ingress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+  
   security_group_id = aws_security_group.red5pro_standalone_sg[0].id
-  cidr_ipv6         = var.security_group_standalone_ingress[count.index].ipv6_cidr_block
-  ip_protocol       = var.security_group_standalone_ingress[count.index].protocol
-  from_port         = var.security_group_standalone_ingress[count.index].protocol == "-1" ? null : var.security_group_standalone_ingress[count.index].from_port
-  to_port           = var.security_group_standalone_ingress[count.index].protocol == "-1" ? null : var.security_group_standalone_ingress[count.index].to_port
-  description       = var.security_group_standalone_ingress[count.index].description
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_standalone_egress_ipv4" {
   count             = local.standalone ? length(var.security_group_standalone_egress) : 0
@@ -450,13 +477,17 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_standalone_egress_ipv4" {
   description       = var.security_group_standalone_egress[count.index].description
 }
 resource "aws_vpc_security_group_egress_rule" "red5pro_standalone_egress_ipv6" {
-  count             = local.standalone ? length(var.security_group_standalone_egress) : 0
+  for_each = local.standalone ? {
+    for idx, rule in var.security_group_standalone_egress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+  
   security_group_id = aws_security_group.red5pro_standalone_sg[0].id
-  cidr_ipv6         = var.security_group_standalone_egress[count.index].ipv6_cidr_block
-  ip_protocol       = var.security_group_standalone_egress[count.index].protocol
-  from_port         = var.security_group_standalone_egress[count.index].protocol == "-1" ? null : var.security_group_standalone_egress[count.index].from_port
-  to_port           = var.security_group_standalone_egress[count.index].protocol == "-1" ? null : var.security_group_standalone_egress[count.index].to_port
-  description       = var.security_group_standalone_egress[count.index].description
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
 }
 
 ################################################################################
