@@ -103,7 +103,7 @@ services:
   as-kafka-init:
     deploy:
       replicas: ${AS_KAFKA_INIT_REPLICAS:-1}
-    image: red5pro/as-kafka-init:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-kafka-init:${AS_VERSION:-latest}
     depends_on:
       kafka0:
         condition: service_healthy
@@ -138,7 +138,7 @@ services:
     logging: *logging-config
 
   as-admin:
-    image: red5pro/as-admin:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-admin:${AS_VERSION:-latest}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/admin/healthz"]
@@ -208,7 +208,7 @@ services:
     restart: unless-stopped
     deploy:
       replicas: 1
-    image: red5pro/as-terraform:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-terraform:${AS_VERSION:-latest}
     network_mode: host  # Required for IMDSv2 access from container
     depends_on:
       as-kafka-init:
@@ -238,13 +238,13 @@ services:
       R5AS_PRODUCER_REQUEST_TIMEOUT: ${R5AS_PRODUCER_REQUEST_TIMEOUT:-300000}
       TF_VAR_aws_ssh_key_pair: ${TF_VAR_aws_ssh_key_pair}
       TF_VAR_aws_enable_root_volume_block_encryption: ${TF_VAR_aws_enable_root_volume_block_encryption:-true}
-      TF_VAR_r5p_license_key: ${TF_VAR_r5p_license_key}  
+      TF_VAR_r5p_license_key: ${TF_VAR_r5p_license_key}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     logging: *logging-config
 
   as-proxy:
-    image: red5pro/as-proxy:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-proxy:${AS_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       as-kafka-init:
@@ -277,7 +277,7 @@ services:
     logging: *logging-config
 
   as-autoscale-service:
-    image: red5pro/as-autoscale-service:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-autoscale-service:${AS_VERSION:-latest}
     restart: unless-stopped
     deploy:
       replicas: 1
@@ -372,7 +372,7 @@ services:
     logging: *logging-config
 
   as-auth:
-    image: red5pro/as-auth:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-auth:${AS_VERSION:-latest}
     restart: unless-stopped
     ports:
       - 10080:8080
@@ -394,7 +394,7 @@ services:
     logging: *logging-config
 
   as-streams:
-    image: red5pro/as-streams:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-streams:${AS_VERSION:-latest}
     restart: unless-stopped
     deploy:
       replicas: 1
@@ -490,7 +490,7 @@ services:
     logging: *logging-config
 
   as-testbeds:
-     image: red5pro/as-testbed:${AS_VERSION:-latest}
+     image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-testbed:${AS_TESTBED_VERSION:-${AS_VERSION:-latest}}
      restart: unless-stopped
      depends_on:
        as-auth:
@@ -525,7 +525,7 @@ services:
       driver: none # disable logging
 
   as-debug-ui:
-    image: "red5pro/as-debug-ui:${AS_VERSION:-latest}"
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-debug-ui:${AS_VERSION:-latest}
     restart: unless-stopped
     labels:
       traefik.enable: true

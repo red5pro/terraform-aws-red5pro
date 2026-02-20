@@ -103,7 +103,7 @@ services:
   as-kafka-init:
     deploy:
       replicas: ${AS_KAFKA_INIT_REPLICAS:-1}
-    image: red5pro/as-kafka-init:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-kafka-init:${AS_VERSION:-latest}
     depends_on:
       kafka0:
         condition: service_healthy
@@ -138,7 +138,7 @@ services:
     logging: *logging-config
 
   as-admin:
-    image: red5pro/as-admin:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-admin:${AS_VERSION:-latest}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/admin/healthz"]
@@ -164,7 +164,7 @@ services:
       R5AS_SSL_CA_CERTIFICATE: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
       R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
       R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
-      R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
+      R5AS_SASL_ENABLED_MECHANISMS: PLAIN
       SPRINGDOC_API_DOCS_PATH: /as/v1/admin/v3/api-docs
       SPRINGDOC_SWAGGER_UI_URLS_0_URL: /as/v1/autoscale/v3/api-docs
       SPRINGDOC_SWAGGER_UI_URLS_0_NAME: autoscale
@@ -179,6 +179,7 @@ services:
       R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
       R5AS_WS_PING_PONG_INTERVAL_S: ${R5AS_WS_PING_PONG_INTERVAL_S:-30}
       R5AS_WS_PONG_TIMEOUT_S: ${R5AS_WS_PONG_TIMEOUT_S:-50}
+      R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
       R5AS_PROCESS_NODEGROUP_CONFIG_TIMEOUT: ${R5AS_PROCESS_NODEGROUP_CONFIG_TIMEOUT:-30000}
       R5AS_CONSUMER_REQUEST_TIMEOUT: ${R5AS_CONSUMER_REQUEST_TIMEOUT:-300000}
       R5AS_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_CONSUMER_MAX_POLL_INTERVAL:-600000}
@@ -187,7 +188,6 @@ services:
       R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL:-600000}
       R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
       R5AS_PRODUCER_REQUEST_TIMEOUT: ${R5AS_PRODUCER_REQUEST_TIMEOUT:-300000}
-      R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
     labels:
       traefik.http.routers.config-swagger.rule: "PathPrefix(`/swagger-ui`)"
       traefik.http.routers.config-swagger.entrypoints: "web"
@@ -208,7 +208,7 @@ services:
     restart: unless-stopped
     deploy:
       replicas: 1
-    image: red5pro/as-terraform:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-terraform:${AS_VERSION:-latest}
     network_mode: host  # Required for IMDSv2 access from container
     depends_on:
       as-kafka-init:
@@ -227,6 +227,7 @@ services:
       R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
       R5AS_COMMAND_INACTIVITY_GAP_MS: ${R5AS_COMMAND_INACTIVITY_GAP_MS:-10000}
       R5AS_TERRAFORM_PARALLELISM: ${R5AS_TERRAFORM_PARALLELISM:-50}
+      R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
       R5AS_TERRAFORM_TIMEOUT: ${R5AS_TERRAFORM_TIMEOUT:-1800000}
       R5AS_CONSUMER_REQUEST_TIMEOUT: ${R5AS_CONSUMER_REQUEST_TIMEOUT:-300000}
       R5AS_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_CONSUMER_MAX_POLL_INTERVAL:-600000}
@@ -235,7 +236,6 @@ services:
       R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL:-600000}
       R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
       R5AS_PRODUCER_REQUEST_TIMEOUT: ${R5AS_PRODUCER_REQUEST_TIMEOUT:-300000}
-      R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
       TF_VAR_aws_ssh_key_pair: ${TF_VAR_aws_ssh_key_pair}
       TF_VAR_aws_enable_root_volume_block_encryption: ${TF_VAR_aws_enable_root_volume_block_encryption:-true}
       TF_VAR_r5p_license_key: ${TF_VAR_r5p_license_key}
@@ -244,7 +244,7 @@ services:
     logging: *logging-config
 
   as-proxy:
-    image: red5pro/as-proxy:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-proxy:${AS_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       as-kafka-init:
@@ -266,8 +266,8 @@ services:
       R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET}
       R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
       # R5AS_AUTOSCALE_DOMAIN: ${TRAEFIK_HOST:-localhost}
-      R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
       R5AS_PROXY_HTTP_REQUEST_TIMEOUT_S: ${R5AS_PROXY_HTTP_REQUEST_TIMEOUT_S:-60}
+      R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
     labels:
       traefik.enable: true
       traefik.http.routers.asproxy.rule: PathPrefix(`/as/v1/proxy`)
@@ -277,7 +277,7 @@ services:
     logging: *logging-config
 
   as-autoscale-service:
-    image: red5pro/as-autoscale-service:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-autoscale-service:${AS_VERSION:-latest}
     restart: unless-stopped
     deploy:
       replicas: 1
@@ -372,7 +372,7 @@ services:
     logging: *logging-config
 
   as-auth:
-    image: red5pro/as-auth:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-auth:${AS_VERSION:-latest}
     restart: unless-stopped
     ports:
       - 10080:8080
@@ -394,7 +394,7 @@ services:
     logging: *logging-config
 
   as-streams:
-    image: red5pro/as-streams:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-streams:${AS_VERSION:-latest}
     restart: unless-stopped
     deploy:
       replicas: 1
@@ -476,7 +476,7 @@ services:
     logging: *logging-config
 
   as-testbeds:
-     image: red5pro/as-testbed:${AS_VERSION:-latest}
+     image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-testbed:${AS_TESTBED_VERSION:-${AS_VERSION:-latest}}
      restart: unless-stopped
      depends_on:
        as-auth:
@@ -510,7 +510,7 @@ services:
       driver: none # disable logging
 
   as-debug-ui:
-    image: "red5pro/as-debug-ui:${AS_VERSION:-latest}"
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-debug-ui:${AS_VERSION:-latest}
     restart: unless-stopped
     labels:
       traefik.enable: true

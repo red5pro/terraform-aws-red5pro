@@ -11,6 +11,9 @@
 # SM_STANDALONE=""
 # SM_SSL=""
 # SM_SSL_DOMAIN=""
+# CONTAINER_REGISTRY=""
+# CONTAINER_REGISTRY_USER=""
+# CONTAINER_REGISTRY_PASSWORD=""
 
 SM_HOME="/usr/local/stream-manager"
 CURRENT_DIRECTORY=$(pwd)
@@ -115,6 +118,11 @@ config_sm() {
         exit 1
     fi
 
+    if [[ -n "$CONTAINER_REGISTRY" && -n "$CONTAINER_REGISTRY_USER" && -n "$CONTAINER_REGISTRY_PASSWORD" ]]; then
+        log_i "Login to container registry $CONTAINER_REGISTRY"
+        docker login "$CONTAINER_REGISTRY" -u "$CONTAINER_REGISTRY_USER" -p "$CONTAINER_REGISTRY_PASSWORD"
+    fi
+
     if [ "$SM_SSL" == "letsencrypt" ]; then
         log_i "Stream Manager 2.0 with Let's Encrypt SSL"
 
@@ -163,6 +171,7 @@ pull_docker_images() {
         log_i "Docker images pulled"
     else
         log_e "Docker images not pulled"
+        docker compose pull
         exit 1
     fi
 }
