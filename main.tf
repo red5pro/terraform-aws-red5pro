@@ -1114,7 +1114,7 @@ resource "aws_autoscaling_group" "red5pro_sm_ag" {
 # AWS Stream Manager autoscaling - Target group
 resource "aws_lb_target_group" "red5pro_sm_tg" {
   count       = local.autoscale ? 1 : 0
-  name        = "${var.name}-stream-manager-tg"
+  name        = "${var.name}-sm-tg"
   target_type = "instance"
   port        = 80
   protocol    = "HTTP"
@@ -1142,7 +1142,7 @@ data "aws_acm_certificate" "red5pro_sm_cert" {
 # AWS Stream Manager autoscaling - Aplication Load Balancer
 resource "aws_lb" "red5pro_sm_lb" {
   count              = local.autoscale ? 1 : 0
-  name               = "${var.name}-stream-manager-lb"
+  name               = "${var.name}-sm-lb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.red5pro_sm_sg[0].id]
@@ -1150,7 +1150,7 @@ resource "aws_lb" "red5pro_sm_lb" {
 
   enable_deletion_protection = false
 
-  tags = merge({ "Name" = "${var.name}-stream-manager-lb" }, var.tags, )
+  tags = merge({ "Name" = "${var.name}-sm-lb" }, var.tags, )
 }
 
 # AWS Stream Manager autoscaling - LB HTTP listener
