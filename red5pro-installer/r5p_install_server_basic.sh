@@ -239,7 +239,15 @@ install_red5pro() {
             exit 1
         fi
     fi
-    
+
+    if [ -n "$LICENSE_KEY" ]; then
+        if [ -f "$RED5_HOME/LICENSE.KEY" ]; then
+            rm $RED5_HOME/LICENSE.KEY
+            echo "$LICENSE_KEY" > $RED5_HOME/LICENSE.KEY
+        else
+            echo "$LICENSE_KEY" > $RED5_HOME/LICENSE.KEY
+        fi
+    fi
 }
 
 install_red5pro_service(){
