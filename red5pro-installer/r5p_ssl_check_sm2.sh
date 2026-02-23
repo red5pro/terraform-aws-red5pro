@@ -29,7 +29,9 @@ if [ "$SM_SSL" == "letsencrypt" ]; then
             if [ -f "$HOME/autoscaling-with-ssl/docker-compose.yml" ]; then
                 rm -rf "$SM_HOME/docker-compose.yml"
                 cp -r "$HOME/autoscaling-with-ssl/docker-compose.yml" "$SM_HOME/"
-                docker compose up -d
+                log_i "Restarting Stream Manager service to apply SSL configuration"
+                systemctl restart sm.service
+                log_i "Stream Manager service restarted"
                 break
             else
                 log_e "File $HOME/autoscaling-with-ssl/docker-compose.yml not found"
