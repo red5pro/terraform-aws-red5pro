@@ -178,6 +178,11 @@ pull_docker_images() {
 
 start_sm() {
     log_i "Start SM2.0 service"
+
+    if [[ -n "$CONTAINER_REGISTRY" && -n "$CONTAINER_REGISTRY_USER" && -n "$CONTAINER_REGISTRY_PASSWORD" ]]; then
+        log_i "Logout from container registry $CONTAINER_REGISTRY"
+        docker logout "$CONTAINER_REGISTRY" >/dev/null 2>&1
+    fi
     
     if [ "$SM_STANDALONE" == "true" ]; then
         log_i "Stream Manager 2.0 standalone mode - start service"
