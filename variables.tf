@@ -265,7 +265,7 @@ variable "kafka_standalone_volume_size" {
 variable "kafka_standalone_instance_arhive_url" {
   description = "Kafka standalone instance - archive URL"
   type        = string
-  default     = "https://downloads.apache.org/kafka/3.8.0/kafka_2.13-3.8.0.tgz"
+  default     = "https://downloads.apache.org/kafka/3.9.2/kafka_2.13-3.9.2.tgz"
 }
 
 # HTTPS/SSL variables for standalone/cluster
