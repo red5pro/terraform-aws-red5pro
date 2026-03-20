@@ -18,7 +18,6 @@ services:
     container_name: kafka0
     ports:
       - 9092:9092
-      - 9997:9997
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_SSL_TRUSTSTORE_CERTIFICATES: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
@@ -81,8 +80,6 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka0:9093"
       KAFKA_LISTENERS: BROKER://:9092,CONTROLLER://:9093
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
-      KAFKA_JMX_PORT: 9997
-      KAFKA_JMX_OPTS: -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka0 -Dcom.sun.management.jmxremote.rmi.port=9997
       KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
       KAFKA_LOG4J_TOOLS_LOGLEVEL: ERROR
       KAFKA_LOG4J_LOGGERS: 'kafka=WARN,kafka.controller=WARN,kafka.log.LogCleaner=WARN,state.change.logger=WARN,kafka.producer.async.DefaultEventHandler=WARN'
