@@ -532,6 +532,45 @@ services:
     logging:
       driver: none # disable logging
 
+  as-admin-ui:
+    deploy:
+      replicas: ${AS_ADMIN_UI_REPLICAS:-1}
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.50'
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-admin-ui:${AS_VERSION:-latest}
+    depends_on:
+      reverse-proxy:
+        condition: service_started
+    environment:
+      # Core (HTTPS — matches TRAEFIK_HOST certificate)
+      REACT_APP_API_BASE_URL: https://${TRAEFIK_HOST:-localhost}
+      REACT_APP_API_TIMEOUT: 30000
+      REACT_APP_SM_VERSION: ${AS_VERSION:-latest}
+      REACT_APP_MAIN_REGION: ${AS_ADMIN_UI_MAIN_REGION:-}
+      REACT_APP_BASENAME: ${AS_ADMIN_UI_BASENAME:-/as-admin-ui}
+      # Default Node Image (all cloud platforms)
+      REACT_APP_NODE_IMAGE_NAME: ${AS_ADMIN_UI_NODE_IMAGE_NAME:-}
+      # AWS
+      REACT_APP_AWS_VPC: ${AS_ADMIN_UI_AWS_VPC:-red5-ci-deployments-multiregion-vpc}
+      REACT_APP_AWS_SECURITY_GROUP: ${AS_ADMIN_UI_AWS_SECURITY_GROUP:-red5-ci-deployments-multiregion-node-nsg}
+    labels:
+      traefik.enable: true
+      # UI under /as-admin-ui (websecure + Host, same pattern as as-auth / as-proxy)
+      traefik.http.routers.as-admin-ui.rule: "PathPrefix(`${AS_ADMIN_UI_BASENAME:-/as-admin-ui}`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))"
+      traefik.http.routers.as-admin-ui.entrypoints: websecure
+      traefik.http.routers.as-admin-ui.middlewares: strip-as-admin-ui@docker
+      traefik.http.middlewares.strip-as-admin-ui.stripprefix.prefixes: ${AS_ADMIN_UI_BASENAME:-/as-admin-ui}
+      traefik.http.middlewares.strip-as-admin-ui.stripprefix.forceSlash: false
+      # API calls from the UI remain same-origin (/api/as/*) and are forwarded to this container.
+      # Use higher priority than traefik dashboard /api router.
+      traefik.http.routers.as-admin-ui-api.rule: PathPrefix(`/api/as/`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.as-admin-ui-api.entrypoints: websecure
+      traefik.http.routers.as-admin-ui-api.priority: 1000
+      traefik.http.services.as-admin-ui.loadbalancer.server.port: 80
+    logging: *logging-config
+
 volumes:
   kafka-data:
 

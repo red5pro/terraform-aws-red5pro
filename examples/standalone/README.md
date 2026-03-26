@@ -49,12 +49,12 @@ module "red5pro" {
 
   # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
   # https_ssl_certificate             = "letsencrypt"
-  # https_ssl_certificate_domain_name = "red5pro.example.com" # Replace with your domain name
+  # https_ssl_certificate_domain_name = "red5pro.example.com" # FQDN on the certificate and in browser HTTPS URLs for this server
   # https_ssl_certificate_email       = "email@example.com"   # Replace with your email
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"             # Replace with your domain name
+  # https_ssl_certificate_domain_name = "red5pro.example.com"             # FQDN on the certificate and in browser HTTPS URLs for this server
   # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem" # Path to cert file or full chain file
   # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"    # Path to privkey file
 

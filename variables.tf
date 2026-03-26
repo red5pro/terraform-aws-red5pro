@@ -279,7 +279,7 @@ variable "https_ssl_certificate" {
   }
 }
 variable "https_ssl_certificate_domain_name" {
-  description = "Domain name for SSL certificate (letsencrypt/imported/existing)"
+  description = "Certificate identity for Let's Encrypt, imported cert, or ACM lookup (existing). May be a wildcard (e.g. *.example.com). For cluster/autoscale, user-facing URLs and Traefik use stream_manager_public_hostname (a concrete FQDN covered by that cert), not this value."
   type        = string
   default     = ""
 }
@@ -949,6 +949,11 @@ variable "stream_manager_version" {
 }
 variable "stream_manager_testbed_version" {
   description = "value to set the version for Stream Manager 2.0 Testbed (Optional) - if not set it will use version from stream_manager_version variable"
+  type        = string
+  default     = ""
+}
+variable "stream_manager_public_hostname" {
+  description = "Public FQDN for Stream Manager 2.0 (cluster/autoscale): TRAEFIK_HOST, admin UI API base, stream_manager_url_https, etc. Must be a real hostname (e.g. sm.example.com), not a wildcard. https_ssl_certificate_domain_name may still be *.example.com if this host is under that zone."
   type        = string
   default     = ""
 }

@@ -9,7 +9,7 @@ output "ssh_key_name" {
 }
 output "ssh_private_key_path" {
   description = "SSH private key path"
-  value = local.ssh_private_key_path
+  value       = local.ssh_private_key_path
 }
 output "vpc_id" {
   description = "VPC ID"
@@ -32,8 +32,8 @@ output "stream_manager_url_http" {
   value       = local.cluster_or_autoscale ? "http://${local.stream_manager_ip}:80" : ""
 }
 output "stream_manager_url_https" {
-  description = "Stream Manager HTTPS URL"
-  value       = local.cluster_or_autoscale && var.https_ssl_certificate != "none" ? "https://${var.https_ssl_certificate_domain_name}:443" : ""
+  description = "Stream Manager HTTPS URL (hostname from stream_manager_public_hostname, not https_ssl_certificate_domain_name — supports wildcard certs)"
+  value       = local.cluster_or_autoscale && var.https_ssl_certificate != "none" && var.stream_manager_public_hostname != "" ? "https://${var.stream_manager_public_hostname}:443" : ""
 }
 output "stream_manager_red5pro_node_image" {
   description = "Stream Manager 2.0 Red5 Pro Node Image (AWS AMI)"
@@ -52,8 +52,11 @@ output "standalone_red5pro_server_https_url" {
   value       = local.standalone && var.https_ssl_certificate != "none" ? "https://${var.https_ssl_certificate_domain_name}:443" : ""
 }
 output "manual_dns_record" {
-  description = "Manual DNS Record"
-  value       = var.https_ssl_certificate != "none" ? "Please create DNS A record for Stream Manager 2.0: '${var.https_ssl_certificate_domain_name} - ${local.cluster_or_autoscale ? local.stream_manager_ip : local.standalone_elastic_ip}'" : ""
+  description = "DNS hint for TLS: cluster/autoscale uses stream_manager_public_hostname; standalone uses https_ssl_certificate_domain_name"
+  value = var.https_ssl_certificate != "none" ? (
+    local.cluster_or_autoscale ? "Please create DNS A record for Stream Manager 2.0: '${var.stream_manager_public_hostname}' -> '${local.stream_manager_ip}'"
+    : "Please create DNS A record for Standalone Red5 Pro: '${var.https_ssl_certificate_domain_name}' -> '${local.standalone_elastic_ip}'"
+  ) : ""
 }
 output "standalone_red5pro_server_brew_mixer_controller_page_url" {
   description = "Standalone Red5 Pro Server Brew Mixer Controller Page URL"
