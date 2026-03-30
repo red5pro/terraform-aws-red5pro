@@ -972,6 +972,7 @@ resource "aws_instance" "red5pro_sm" {
           TRAEFIK_HOST=${var.stream_manager_public_hostname}
           TRAEFIK_SSL_EMAIL=${var.https_ssl_certificate_email}
           TRAEFIK_CMD=${local.stream_manager_ssl == "imported" ? "--providers.file.filename=/scripts/traefik.yaml" : ""}
+          AS_ADMIN_UI_VERSION=${var.stream_manager_admin_ui_version}
           AS_ADMIN_UI_MAIN_REGION=${var.aws_region}
           AS_ADMIN_UI_NODE_IMAGE_NAME=${local.red5pro_node_image_name}
           AS_ADMIN_UI_AWS_VPC=${local.vpc_name}

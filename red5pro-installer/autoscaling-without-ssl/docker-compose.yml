@@ -523,7 +523,7 @@ services:
         limits:
           memory: 512M
           cpus: '0.50'
-    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-admin-ui:${AS_VERSION:-latest}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-admin-ui:${AS_ADMIN_UI_VERSION:-${AS_VERSION:-latest}}
     depends_on:
       reverse-proxy:
         condition: service_started
@@ -537,8 +537,8 @@ services:
       # Default Node Image (all cloud platforms)
       REACT_APP_NODE_IMAGE_NAME: ${AS_ADMIN_UI_NODE_IMAGE_NAME:-}
       # AWS
-      REACT_APP_AWS_VPC: ${AS_ADMIN_UI_AWS_VPC:-red5-ci-deployments-multiregion-vpc}
-      REACT_APP_AWS_SECURITY_GROUP: ${AS_ADMIN_UI_AWS_SECURITY_GROUP:-red5-ci-deployments-multiregion-node-nsg}
+      REACT_APP_AWS_VPC: ${AS_ADMIN_UI_AWS_VPC:-}
+      REACT_APP_AWS_SECURITY_GROUP: ${AS_ADMIN_UI_AWS_SECURITY_GROUP:-}
     labels:
       traefik.enable: true
       # UI under /as-admin-ui
