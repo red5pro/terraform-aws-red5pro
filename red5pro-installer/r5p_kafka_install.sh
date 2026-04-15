@@ -66,7 +66,7 @@ install_jdk() {
 }
 
 download_kafka_archive() {
-    log_i "Download Kafka archive..."
+    log_i "Download Kafka archive: $KAFKA_ARCHIVE_URL"
     wget -q "$KAFKA_ARCHIVE_URL"
     # wget "$KAFKA_ARCHIVE_URL"
     if ls kafka_*.tgz 1>/dev/null 2>&1; then

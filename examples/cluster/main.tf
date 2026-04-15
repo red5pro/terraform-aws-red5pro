@@ -40,6 +40,7 @@ module "red5pro" {
   stream_manager_spatial_user     = "example_spatial_user"     # Stream Manager 2.0 spatial user name
   stream_manager_spatial_password = "example_spatial_password" # Stream Manager 2.0 spatial password
   stream_manager_version          = "latest"                   # Stream Manager 2.0 docker images version (latest, 14.1.0, 14.1.1, etc.) - https://hub.docker.com/r/red5pro/as-admin/tags
+  stream_manager_public_hostname  = "sm.example.com"           # Required: public FQDN for Traefik, admin UI, and HTTPS URLs (not a wildcard). Point DNS A record at the Stream Manager Elastic IP from outputs.
 
   # Stream Manager Elastic IP configuration
   stream_manager_elastic_ip_use_existing = false     # true - use existing elastic IP, false - create new elastic IP automatically
@@ -50,12 +51,12 @@ module "red5pro" {
 
   # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
   # https_ssl_certificate             = "letsencrypt"
-  # https_ssl_certificate_domain_name = "red5pro.example.com" # Replace with your domain name
+  # https_ssl_certificate_domain_name = "red5pro.example.com" # Cert / ACM primary name (may be *.example.com); must cover stream_manager_public_hostname
   # https_ssl_certificate_email       = "email@example.com"   # Replace with your email
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"             # Replace with your domain name
+  # https_ssl_certificate_domain_name = "red5pro.example.com"             # Cert / ACM primary name (may be *.example.com); must cover stream_manager_public_hostname
   # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem" # Path to cert file or full chain file
   # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"    # Path to privkey file
 

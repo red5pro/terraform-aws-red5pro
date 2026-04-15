@@ -1,33 +1,22 @@
-# Autoscaling Stream Managers 2.0 with Autoscaling Nodes (autoscale) - [Example](https://github.com/red5pro/terraform-aws-red5pro/tree/master/examples/autoscale)
+# Stream Manager 2.0 cluster with autoscaling nodes (cluster) - [Example](https://github.com/red5pro/terraform-aws-red5pro/tree/master/examples/cluster)
 
-This example Terraform module automates the infrastructure provisioning of Autoscale Stream Managers 2.0 with Red5 Pro (SM2.0) Autoscaling node groups (origins, edges, transcoders, relays) in AWS.
+This example provisions a Stream Manager 2.0 **cluster** with a Red5 Pro (SM2.0) autoscaling node group (origins, edges, transcoders, relays) on AWS.
 
-## Terraform Deployed Resources (autoscale)
+**`stream_manager_public_hostname`:** Set this to the DNS name clients use for Stream Manager (e.g. `sm.example.com`). It sets Traefik’s host, the admin UI API base, and outputs such as `stream_manager_url_https`. Use a concrete FQDN, not a wildcard. For TLS, `https_ssl_certificate_domain_name` may still be a wildcard (e.g. `*.example.com`) if the certificate covers this hostname.
 
-- VPC
-- Public Subnet
-- Internet Gateway
-- Route Table
-- Security Groups:
-  - Stream Manager 2.0
-  - Kafka
-  - Red5 Pro (SM2.0) Autoscaling Nodes
+## Terraform Deployed Resources (cluster)
+
+- VPC, public subnet, internet gateway, route table
+- Security groups for Stream Manager 2.0, Kafka, and autoscaling nodes
 - SSH key pair (use existing or create a new one)
-- Standalone Kafka instance
-- Stream Manager 2.0 instance image
-- Instance pool for Stream Manager 2.0 instances
-- Autoscaling configuration for Stream Manager 2.0 instances
-- Application Load Balancer for Stream Manager 2.0 instances
-- SSL Certificate for Application Load Balancer:
-  - `none`: Load Balancer without HTTPS and SSL certificate (HTTP on port `80`)
-  - `letsencrypt` - Stream Manager 2.0 with HTTPS and SSL certificate obtained by Let's Encrypt. HTTP on port `80`, HTTPS on port `443`
-  - `imported`: Load Balancer with HTTPS using an imported SSL certificate (HTTP on port `80`, HTTPS on port `443`)
-- Red5 Pro (SM2.0) Node instance image (origins, edges, transcoders, relays)
-- Red5 Pro (SM2.0) Autoscaling Node group (origins, edges, transcoders, relays)
+- Standalone Kafka instance (optional)
+- Stream Manager 2.0 instance (Kafka may run on the same instance)
+- SSL for Stream Manager: `none`, `letsencrypt`, or `imported`
+- Red5 Pro (SM2.0) node AMI and autoscaling node group
 
-> Note: For cluster deployments, this module also deploys an AWS IAM Role and IAM Policy that are attached to the Stream Manager EC2 instance via an instance profile. This enables the Stream Manager to authenticate to AWS (without static keys) and run Terraform operations as needed.
+> Note: This module deploys an IAM role and instance profile on the Stream Manager instance so it can call AWS APIs for Terraform operations without static keys.
 
-## Example main.tf (autoscale)
+## Example main.tf (cluster)
 
 ```yaml
 provider "aws" {
@@ -68,6 +57,7 @@ module "red5pro" {
   stream_manager_spatial_user     = "example_spatial_user"     # Stream Manager 2.0 spatial user name
   stream_manager_spatial_password = "example_spatial_password" # Stream Manager 2.0 spatial password
   stream_manager_version          = "latest"                   # Stream Manager 2.0 docker images version (latest, 14.1.0, 14.1.1, etc.) - https://hub.docker.com/r/red5pro/as-admin/tags
+  stream_manager_public_hostname  = "sm.example.com"           # Required: FQDN for Traefik / admin UI / HTTPS URLs; point DNS at Stream Manager Elastic IP from outputs
 
   # Stream Manager Elastic IP configuration
   stream_manager_elastic_ip_use_existing = false     # true - use existing elastic IP, false - create new elastic IP automatically
@@ -78,12 +68,12 @@ module "red5pro" {
 
   # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
   # https_ssl_certificate             = "letsencrypt"
-  # https_ssl_certificate_domain_name = "red5pro.example.com" # Replace with your domain name
+  # https_ssl_certificate_domain_name = "red5pro.example.com" # Cert / ACM primary name (may be *.example.com); must cover stream_manager_public_hostname
   # https_ssl_certificate_email       = "email@example.com"   # Replace with your email
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"             # Replace with your domain name
+  # https_ssl_certificate_domain_name = "red5pro.example.com"             # Cert / ACM primary name (may be *.example.com); must cover stream_manager_public_hostname
   # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem" # Path to cert file or full chain file
   # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"    # Path to privkey file
 

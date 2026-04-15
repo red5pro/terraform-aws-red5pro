@@ -22,7 +22,9 @@ locals {
   standalone_elastic_ip         = local.standalone ? var.standalone_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_standalone[0].public_ip : aws_eip.elastic_ip_standalone[0].public_ip : "null"
   aws_availability_zones_amount = var.vpc_use_existing ? 0 : length(data.aws_availability_zones.available[0].names)
   aws_subnets_amount            = var.vpc_use_existing ? 0 : length(aws_subnet.red5pro_subnets)
-  r5as_traefik_host             = local.autoscale ? local.stream_manager_ip : var.https_ssl_certificate_domain_name
+  # Same value as aws_ami_from_instance.red5pro_node_image name, but computed here so
+  # aws_instance.red5pro_sm user_data does not reference the AMI and SM is not ordered after it.
+  red5pro_node_image_name = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${formatdate("DDMMMYY-hhmm", timestamp())}" : ""
 }
 
 ################################################################################
@@ -255,7 +257,7 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_ingress_ipv6" {
     for idx, rule in var.security_group_stream_manager_ingress : idx => rule
     if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
   } : {}
-  
+
   security_group_id = aws_security_group.red5pro_sm_sg[0].id
   cidr_ipv6         = each.value.ipv6_cidr_block
   ip_protocol       = each.value.protocol
@@ -277,7 +279,7 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv6" {
     for idx, rule in var.security_group_stream_manager_egress : idx => rule
     if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
   } : {}
-  
+
   security_group_id = aws_security_group.red5pro_sm_sg[0].id
   cidr_ipv6         = each.value.ipv6_cidr_block
   ip_protocol       = each.value.protocol
@@ -309,7 +311,7 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_node_ingress_ipv6" {
     for idx, rule in var.security_group_node_ingress : idx => rule
     if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
   } : {}
-  
+
   security_group_id = aws_security_group.red5pro_node_sg[0].id
   cidr_ipv6         = each.value.ipv6_cidr_block
   ip_protocol       = each.value.protocol
@@ -331,7 +333,7 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_node_egress_ipv6" {
     for idx, rule in var.security_group_node_egress : idx => rule
     if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
   } : {}
-  
+
   security_group_id = aws_security_group.red5pro_node_sg[0].id
   cidr_ipv6         = each.value.ipv6_cidr_block
   ip_protocol       = each.value.protocol
@@ -363,7 +365,7 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_kafka_ingress_ipv6" {
     for idx, rule in var.security_group_kafka_ingress : idx => rule
     if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
   } : {}
-  
+
   security_group_id = aws_security_group.red5pro_kafka_sg[0].id
   cidr_ipv6         = each.value.ipv6_cidr_block
   ip_protocol       = each.value.protocol
@@ -385,7 +387,7 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_kafka_egress_ipv6" {
     for idx, rule in var.security_group_kafka_egress : idx => rule
     if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
   } : {}
-  
+
   security_group_id = aws_security_group.red5pro_kafka_sg[0].id
   cidr_ipv6         = each.value.ipv6_cidr_block
   ip_protocol       = each.value.protocol
@@ -459,7 +461,7 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_standalone_ingress_ipv6"
     for idx, rule in var.security_group_standalone_ingress : idx => rule
     if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
   } : {}
-  
+
   security_group_id = aws_security_group.red5pro_standalone_sg[0].id
   cidr_ipv6         = each.value.ipv6_cidr_block
   ip_protocol       = each.value.protocol
@@ -481,7 +483,7 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_standalone_egress_ipv6" {
     for idx, rule in var.security_group_standalone_egress : idx => rule
     if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
   } : {}
-  
+
   security_group_id = aws_security_group.red5pro_standalone_sg[0].id
   cidr_ipv6         = each.value.ipv6_cidr_block
   ip_protocol       = each.value.protocol
@@ -927,13 +929,13 @@ resource "aws_instance" "red5pro_sm" {
   key_name               = local.ssh_key_name
   subnet_id              = element(local.subnet_ids, 0)
   vpc_security_group_ids = [aws_security_group.red5pro_sm_sg[0].id]
-  
+
   # Add IAM instance profile for Terraform operations
-  iam_instance_profile   = aws_iam_instance_profile.stream_manager_terraform_profile[0].name
+  iam_instance_profile = aws_iam_instance_profile.stream_manager_terraform_profile[0].name
 
   metadata_options {
     http_endpoint = "enabled"
-    http_tokens   = "required"  # Enforce IMDSv2, disable IMDSv1
+    http_tokens   = "required" # Enforce IMDSv2, disable IMDSv1
   }
 
   root_block_device {
@@ -967,12 +969,24 @@ resource "aws_instance" "red5pro_sm" {
           TF_VAR_aws_ssh_key_pair=${local.ssh_key_name}
           TF_VAR_r5p_license_key=${var.red5pro_license_key}
           TRAEFIK_TLS_CHALLENGE=${local.stream_manager_ssl == "letsencrypt" ? "true" : "false"}
-          TRAEFIK_HOST=${local.r5as_traefik_host}
+          TRAEFIK_HOST=${var.stream_manager_public_hostname}
           TRAEFIK_SSL_EMAIL=${var.https_ssl_certificate_email}
           TRAEFIK_CMD=${local.stream_manager_ssl == "imported" ? "--providers.file.filename=/scripts/traefik.yaml" : ""}
+          AS_ADMIN_UI_VERSION=${var.stream_manager_admin_ui_version}
+          AS_ADMIN_UI_MAIN_REGION=${var.aws_region}
+          AS_ADMIN_UI_NODE_IMAGE_NAME=${local.red5pro_node_image_name}
+          AS_ADMIN_UI_AWS_VPC=${local.vpc_name}
+          AS_ADMIN_UI_AWS_SECURITY_GROUP=${aws_security_group.red5pro_node_sg[0].name}
         EOF
   )
-  tags = merge({ "Name" = "${var.name}-stream-manager", }, var.tags, )
+  tags = merge({ "Name" = "${var.name}-stream-manager-image", }, var.tags, )
+  
+  lifecycle {
+    precondition {
+      condition     = var.stream_manager_public_hostname != ""
+      error_message = "ERROR! Value in variable stream_manager_public_hostname must be a valid FQDN! Example: sm.example.com"
+    }
+  }
 }
 
 resource "null_resource" "red5pro_sm" {
@@ -1046,7 +1060,7 @@ resource "aws_launch_template" "red5pro_sm_lt" {
   instance_type          = var.stream_manager_instance_type
   key_name               = local.ssh_key_name
   update_default_version = true
-  
+
   # Add IAM instance profile for Terraform operations
   iam_instance_profile {
     name = aws_iam_instance_profile.stream_manager_terraform_profile[0].name
@@ -1269,14 +1283,14 @@ resource "aws_instance" "red5pro_node" {
 # node - Create image (AWS EC2 AMI)
 resource "aws_ami_from_instance" "red5pro_node_image" {
   count              = local.cluster_or_autoscale && var.node_image_create ? 1 : 0
-  name               = "${var.name}-node-image-${formatdate("DDMMMYY-hhmm", timestamp())}"
+  name               = local.red5pro_node_image_name
   source_instance_id = aws_instance.red5pro_node[0].id
   depends_on         = [aws_instance.red5pro_node[0]]
   lifecycle {
     ignore_changes = [name, tags]
   }
 
-  tags = merge({ "Name" = "${var.name}-node-image-${formatdate("DDMMMYY-hhmm", timestamp())}" }, var.tags, )
+  tags = merge({ "Name" = local.red5pro_node_image_name }, var.tags, )
 }
 
 ################################################################################
