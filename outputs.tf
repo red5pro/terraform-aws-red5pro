@@ -81,5 +81,4 @@ output "security_group_name_standalone" {
 output "r5as_conference_secret" {
   description = "Auto-generated R5AS Conference secret (hex)"
   value       = try(random_id.r5as_conference_secret[0].hex, "")
-  sensitive   = true
 }
