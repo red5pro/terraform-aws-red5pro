@@ -921,6 +921,11 @@ resource "random_password" "r5as_auth_secret" {
   special = false
 }
 
+resource "random_id" "r5as_conference_secret" {
+  count       = local.cluster_or_autoscale ? 1 : 0
+  byte_length = 16
+}
+
 # Stream Manager instance 
 resource "aws_instance" "red5pro_sm" {
   count                  = local.cluster || local.autoscale ? 1 : 0
@@ -963,6 +968,7 @@ resource "aws_instance" "red5pro_sm" {
           R5AS_PROXY_PASS=${var.stream_manager_proxy_password}
           R5AS_SPATIAL_USER=${var.stream_manager_spatial_user}
           R5AS_SPATIAL_PASS=${var.stream_manager_spatial_password}
+          R5AS_CONFERENCE_SECRET=${random_id.r5as_conference_secret[0].hex}
           R5AS_NODE_API_ACCESS_TOKEN=${var.red5pro_api_key}
           CONTAINER_REGISTRY=${var.stream_manager_container_registry}
           AS_VERSION=${var.stream_manager_version}

@@ -78,3 +78,8 @@ output "security_group_name_standalone" {
   description = "Security group name Standalone Red5 Pro server"
   value       = try(aws_security_group.red5pro_standalone_sg[0].name, "")
 }
+output "r5as_conference_secret" {
+  description = "Auto-generated R5AS Conference secret (hex)"
+  value       = try(random_id.r5as_conference_secret[0].hex, "")
+  sensitive   = true
+}
