@@ -24,7 +24,7 @@ locals {
   aws_subnets_amount            = var.vpc_use_existing ? 0 : length(aws_subnet.red5pro_subnets)
   # Same value as aws_ami_from_instance.red5pro_node_image name, but computed here so
   # aws_instance.red5pro_sm user_data does not reference the AMI and SM is not ordered after it.
-  red5pro_node_image_name = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${formatdate("DDMMMYY-hhmm", timestamp())}" : ""
+  red5pro_node_image_name = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${random_id.node_image_suffix[0].hex}" : ""
 }
 
 ################################################################################
@@ -926,6 +926,11 @@ resource "random_id" "r5as_conference_secret" {
   byte_length = 16
 }
 
+resource "random_id" "node_image_suffix" {
+  count       = local.cluster_or_autoscale && var.node_image_create ? 1 : 0
+  byte_length = 4
+}
+
 # Stream Manager instance 
 resource "aws_instance" "red5pro_sm" {
   count                  = local.cluster || local.autoscale ? 1 : 0
@@ -989,6 +994,7 @@ resource "aws_instance" "red5pro_sm" {
   tags = merge({ "Name" = local.autoscale ? "${var.name}-stream-manager-image" : "${var.name}-stream-manager", }, var.tags, )
   
   lifecycle {
+    ignore_changes = [user_data_base64]
     precondition {
       condition     = var.stream_manager_public_hostname != ""
       error_message = "ERROR! Value in variable stream_manager_public_hostname must be a valid FQDN! Example: sm.example.com"
