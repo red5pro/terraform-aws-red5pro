@@ -963,6 +963,7 @@ resource "aws_instance" "red5pro_sm" {
           R5AS_PROXY_PASS=${var.stream_manager_proxy_password}
           R5AS_SPATIAL_USER=${var.stream_manager_spatial_user}
           R5AS_SPATIAL_PASS=${var.stream_manager_spatial_password}
+          R5AS_NODE_API_ACCESS_TOKEN=${var.red5pro_api_key}
           CONTAINER_REGISTRY=${var.stream_manager_container_registry}
           AS_VERSION=${var.stream_manager_version}
           AS_TESTBED_VERSION=${var.stream_manager_testbed_version}
@@ -979,7 +980,7 @@ resource "aws_instance" "red5pro_sm" {
           AS_ADMIN_UI_AWS_SECURITY_GROUP=${aws_security_group.red5pro_node_sg[0].name}
         EOF
   )
-  tags = merge({ "Name" = "${var.name}-stream-manager-image", }, var.tags, )
+  tags = merge({ "Name" = local.autoscale ? "${var.name}-stream-manager-image" : "${var.name}-stream-manager", }, var.tags, )
   
   lifecycle {
     precondition {
