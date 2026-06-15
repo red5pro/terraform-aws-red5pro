@@ -994,7 +994,6 @@ resource "aws_instance" "red5pro_sm" {
   tags = merge({ "Name" = local.autoscale ? "${var.name}-stream-manager-image" : "${var.name}-stream-manager", }, var.tags, )
   
   lifecycle {
-    ignore_changes = [user_data_base64]
     precondition {
       condition     = var.stream_manager_public_hostname != ""
       error_message = "ERROR! Value in variable stream_manager_public_hostname must be a valid FQDN! Example: sm.example.com"
