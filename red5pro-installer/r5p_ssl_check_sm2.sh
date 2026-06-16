@@ -27,6 +27,14 @@ if [ "$SM_SSL" == "letsencrypt" ]; then
         if [[ "$(dig +short "$SM_SSL_DOMAIN")" ]]; then
             log_i "DNS record for domain: $SM_SSL_DOMAIN was found."
             if [ -f "$HOME/autoscaling-with-ssl/docker-compose.yml" ]; then
+                log_i "Waiting 5 minutes for Stream Manager service to initialize..."
+                sleep 300
+                log_i "Waiting for Stream Manager service to be active..."
+                until systemctl is-active --quiet sm.service; do
+                    log_i "Stream Manager service is not active yet, waiting 10 seconds..."
+                    sleep 10
+                done
+                log_i "Stream Manager service is active. Applying SSL configuration."
                 rm -rf "$SM_HOME/docker-compose.yml"
                 cp -r "$HOME/autoscaling-with-ssl/docker-compose.yml" "$SM_HOME/"
                 log_i "Restarting Stream Manager service to apply SSL configuration"
