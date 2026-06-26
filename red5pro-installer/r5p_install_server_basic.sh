@@ -100,13 +100,7 @@ check_linux_and_java_versions() {
         jdk8) PACKAGES=("${PACKAGES_2204[@]}" "${JDK_8[@]}") ;;
         jdk11) PACKAGES=("${PACKAGES_2204[@]}" "${JDK_11[@]}") ;;
         jdk21)
-            PACKAGES=("${PACKAGES_2204[@]}" "${JDK_21[@]}")
-            log_i "Add libde265 repository"
-            if ! add-apt-repository -y ppa:strukturag/libde265; then
-                log_e "Failed to add libde265 repository"
-                exit 1
-            fi
-            ;;
+            PACKAGES=("${PACKAGES_2204[@]}" "${JDK_21[@]}") ;;
         *)
             log_e "JDK version is not supported $jdk_version"
             exit 1
