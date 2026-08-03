@@ -1,0 +1,116 @@
+---
+# Loaded via COMPOSE_FILE (see config_sm() in r5p_install_sm2_aws.sh) only
+# when SM_SSL=imported. Layers Traefik TLS termination on top of the base
+# docker-compose.yml: HTTPS entrypoint + Host()-restricted routing rules on
+# every router, plus a static TLS config sourced from imported cert files
+# (./certs/cert.pem + ./certs/privkey.pem). When SM_SSL is "none" or
+# "letsencrypt", this file is not loaded and services keep the base file's
+# plain "web" entrypoint with no Host() restriction.
+#
+# Only the keys that actually differ from docker-compose.yml are listed
+# here (Compose merges "labels" as a map by key); "command" and "configs"
+# on reverse-proxy are full replacements since Compose does not merge list
+# fields.
+
+services:
+  as-admin:
+    labels:
+      traefik.http.routers.config-swagger.rule: "PathPrefix(`/swagger-ui`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))"
+      traefik.http.routers.config-swagger.entrypoints: "websecure"
+      traefik.http.routers.admin-springdoc.rule: "PathPrefix(`/as/v1/admin/v3`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))"
+      traefik.http.routers.admin-springdoc.entrypoints: "websecure"
+      traefik.http.routers.as-admin.rule: "PathPrefix(`/as/v1/admin`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))"
+      traefik.http.routers.as-admin.entrypoints: "websecure"
+
+  as-proxy:
+    labels:
+      traefik.http.routers.asproxy.rule: PathPrefix(`/as/v1/proxy`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.asproxy.entrypoints: websecure
+
+  as-autoscale-service:
+    labels:
+      traefik.http.routers.autoscale-springdoc.rule: PathPrefix(`/as/v1/autoscale/v3`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.autoscale-springdoc.entrypoints: websecure
+      traefik.http.routers.autoscale.rule: PathPrefix(`/as/v1/autoscale`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.autoscale.entrypoints: websecure
+
+  as-auth:
+    labels:
+      traefik.http.routers.asauth.rule: PathPrefix(`/as/v1/auth`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.asauth.entrypoints: websecure
+
+  as-streams:
+    labels:
+      traefik.http.routers.asstreams.rule: PathPrefix(`/as/v1/streams`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.asstreams.entrypoints: websecure
+
+  reverse-proxy:
+    command:
+      --log.level=DEBUG
+      --api.insecure=true
+      --api.dashboard=true
+      --providers.docker=true
+      --providers.docker.exposedbydefault=false
+      --entrypoints.web.address=:80
+      --entrypoints.web.http.redirections.entrypoint.to=websecure
+      --entryPoints.web.http.redirections.entrypoint.scheme=https
+      --entrypoints.websecure.address=:443
+      --entrypoints.websecure.http.tls=true
+      --entrypoints.websecure.http.tls.domains[0].main=${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}
+      --certificatesresolvers.myresolver.acme.tlschallenge=${TRAEFIK_TLS_CHALLENGE:-false}
+      --certificatesresolvers.myresolver.acme.email=${TRAEFIK_SSL_EMAIL}
+      --certificatesresolvers.myresolver.acme.storage=/certs/red5.json
+      ${TRAEFIK_CMD}
+    configs:
+      - source: traefik-config-ssl
+        target: /scripts/traefik.yaml
+    labels:
+      traefik.http.routers.traefik-ui.entrypoints: websecure
+      traefik.http.routers.traefik-ui.tls.certresolver: myresolver
+      traefik.http.routers.traefik-ui.rule: (PathPrefix(`/dashboard`) || PathPrefix(`/api`)) && Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`)
+
+  as-testbeds:
+    labels:
+      traefik.http.routers.red5.tls: true
+      traefik.http.routers.red5.entrypoints: websecure
+      traefik.http.routers.red5.rule: PathPrefix(`/red5`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.red5css.entrypoints: websecure
+      traefik.http.routers.red5css.rule: PathPrefix(`/css`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.red5images.entrypoints: websecure
+      traefik.http.routers.red5images.rule: PathPrefix(`/images`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.red5lib.entrypoints: websecure
+      traefik.http.routers.red5lib.rule: PathPrefix(`/lib`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.red5script.entrypoints: websecure
+      traefik.http.routers.red5script.rule: PathPrefix(`/script`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+
+  as-debug-ui:
+    labels:
+      traefik.http.routers.caddy.entrypoints: websecure
+      #traefik.http.routers.caddy.tls.certresolver: myresolver
+      traefik.http.routers.caddy.rule: PathPrefix(`/`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+
+  as-admin-ui:
+    labels:
+      traefik.http.routers.as-admin-ui.rule: "PathPrefix(`${AS_ADMIN_UI_BASENAME:-/as-admin-ui}`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))"
+      traefik.http.routers.as-admin-ui.entrypoints: websecure
+      traefik.http.routers.as-admin-ui-api.rule: PathPrefix(`/api/as/`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.as-admin-ui-api.entrypoints: websecure
+
+  as-conference:
+    labels:
+      traefik.http.routers.asconference.tls: true
+      traefik.http.routers.asconference.rule: "PathPrefix(`/as/v1/conference`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))"
+      traefik.http.routers.asconference.entrypoints: websecure
+
+configs:
+  traefik-config-ssl:
+    content: |
+      tls:
+        stores:
+          default:
+            defaultCertificate:
+              certFile: /certs/cert.pem
+              keyFile: /certs/privkey.pem
+        certificates:
+          - certFile: /certs/cert.pem
+            keyFile: /certs/privkey.pem

@@ -1,16 +1,18 @@
 [Unit]
 Requires=network.target remote-fs.target
 After=network.target remote-fs.target
+StartLimitIntervalSec=60
 
 [Service]
 StandardError=journal
 StandardOutput=journal
 StandardInput=null
 Type=simple
-User=root
+User=kafka
 ExecStart=/bin/sh -c '/usr/local/kafka/bin/kafka-server-start.sh /usr/local/kafka/config/kraft/server.properties'
 ExecStop=/usr/local/kafka/bin/kafka-server-stop.sh
-Restart=on-abnormal
+Restart=on-failure
+StartLimitBurst=3
 EnvironmentFile=-/etc/sysconfig/kafka
 WorkingDirectory=/usr/local/kafka
 

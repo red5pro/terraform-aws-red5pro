@@ -15,6 +15,9 @@
 # CONTAINER_REGISTRY_USER=""
 # CONTAINER_REGISTRY_PASSWORD=""
 
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_SUSPEND=1
+
 SM_HOME="/usr/local/stream-manager"
 CURRENT_DIRECTORY=$(pwd)
 PACKAGES=(ca-certificates curl)
@@ -37,6 +40,21 @@ log_e() {
 }
 log() {
     echo -n "[$(date '+%Y-%m-%d %H:%M:%S')]"
+}
+
+wait_for_dns() {
+    log_i "Waiting for DNS resolution to become available"
+    local timeout=90
+    local elapsed=0
+    while ! getent hosts archive.ubuntu.com &>/dev/null; do
+        if [ "$elapsed" -ge "$timeout" ]; then
+            log_w "DNS still not resolving after ${timeout}s, proceeding anyway"
+            break
+        fi
+        sleep 2
+        elapsed=$((elapsed + 2))
+    done
+    log_i "DNS resolution check finished after ${elapsed}s"
 }
 
 install_pkg() {
@@ -123,45 +141,53 @@ config_sm() {
         docker login "$CONTAINER_REGISTRY" -u "$CONTAINER_REGISTRY_USER" -p "$CONTAINER_REGISTRY_PASSWORD"
     fi
 
-    if [ "$SM_SSL" == "letsencrypt" ]; then
-        log_i "Stream Manager 2.0 with Let's Encrypt SSL"
-
+    if [ "$SM_SSL" == "letsencrypt" ] || [ "$SM_SSL" == "imported" ]; then
         mkdir -p "$SM_HOME/certs"
+    fi
 
-        # Copy docker-compose.yml
-        if [ -f "$CURRENT_DIRECTORY/autoscaling-without-ssl/docker-compose.yml" ]; then
-            cp -r "$CURRENT_DIRECTORY/autoscaling-without-ssl/docker-compose.yml" "$SM_HOME/"
+    log_i "Copy docker-compose.yml"
+    if [ -f "$CURRENT_DIRECTORY/docker-compose.yml" ]; then
+        cp "$CURRENT_DIRECTORY/docker-compose.yml" "$SM_HOME/"
+    else
+        log_e "File $CURRENT_DIRECTORY/docker-compose.yml not found"
+        ls -la "$CURRENT_DIRECTORY/"
+        exit 1
+    fi
+    compose_files="docker-compose.yml"
+
+    if [ "$SM_SSL" == "imported" ]; then
+        log_i "Stream Manager 2.0 with imported SSL - layering docker-compose.ssl.yml"
+        if [ -f "$CURRENT_DIRECTORY/docker-compose.ssl.yml" ]; then
+            cp "$CURRENT_DIRECTORY/docker-compose.ssl.yml" "$SM_HOME/"
+            compose_files="$compose_files:docker-compose.ssl.yml"
         else
-            log_e "File $CURRENT_DIRECTORY/autoscaling-without-ssl/docker-compose.yml not found"
-            ls -la "$CURRENT_DIRECTORY/autoscaling-without-ssl/"
-            exit 1
-        fi
-
-    elif [ "$SM_SSL" == "imported" ]; then
-        log_i "Stream Manager 2.0 with imported SSL"
-
-        mkdir -p "$SM_HOME/certs"
-
-        # Copy docker-compose.yml
-        if [ -f "$CURRENT_DIRECTORY/autoscaling-with-ssl/docker-compose.yml" ]; then
-            cp -r "$CURRENT_DIRECTORY/autoscaling-with-ssl/docker-compose.yml" "$SM_HOME/"
-        else
-            log_e "File $CURRENT_DIRECTORY/autoscaling-with-ssl/docker-compose.yml not found"
-            ls -la "$CURRENT_DIRECTORY/autoscaling-with-ssl/"
+            log_e "File $CURRENT_DIRECTORY/docker-compose.ssl.yml not found"
+            ls -la "$CURRENT_DIRECTORY/"
             exit 1
         fi
     else
-        log_i "Stream Manager 2.0 without SSL"
+        log_i "Stream Manager 2.0 with SSL=$SM_SSL - using base docker-compose.yml (plain HTTP Traefik entrypoint)"
+    fi
 
-        # Copy docker-compose.yml
-        if [ -f "$CURRENT_DIRECTORY/autoscaling-without-ssl/docker-compose.yml" ]; then
-            cp -r "$CURRENT_DIRECTORY/autoscaling-without-ssl/docker-compose.yml" "$SM_HOME/"
+    if [ "${KAFKA_REPLICAS:-0}" != "0" ]; then
+        log_i "KAFKA_REPLICAS=$KAFKA_REPLICAS - Kafka runs embedded in the SM compose stack, layering docker-compose.embedded-kafka.yml"
+        if [ -f "$CURRENT_DIRECTORY/docker-compose.embedded-kafka.yml" ]; then
+            cp "$CURRENT_DIRECTORY/docker-compose.embedded-kafka.yml" "$SM_HOME/"
+            compose_files="$compose_files:docker-compose.embedded-kafka.yml"
         else
-            log_e "File $CURRENT_DIRECTORY/autoscaling-without-ssl/docker-compose.yml not found"
-            ls -la "$CURRENT_DIRECTORY/autoscaling-without-ssl/"
+            log_e "File $CURRENT_DIRECTORY/docker-compose.embedded-kafka.yml not found"
+            ls -la "$CURRENT_DIRECTORY/"
             exit 1
         fi
+    else
+        log_i "KAFKA_REPLICAS=0 - Kafka runs on a standalone instance, no embedded kafka0 service"
     fi
+
+    log_i "Compose files in use: $compose_files"
+    echo "COMPOSE_FILE=$compose_files" >>"$SM_HOME/.env"
+
+    # log_i "Debug info"
+    # cat "$SM_HOME/.env"
 }
 
 pull_docker_images() {
@@ -170,9 +196,13 @@ pull_docker_images() {
     if docker compose pull >/dev/null 2>&1; then
         log_i "Docker images pulled"
     else
-        log_e "Docker images not pulled"
-        docker compose pull
-        exit 1
+        log_w "Silent pull failed, retrying with visible output"
+        if docker compose pull; then
+            log_i "Docker images pulled on retry"
+        else
+            log_e "Docker images not pulled"
+            exit 1
+        fi
     fi
 }
 
@@ -212,12 +242,6 @@ start_sm() {
                 exit 1
             fi
 
-            # Modify DNS servers in systemd-resolved to use Google DNS servers because of long propagation in OCI DNS servers
-            log_i "Modify DNS servers in systemd-resolved"
-            echo "DNS=8.8.8.8 8.8.4.4" >>/etc/systemd/resolved.conf
-            echo "FallbackDNS=2001:4860:4860::8888 2001:4860:4860::8844" >>/etc/systemd/resolved.conf
-            systemctl restart systemd-resolved
-
             log_i "Start SSL check script"
             export SM_SSL_DOMAIN="$SM_SSL_DOMAIN"
             nohup sudo -E "$CURRENT_DIRECTORY/r5p_ssl_check_sm2.sh" >>"$CURRENT_DIRECTORY/r5p_ssl_check_sm2.log" &
@@ -230,6 +254,18 @@ if [ "$EUID" -ne 0 ]; then
     log_e "Please run as root"
     exit 1
 fi
+
+# Use Google DNS instead of the default VPC resolver, which can be slow or
+# unresponsive right after boot and stall apt/curl for several minutes.
+log_i "Modify DNS servers in systemd-resolved"
+echo "DNS=8.8.8.8 8.8.4.4" >>/etc/systemd/resolved.conf
+echo "FallbackDNS=2001:4860:4860::8888 2001:4860:4860::8844" >>/etc/systemd/resolved.conf
+systemctl restart systemd-resolved
+
+wait_for_dns
+
+log_i "Forcing apt to use IPv4 (avoids slow/failed IPv6 attempts to Ubuntu mirrors on networks without IPv6 routing)"
+echo 'Acquire::ForceIPv4 "true";' >/etc/apt/apt.conf.d/99force-ipv4
 
 if command -v flock &>/dev/null; then
     log_i "Check if apt is locked"

@@ -5,11 +5,14 @@
 # KAFKA_ARCHIVE_URL="https://downloads.apache.org/kafka/3.8.0/kafka_2.13-3.8.0.tgz"
 # KAFKA_CLUSTER_ID="kafka-id"
 
+set -euo pipefail
+
 CURRENT_DIRECTORY=$(pwd)
 packages=(ripgrep kafkacat)
 kafka_log_dir="/var/log/kafka"
 
 export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_SUSPEND=1
 
 log_i() {
     log
@@ -29,25 +32,26 @@ log() {
 
 install_pkg() {
     for i in {1..5}; do
-        local install_issuse=0
-        apt-get -y update --fix-missing &>/dev/null
+        local install_issue=0
+        apt-get -y update --fix-missing || true
 
         for index in ${!packages[*]}; do
             log_i "Install utility ${packages[$index]}"
-            apt-get install -y ${packages[$index]} &>/dev/null
+            apt-get install -y ${packages[$index]} || true
         done
 
         for index in ${!packages[*]}; do
-            PKG_OK=$(dpkg-query -W --showformat='${Status}\n' ${packages[$index]} | grep "install ok installed")
+            local PKG_OK
+            PKG_OK=$(dpkg-query -W --showformat='${Status}\n' ${packages[$index]} | grep "install ok installed" || true)
             if [ -z "$PKG_OK" ]; then
                 log_i "${packages[$index]} utility didn't install, didn't find MIRROR !!! "
-                install_issuse=$((${install_issuse} + 1))
+                install_issue=$((install_issue + 1))
             else
                 log_i "${packages[$index]} utility installed"
             fi
         done
 
-        if [ ${install_issuse} -eq 0 ]; then
+        if [ ${install_issue} -eq 0 ]; then
             break
         fi
         if [ $i -ge 5 ]; then
@@ -59,16 +63,75 @@ install_pkg() {
 }
 
 install_jdk() {
-    wget -O - https://apt.corretto.aws/corretto.key | sudo gpg --dearmor -o /usr/share/keyrings/corretto-keyring.gpg &&
-        echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | sudo tee /etc/apt/sources.list.d/corretto.list
-    apt-get update
-    apt-get install -y java-17-amazon-corretto-jdk
+    for attempt in {1..5}; do
+        if wget -O - https://apt.corretto.aws/corretto.key | sudo gpg --dearmor -o /usr/share/keyrings/corretto-keyring.gpg &&
+            echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | sudo tee /etc/apt/sources.list.d/corretto.list &&
+            apt-get update &&
+            apt-get install -y java-17-amazon-corretto-jdk; then
+            return 0
+        fi
+
+        log_w "JDK installation attempt ${attempt} failed, retrying in 20s..."
+        sleep 20
+    done
+
+    log_e "Failed to install JDK after 5 attempts. Exiting."
+    exit 1
+}
+
+check_memory_requirements() {
+    local total_memory_mb
+    total_memory_mb=$(free -m | awk '/^Mem:/{print $2}') # Value in MB
+
+    if [ "$total_memory_mb" -lt 8192 ]; then
+        log_e "Kafka requires at least 8 GB of memory. Found ${total_memory_mb} MB. Exiting."
+        exit 1
+    fi
+}
+
+check_not_already_installed() {
+    if [[ -d "/usr/local/kafka" ]]; then
+        log_e "/usr/local/kafka already exists; this installer is meant to run once against a fresh instance. Exiting."
+        exit 1
+    fi
+}
+
+force_apt_ipv4() {
+    log_i "Forcing apt to use IPv4 (avoids slow/failed IPv6 attempts to Ubuntu mirrors on networks without IPv6 routing)"
+    echo 'Acquire::ForceIPv4 "true";' >/etc/apt/apt.conf.d/99force-ipv4
+}
+
+wait_for_dns() {
+    log_i "Waiting for DNS resolution to become available"
+    local timeout=90
+    local elapsed=0
+    while ! getent hosts archive.ubuntu.com &>/dev/null; do
+        if [ "$elapsed" -ge "$timeout" ]; then
+            log_w "DNS still not resolving after ${timeout}s, proceeding anyway"
+            break
+        fi
+        sleep 2
+        elapsed=$((elapsed + 2))
+    done
+    log_i "DNS resolution check finished after ${elapsed}s"
 }
 
 download_kafka_archive() {
     log_i "Download Kafka archive: $KAFKA_ARCHIVE_URL"
-    wget -q "$KAFKA_ARCHIVE_URL"
-    # wget "$KAFKA_ARCHIVE_URL"
+    local downloaded=0
+    for attempt in {1..5}; do
+        if wget "$KAFKA_ARCHIVE_URL"; then
+            downloaded=1
+            break
+        fi
+        log_w "Kafka archive download attempt ${attempt} failed, retrying in 15s..."
+        rm -f kafka_*.tgz
+        sleep 15
+    done
+    if [ "$downloaded" -eq 0 ]; then
+        log_e "Failed to download Kafka archive from $KAFKA_ARCHIVE_URL after 5 attempts. Exiting."
+        exit 1
+    fi
     if ls kafka_*.tgz 1>/dev/null 2>&1; then
         log_i "File matching kafka_*.tgz exists."
         kafka_archive=$(ls kafka_*.tgz | xargs -n 1 basename)
@@ -86,8 +149,11 @@ set_config() {
 
     log_i "Setting configuration: $key=$value"
 
+    local escaped_value
+    escaped_value=$(printf '%s' "$value" | sed -e 's/[\&|]/\\&/g')
+
     if grep -q "^[#]*\s*$key=" "$kafka_config_file"; then
-        sed -i "s|^[#]*\s*$key=.*|$key=$value|" "$kafka_config_file"
+        sed -i "s|^[#]*\s*$key=.*|$key=$escaped_value|" "$kafka_config_file"
     else
         echo "$key=$value" >>"$kafka_config_file"
     fi
@@ -95,8 +161,17 @@ set_config() {
 
 install_kafka() {
     log_i "Kafka configuring..."
-    tar -xzvf "${kafka_archive}" -C /usr/local/ >/dev/null 2>&1 # Extract the kafka archive without verbose output
-    mv /usr/local/kafka_* /usr/local/kafka
+
+    if ! tar -xzvf "${kafka_archive}" -C /usr/local/ >/dev/null 2>&1; then # Extract the kafka archive without verbose output
+        log_e "Failed to extract Kafka archive ${kafka_archive}. Exiting."
+        exit 1
+    fi
+
+    if ! mv /usr/local/kafka_* /usr/local/kafka; then
+        log_e "Failed to move extracted Kafka directory to /usr/local/kafka. Exiting."
+        exit 1
+    fi
+
     mkdir -p $kafka_log_dir
     if [[ -d "/usr/local/kafka" ]]; then
         # Set kafka log location to /var/log/kafka/kafka-logs
@@ -104,20 +179,24 @@ install_kafka() {
             log_i "Kafka log directory doesn't exists, creating $kafka_log_dir/kafka-logs"
             mkdir -p $kafka_log_dir/kafka-logs
         fi
-        chmod 777 -R $kafka_log_dir/kafka-logs
 
-        kafka_config_file="/usr/local/kafka/config/kraft/server.properties"
+        if ! id -u kafka &>/dev/null; then
+            log_i "Creating dedicated system user 'kafka'"
+            useradd --system --no-create-home --shell /usr/sbin/nologin kafka
+        fi
+
+        local kafka_config_file="/usr/local/kafka/config/kraft/server.properties"
 
         log_i "Setting up Kafka configuration file: $kafka_config_file"
 
         # Set Kafka log directory to /var/log/kafka/kafka-logs
-        sed 's/log.dirs=.*/log.dirs=\/var\/log\/kafka\/kafka-logs/' -i "$kafka_config_file"
+        set_config log.dirs "/var/log/kafka/kafka-logs"
 
         # Comment out the advertised.listeners setting. It will be copied from ${CURRENT_DIRECTORY}/server.properties.
         sed -i 's/^advertised.listeners/#&/' "$kafka_config_file"
 
         # Set the listeners to BROKER and CONTROLLER
-        sed -i 's/listeners=.*/listeners=BROKER:\/\/:9092,CONTROLLER:\/\/:9093/' "$kafka_config_file"
+        set_config listeners "BROKER://:9092,CONTROLLER://:9093"
 
         # Replication and ISR
         set_config offsets.topic.replication.factor 1
@@ -130,7 +209,6 @@ install_kafka() {
         set_config offsets.retention.minutes 2880
         set_config log.retention.hours 24
         set_config log.retention.bytes 1073741824
-        set_config log.retention.ms 300000
 
         # Replica settings
         set_config replica.lag.time.max.ms 10000
@@ -169,7 +247,15 @@ install_kafka() {
         fi
 
         log_i "Format Kafka storage with KAFKA_CLUSTER_ID"
-        /usr/local/kafka/bin/kafka-storage.sh format -t "$KAFKA_CLUSTER_ID" -c "$kafka_config_file"
+        if ! /usr/local/kafka/bin/kafka-storage.sh format -t "$KAFKA_CLUSTER_ID" -c "$kafka_config_file"; then
+            log_e "kafka-storage.sh format failed. Exiting."
+            exit 1
+        fi
+
+        log_i "Restricting ownership/permissions of Kafka install and data to the 'kafka' user"
+        chown -R kafka:kafka /usr/local/kafka "$kafka_log_dir"
+        chmod -R 750 "$kafka_log_dir"
+        chmod 600 "$kafka_config_file"
 
     else
         log_e "Kafka server does not exists at path /usr/local/kafka"
@@ -186,15 +272,6 @@ install_kafka() {
         exit 1
     fi
 
-    # Check total memory in MB
-    total_memory_mb=$(free -m | awk '/^Mem:/{print $2}') # Value in MB
-
-    # Verify minimum memory requirement
-    if [ "$total_memory_mb" -lt 8192 ]; then
-        log_e "Kafka requires at least 8 GB of memory. Found ${total_memory_mb} MB. Exiting."
-        exit 1
-    fi
-
     # Set Kafka heap size to 6GB
     mkdir -p /etc/sysconfig
     echo 'KAFKA_HEAP_OPTS="-Xmx6g -Xms6g"' >/etc/sysconfig/kafka
@@ -203,8 +280,7 @@ install_kafka() {
 
 start_kafka() {
     log_i "Start Kafka service"
-    systemctl restart kafka.service
-    if [ "0" -eq $? ]; then
+    if systemctl restart kafka.service; then
         log_i "Kafka service started!"
     else
         log_e "Kafka service didn't started!"
@@ -213,6 +289,18 @@ start_kafka() {
     fi
 }
 
+check_not_already_installed
+check_memory_requirements
+
+# Use Google DNS instead of the default VPC resolver, which can be slow or
+# unresponsive right after boot and stall apt/curl for several minutes.
+log_i "Modify DNS servers in systemd-resolved"
+echo "DNS=8.8.8.8 8.8.4.4" >>/etc/systemd/resolved.conf
+echo "FallbackDNS=2001:4860:4860::8888 2001:4860:4860::8844" >>/etc/systemd/resolved.conf
+systemctl restart systemd-resolved
+
+wait_for_dns
+force_apt_ipv4
 install_pkg
 install_jdk
 download_kafka_archive

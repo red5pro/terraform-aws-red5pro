@@ -3,6 +3,7 @@
 # Before start this script you need copy red5pro-server-build.zip into the same folder with this script!!!
 ############################################################################################################
 export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_SUSPEND=1
 
 RED5_HOME="/usr/local/red5pro"
 CURRENT_DIRECTORY=$(pwd)
@@ -31,6 +32,21 @@ log_e() {
 }
 log() {
     echo -n "[$(date '+%Y-%m-%d %H:%M:%S')]"
+}
+
+wait_for_dns() {
+    log_i "Waiting for DNS resolution to become available"
+    local timeout=90
+    local elapsed=0
+    while ! getent hosts archive.ubuntu.com &>/dev/null; do
+        if [ "$elapsed" -ge "$timeout" ]; then
+            log_w "DNS still not resolving after ${timeout}s, proceeding anyway"
+            break
+        fi
+        sleep 2
+        elapsed=$((elapsed + 2))
+    done
+    log_i "DNS resolution check finished after ${elapsed}s"
 }
 
 check_linux_and_java_versions() {
@@ -310,6 +326,18 @@ config_red5pro_api(){
         fi
     fi
 }
+
+# Use Google DNS instead of the default VPC resolver, which can be slow or
+# unresponsive right after boot and stall apt/curl for several minutes.
+log_i "Modify DNS servers in systemd-resolved"
+echo "DNS=8.8.8.8 8.8.4.4" >>/etc/systemd/resolved.conf
+echo "FallbackDNS=2001:4860:4860::8888 2001:4860:4860::8844" >>/etc/systemd/resolved.conf
+systemctl restart systemd-resolved
+
+wait_for_dns
+
+log_i "Forcing apt to use IPv4 (avoids slow/failed IPv6 attempts to Ubuntu mirrors on networks without IPv6 routing)"
+echo 'Acquire::ForceIPv4 "true";' >/etc/apt/apt.conf.d/99force-ipv4
 
 log_i "Check if apt is locked"
 if command -v pgrep &>/dev/null; then

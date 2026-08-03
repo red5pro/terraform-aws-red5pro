@@ -84,15 +84,6 @@ module "red5pro" {
     auth_endpoint_validate   = "/validateCredentials",
     auth_endpoint_invalidate = "/invalidateCredentials"
   }
-  # Restreamer configuration - (Optional) https://www.red5.net/docs/special/restreamer/overview/
-  node_config_restreamer = {
-    enable               = false,
-    target_nodes         = ["origin", "transcoder"],
-    restreamer_tsingest  = true,
-    restreamer_ipcam     = true,
-    restreamer_whip      = true,
-    restreamer_srtingest = true
-  }
   # Social Pusher configuration - (Optional) https://www.red5.net/docs/development/social-media-plugin/rest-api/
   node_config_social_pusher = {
     enable       = false,
@@ -100,26 +91,23 @@ module "red5pro" {
   }
 
   # Red5 Pro autoscaling Node group
-  node_group_create                       = true        # Linux or Mac OS only. true - create new Node group, false - not create new Node group
-  node_group_origins_min                  = 1           # Number of minimum Origins
-  node_group_origins_max                  = 20          # Number of maximum Origins
-  node_group_origins_instance_type        = "t3.medium" # Instance type for Origins
-  node_group_origins_volume_size          = 16          # Volume size for Origins
-  node_group_origins_connection_limit     = 20          # Maximum number of publishers to the origin server
-  node_group_edges_min                    = 1           # Number of minimum Edges
-  node_group_edges_max                    = 20          # Number of maximum Edges
-  node_group_edges_instance_type          = "t3.medium" # Instance type for Edges
-  node_group_edges_volume_size            = 16          # Volume size for Edges
-  node_group_edges_connection_limit       = 200         # Maximum number of subscribers to the edge server
-  node_group_transcoders_min              = 0           # Number of minimum Transcoders
-  node_group_transcoders_max              = 20          # Number of maximum Transcoders
-  node_group_transcoders_instance_type    = "t3.medium" # Instance type for Transcoders
-  node_group_transcoders_volume_size      = 16          # Volume size for Transcoders
-  node_group_transcoders_connection_limit = 20          # Maximum number of publishers to the transcoder server
-  node_group_relays_min                   = 0           # Number of minimum Relays
-  node_group_relays_max                   = 20          # Number of maximum Relays
-  node_group_relays_instance_type         = "t3.medium" # Instance type for Relays
-  node_group_relays_volume_size           = 16          # Volume size for Relays
+  node_group_create                    = true        # Linux or Mac OS only. true - create new Node group, false - not create new Node group
+  node_group_origins_min               = 1           # Number of minimum Origins
+  node_group_origins_max               = 20          # Number of maximum Origins
+  node_group_origins_instance_type     = "t3.medium" # Instance type for Origins
+  node_group_origins_volume_size       = 16          # Volume size for Origins
+  node_group_edges_min                 = 1           # Number of minimum Edges
+  node_group_edges_max                 = 20          # Number of maximum Edges
+  node_group_edges_instance_type       = "t3.medium" # Instance type for Edges
+  node_group_edges_volume_size         = 16          # Volume size for Edges
+  node_group_transcoders_min           = 0           # Number of minimum Transcoders
+  node_group_transcoders_max           = 20          # Number of maximum Transcoders
+  node_group_transcoders_instance_type = "t3.medium" # Instance type for Transcoders
+  node_group_transcoders_volume_size   = 16          # Volume size for Transcoders
+  node_group_relays_min                = 0           # Number of minimum Relays
+  node_group_relays_max                = 20          # Number of maximum Relays
+  node_group_relays_instance_type      = "t3.medium" # Instance type for Relays
+  node_group_relays_volume_size        = 16          # Volume size for Relays
 
   # Red5 Pro tags configuration - it will be added to all Red5 Pro resources
   tags = {
