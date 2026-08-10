@@ -24,6 +24,42 @@ log() {
 
 RED5_HOME="/usr/local/red5pro"
 
+authority_ns=""
+
+# Query the zone's authoritative name server rather than the recursive
+# resolver. This script starts polling before the operator has created the
+# A record, so the first lookup caches an NXDOMAIN for the SOA negative TTL
+# (often 30 minutes) in both systemd-resolved and the upstream resolver, and
+# the record would stay invisible long after it exists. Falls back to the
+# recursive resolver if the authoritative server cannot be determined or
+# does not answer.
+discover_authority_ns() {
+    local zone="$1"
+    while [[ "$zone" == *.* ]]; do
+        authority_ns=$(dig +short SOA "$zone" | awk 'NR==1 {print $1}')
+        if [ -n "$authority_ns" ]; then
+            log_i "Authoritative name server for zone $zone: $authority_ns"
+            return
+        fi
+        zone="${zone#*.}"
+    done
+}
+
+# Must stay free of logging: the caller captures stdout, so any log line
+# here would be read back as a resolved address.
+resolve_domain() {
+    local domain="$1"
+    local result=""
+
+    if [ -n "$authority_ns" ]; then
+        result=$(dig +short +time=3 +tries=1 "$domain" @"$authority_ns")
+    fi
+    if [ -z "$result" ]; then
+        result=$(dig +short "$domain")
+    fi
+    echo "$result"
+}
+
 rpro_ssl_installer() {
     log_i "Update SSL certificate and reload Red5Pro service ..."
 
@@ -185,8 +221,17 @@ if [ "$SSL" == "letsencrypt" ]; then
 
     cert_path="/etc/letsencrypt/live/$SSL_DOMAIN"
     error=0
+
+    discover_authority_ns "$SSL_DOMAIN"
+    if [ -z "$authority_ns" ]; then
+        log_w "Could not determine an authoritative name server for $SSL_DOMAIN, falling back to the recursive resolver - a cached NXDOMAIN may delay detection by up to the zone's negative TTL"
+    fi
+
     while true; do
-        if [[ "$(dig +short $SSL_DOMAIN)" ]]; then
+        if [ -z "$authority_ns" ]; then
+            discover_authority_ns "$SSL_DOMAIN"
+        fi
+        if [[ "$(resolve_domain "$SSL_DOMAIN")" ]]; then
             log_i "DNS record for domain: $SSL_DOMAIN was found."
             log_i "Start SSL installation..."
             #systemctl stop red5pro

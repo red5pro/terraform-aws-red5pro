@@ -1010,7 +1010,6 @@ resource "null_resource" "red5pro_sm" {
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
       "export KAFKA_REPLICAS='${local.kafka_on_sm_replicas}'",
-      "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
       "export CONTAINER_REGISTRY='${var.stream_manager_container_registry}'",
       "export CONTAINER_REGISTRY_USER='${var.stream_manager_container_registry_user}'",
       "export CONTAINER_REGISTRY_PASSWORD='${var.stream_manager_container_registry_password}'",
@@ -1159,6 +1158,13 @@ resource "aws_lb" "red5pro_sm_lb" {
   enable_deletion_protection = false
 
   tags = merge({ "Name" = "${var.name}-sm-lb" }, var.tags, )
+
+  lifecycle {
+    precondition {
+      condition     = var.https_ssl_certificate != "letsencrypt"
+      error_message = "ERROR! https_ssl_certificate=letsencrypt is not supported for type=autoscale - the AWS application load balancer only gets an HTTPS listener when https_ssl_certificate is imported or existing. The ACME challenge cannot reach Stream Manager through the load balancer."
+    }
+  }
 }
 
 # AWS Stream Manager autoscaling - LB HTTP listener

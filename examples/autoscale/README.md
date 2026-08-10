@@ -2,7 +2,7 @@
 
 This example Terraform module automates the infrastructure provisioning of Autoscale Stream Managers 2.0 with Red5 Pro (SM2.0) Autoscaling node groups (origins, edges, transcoders, relays) in AWS.
 
-**`stream_manager_public_hostname`:** Set this to the DNS name clients use for Stream Manager (e.g. `sm.example.com`). It sets Traefik’s host, the admin UI API base, and outputs such as `stream_manager_url_https`. Use a concrete FQDN, not a wildcard. Point DNS at the load balancer hostname from outputs. For TLS, `https_ssl_certificate_domain_name` may be a wildcard (e.g. `*.example.com`) or an ACM primary name if that certificate covers this hostname.
+**`stream_manager_public_hostname`:** Set this to the DNS name clients use for Stream Manager (e.g. `sm.example.com`). It sets Traefik’s host, the admin UI API base, and outputs such as `stream_manager_url_https`. Use a concrete FQDN, not a wildcard. Point DNS at the load balancer hostname from outputs. TLS is terminated on the load balancer, so only `imported` and `existing` are supported here - `letsencrypt` is rejected by a precondition. With `existing`, `https_ssl_certificate_domain_name` is the domain used to look up the certificate in ACM and may be a wildcard.
 
 ## Terraform Deployed Resources (autoscale)
 
@@ -79,14 +79,13 @@ module "red5pro" {
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate                = "imported"            # Improt local HTTPS/SSL certificate to AWS ACM
-  # https_ssl_certificate_domain_name    = "red5pro.example.com" # Cert / ACM primary name (may be *.example.com); must cover stream_manager_public_hostname
   # https_ssl_certificate_cert_path      = "./cert.pem"          # Path to cert file
   # https_ssl_certificate_key_path       = "./privkey.pem"       # Path to privkey file
   # https_ssl_certificate_fullchain_path = "./fullchain.pem"     # Path to full chain file
 
   # Example of existing HTTPS/SSL certificate configuration - please uncomment and provide your domain name
   # https_ssl_certificate             = "existing"             # Use existing HTTPS/SSL certificate from AWS ACM
-  # https_ssl_certificate_domain_name = "red5pro.example.com"  # Cert / ACM primary name (may be *.example.com); must cover stream_manager_public_hostname
+  # https_ssl_certificate_domain_name = "red5pro.example.com"  # Domain used to look up the certificate in AWS ACM (may be *.example.com); must cover stream_manager_public_hostname
 
   # Red5 Pro general configuration
   red5pro_license_key = "1111-2222-3333-4444" # Red5 Pro license key (https://account.red5.net/login)

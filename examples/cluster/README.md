@@ -2,7 +2,7 @@
 
 This example provisions a Stream Manager 2.0 **cluster** with a Red5 Pro (SM2.0) autoscaling node group (origins, edges, transcoders, relays) on AWS.
 
-**`stream_manager_public_hostname`:** Set this to the DNS name clients use for Stream Manager (e.g. `sm.example.com`). It sets Traefik’s host, the admin UI API base, and outputs such as `stream_manager_url_https`. Use a concrete FQDN, not a wildcard. For TLS, `https_ssl_certificate_domain_name` may still be a wildcard (e.g. `*.example.com`) if the certificate covers this hostname.
+**`stream_manager_public_hostname`:** Set this to the DNS name clients use for Stream Manager (e.g. `sm.example.com`). It sets Traefik’s host, the admin UI API base, and outputs such as `stream_manager_url_https`. Use a concrete FQDN, not a wildcard. It is also the certificate subject: with `letsencrypt` the ACME challenge is issued for this hostname, and with `imported` your certificate must cover it. `https_ssl_certificate_domain_name` is not used for cluster deployments.
 
 ## Terraform Deployed Resources (cluster)
 
@@ -68,12 +68,10 @@ module "red5pro" {
 
   # Example of Let's Encrypt HTTPS/SSL certificate configuration - please uncomment and provide your domain name and email
   # https_ssl_certificate             = "letsencrypt"
-  # https_ssl_certificate_domain_name = "red5pro.example.com" # Cert / ACM primary name (may be *.example.com); must cover stream_manager_public_hostname
   # https_ssl_certificate_email       = "email@example.com"   # Replace with your email
 
   # Example of imported HTTPS/SSL certificate configuration - please uncomment and provide your domain name, certificate and key paths
   # https_ssl_certificate             = "imported"
-  # https_ssl_certificate_domain_name = "red5pro.example.com"             # Cert / ACM primary name (may be *.example.com); must cover stream_manager_public_hostname
   # https_ssl_certificate_cert_path   = "/PATH/TO/SSL/CERT/fullchain.pem" # Path to cert file or full chain file
   # https_ssl_certificate_key_path    = "/PATH/TO/SSL/KEY/privkey.pem"    # Path to privkey file
 

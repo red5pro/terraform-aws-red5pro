@@ -10,7 +10,6 @@
 # Variables
 # SM_STANDALONE=""
 # SM_SSL=""
-# SM_SSL_DOMAIN=""
 # CONTAINER_REGISTRY=""
 # CONTAINER_REGISTRY_USER=""
 # CONTAINER_REGISTRY_PASSWORD=""
@@ -166,7 +165,7 @@ config_sm() {
             exit 1
         fi
     else
-        log_i "Stream Manager 2.0 with SSL=$SM_SSL - using base docker-compose.yml (plain HTTP Traefik entrypoint)"
+        log_i "Stream Manager 2.0 with SSL=$SM_SSL - using base docker-compose.yml (plain HTTP Traefik entrypoint). For letsencrypt the SSL overlay is layered later by r5p_ssl_check_sm2.sh once the DNS record resolves."
     fi
 
     if [ "${KAFKA_REPLICAS:-0}" != "0" ]; then
@@ -231,8 +230,8 @@ start_sm() {
 
         if [ "$SM_SSL" == "letsencrypt" ]; then
 
-            if [ -z "$SM_SSL_DOMAIN" ]; then
-                log_e "Variable SM_SSL_DOMAIN is empty."
+            if ! grep -qE '^TRAEFIK_HOST=.+' "$SM_HOME/.env"; then
+                log_e "TRAEFIK_HOST is empty in $SM_HOME/.env - Let's Encrypt issues the certificate for that FQDN. Set stream_manager_public_hostname to the hostname clients use."
                 exit 1
             fi
 
@@ -243,7 +242,6 @@ start_sm() {
             fi
 
             log_i "Start SSL check script"
-            export SM_SSL_DOMAIN="$SM_SSL_DOMAIN"
             nohup sudo -E "$CURRENT_DIRECTORY/r5p_ssl_check_sm2.sh" >>"$CURRENT_DIRECTORY/r5p_ssl_check_sm2.log" &
         fi
 

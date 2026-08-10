@@ -32,7 +32,7 @@ output "stream_manager_url_http" {
   value       = local.cluster_or_autoscale ? "http://${local.stream_manager_ip}:80" : ""
 }
 output "stream_manager_url_https" {
-  description = "Stream Manager HTTPS URL (hostname from stream_manager_public_hostname, not https_ssl_certificate_domain_name — supports wildcard certs)"
+  description = "Stream Manager HTTPS URL (hostname from stream_manager_public_hostname, which is also the certificate subject for cluster/autoscale)"
   value       = local.cluster_or_autoscale && var.https_ssl_certificate != "none" && var.stream_manager_public_hostname != "" ? "https://${var.stream_manager_public_hostname}:443" : ""
 }
 output "stream_manager_red5pro_node_image" {
