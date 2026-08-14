@@ -4,7 +4,7 @@
 # Description: This script generates node group config json and creates a new Node Group in Stream Manager 2.0 and checks the states of the nodes.
 # AUTHOR: Oles Prykhodko
 # COMPANY: Infrared5, Inc.
-# Date: 2025-04-08
+# Date: 2026-07-31
 ############################################################################################################################################################
 
 # SM_IP="sm-ip-address-example"
@@ -12,7 +12,7 @@
 # R5AS_AUTH_USER="sm-auth-user-name-example"
 # R5AS_AUTH_PASS="sm-auth-password-example"
 
-# NODE_GROUP_CLOUD_PLATFORM="OCI" # AWS, GCP, LINODE, OCI
+# NODE_GROUP_CLOUD_PLATFORM="OCI" # AWS, GCP, LINODE, OCI, DO, OPENSTACK
 # NODE_GROUP_REGIONS="us-ashburn-1"
 # NODE_GROUP_ENVIRONMENT="environment-name-example"
 # NODE_GROUP_SUBNET_NAME="subnet-name-example" #OCI only
@@ -25,28 +25,38 @@
 # NODE_GROUP_EDGES_MIN=1
 # NODE_GROUP_TRANSCODERS_MIN=0
 # NODE_GROUP_RELAYS_MIN=0
+# NODE_GROUP_MIXER_MIN=0
 
-# NODE_GROUP_ORIGINS_MAX=20
-# NODE_GROUP_EDGES_MAX=40
-# NODE_GROUP_TRANSCODERS_MAX=20
-# NODE_GROUP_RELAYS_MAX=20
+NODE_GROUP_ORIGINS_MIN=${NODE_GROUP_ORIGINS_MIN:-0}
+NODE_GROUP_EDGES_MIN=${NODE_GROUP_EDGES_MIN:-0}
+NODE_GROUP_TRANSCODERS_MIN=${NODE_GROUP_TRANSCODERS_MIN:-0}
+NODE_GROUP_RELAYS_MIN=${NODE_GROUP_RELAYS_MIN:-0}
+NODE_GROUP_MIXER_MIN=${NODE_GROUP_MIXER_MIN:-0}
+
+# How long to wait for required nodes to reach INSERVICE: attempts * interval seconds.
+NODE_GROUP_CHECK_MAX_ATTEMPTS=${NODE_GROUP_CHECK_MAX_ATTEMPTS:-20}
+NODE_GROUP_CHECK_INTERVAL_SECONDS=${NODE_GROUP_CHECK_INTERVAL_SECONDS:-20}
+
+NODE_GROUP_ORIGINS_MAX=20
+NODE_GROUP_EDGES_MAX=40
+NODE_GROUP_TRANSCODERS_MAX=20
+NODE_GROUP_RELAYS_MAX=20
+NODE_GROUP_MIXER_MAX=1
 
 # NODE_GROUP_ORIGIN_INSTANCE_TYPE="e2-medium"
 # NODE_GROUP_EDGE_INSTANCE_TYPE="e2-medium"
 # NODE_GROUP_TRANSCODER_INSTANCE_TYPE="e2-medium"
 # NODE_GROUP_RELAY_INSTANCE_TYPE="e2-medium"
+# NODE_GROUP_MIXER_INSTANCE_TYPE="e2-medium"
 
 # NODE_GROUP_ORIGIN_VOLUME_SIZE="20"
 # NODE_GROUP_EDGE_VOLUME_SIZE="20"
 # NODE_GROUP_TRANSCODER_VOLUME_SIZE="20"
 # NODE_GROUP_RELAY_VOLUME_SIZE="20"
-
-# NODE_GROUP_ORIGINS_CONNECTION_LIMIT="20"
-# NODE_GROUP_EDGES_CONNECTION_LIMIT="200"
-# NODE_GROUP_TRANSCODERS_CONNECTION_LIMIT="20"
+# NODE_GROUP_MIXER_VOLUME_SIZE="20"
 
 # NODE_GROUP_ROUND_TRIP_AUTH_ENABLE=true
-# NODE_GROUP_ROUNT_TRIP_AUTH_TARGET_NODES="origin,edge,transcoder"
+NODE_GROUP_ROUNT_TRIP_AUTH_TARGET_NODES="origin,edge,transcoder"
 # NODE_GROUP_ROUND_TRIP_AUTH_HOST="rta-host.com.ua"
 # NODE_GROUP_ROUND_TRIP_AUTH_PORT="443"
 # NODE_GROUP_ROUND_TRIP_AUTH_PROTOCOL="https://"
@@ -54,23 +64,11 @@
 # NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE="/invalidate"
 
 # NODE_GROUP_WEBHOOK_ENABLE=true
-# NODE_GROUP_WEBHOOK_TARGET_NODES="origin,edge,transcoder"
+NODE_GROUP_WEBHOOK_TARGET_NODES="origin,edge,transcoder"
 # NODE_GROUP_WEBHOOK_ENDPOINT="https://webhook-endpoint.com.ua"
 
 # NODE_GROUP_SOCIAL_PUSHER_ENABLE=true
-# NODE_GROUP_SOCIAL_PUSHER_TARGET_NODES="origin,edge,transcoder"
-
-# NODE_GROUP_RESTREAMER_ENABLE=true
-# NODE_GROUP_RESTREAMER_TARGET_NODES="origin,edge,transcoder"
-# NODE_GROUP_RESTREAMER_TSINGEST=true
-# NODE_GROUP_RESTREAMER_IPCAM=true
-# NODE_GROUP_RESTREAMER_WHIP=true
-# NODE_GROUP_RESTREAMER_SRTINGEST=true
-
-################################################################################################################
-NODE_GROUP_ORIGIN_OUT_THRESHOLD="0.6"     # 0.6 = 60%
-NODE_GROUP_EDGE_OUT_THRESHOLD="0.6"       # 0.6 = 60%
-NODE_GROUP_TRANSCODER_OUT_THRESHOLD="0.6" # 0.6 = 60%
+NODE_GROUP_SOCIAL_PUSHER_TARGET_NODES="origin,edge,transcoder"
 
 log_i() {
     log
@@ -88,8 +86,25 @@ log_e() {
     log
     printf "\033[0;31m [ERROR]  --- %s \033[0m\n" "${@}"
 }
+log_p() {
+    log
+    printf "\033[0;36m [PROGRESS]  --- %s \033[0m\n" "${@}"
+}
 log() {
     echo -n "[$(date '+%Y-%m-%d %H:%M:%S')]"
+}
+
+# Colored "role: current/min" fragment - green once satisfied, yellow while still scaling up.
+role_progress_fragment() {
+    role_name="$1"
+    current="$2"
+    min="$3"
+
+    if [ "$current" -ge "$min" ]; then
+        printf "\033[0;32m%s: %s/%s\033[0m" "$role_name" "$current" "$min"
+    else
+        printf "\033[0;33m%s: %s/%s\033[0m" "$role_name" "$current" "$min"
+    fi
 }
 
 if [ "$NODE_GROUP_ORIGINS_MIN" -eq 0 ]; then
@@ -112,6 +127,9 @@ fi
 if [ "$NODE_GROUP_RELAYS_MIN" -gt 0 ]; then
     NODE_GROUP_DESCRIPTION="${NODE_GROUP_DESCRIPTION}, Relay"
 fi
+if [ "$NODE_GROUP_MIXER_MIN" -gt 0 ]; then
+    NODE_GROUP_DESCRIPTION="${NODE_GROUP_DESCRIPTION}, Mixer"
+fi
 
 NODE_GROUP_DESCRIPTION="${NODE_GROUP_DESCRIPTION} in ${NODE_GROUP_CLOUD_PLATFORM} cloud platform"
 
@@ -120,7 +138,8 @@ CLOUD_PROPERTIES_OCI="environment=$NODE_GROUP_ENVIRONMENT;subnet=$NODE_GROUP_SUB
 CLOUD_PROPERTIES_AWS="environment=$NODE_GROUP_ENVIRONMENT;vpc=$NODE_GROUP_VPC_NAME;security_group=$NODE_GROUP_SECURITY_GROUP_NAME"
 CLOUD_PROPERTIES_GCP="environment=$NODE_GROUP_ENVIRONMENT;vpc=$NODE_GROUP_VPC_NAME"
 CLOUD_PROPERTIES_LINODE="environment=$NODE_GROUP_ENVIRONMENT;vpc=$NODE_GROUP_VPC_NAME;security_group=$NODE_GROUP_SECURITY_GROUP_NAME"
-
+CLOUD_PROPERTIES_DO="environment=$NODE_GROUP_ENVIRONMENT;vpc=$NODE_GROUP_VPC_NAME"
+CLOUD_PROPERTIES_OPENSTACK="environment=$NODE_GROUP_ENVIRONMENT;vpc=$NODE_GROUP_VPC_NAME;security_group=$NODE_GROUP_SECURITY_GROUP_NAME"
 # Select cloud properties based on the cloud platform
 case $NODE_GROUP_CLOUD_PLATFORM in
 "OCI")
@@ -134,6 +153,12 @@ case $NODE_GROUP_CLOUD_PLATFORM in
     ;;
 "LINODE")
     CLOUD_PROPERTIES=$CLOUD_PROPERTIES_LINODE
+    ;;
+"DO")
+    CLOUD_PROPERTIES=$CLOUD_PROPERTIES_DO
+    ;;
+"OPENSTACK")
+    CLOUD_PROPERTIES=$CLOUD_PROPERTIES_OPENSTACK
     ;;
 *)
     log_e "Unknown cloud platform: $NODE_GROUP_CLOUD_PLATFORM. Exiting."
@@ -151,6 +176,7 @@ node_group_json_top_level=$(
     "cloudPlatform": "$NODE_GROUP_CLOUD_PLATFORM",
     "isScalingPaused": false,
     "internalVersionCount": 0,
+    "shuffleSizeExpression": "nodeCount*0.5",
     "images": {},
     "roles": {},
     "groups": {}
@@ -206,6 +232,18 @@ node_group_json_images_relay=$(
 }
 EOF
 )
+# JSON for Mixer image
+node_group_json_images_mixer=$(
+    cat <<EOF
+{
+    "mixer_image": {
+        "name": "mixer_image",
+        "image": "$NODE_GROUP_IMAGE_NAME",
+        "cloudProperties": "instance_type=$NODE_GROUP_MIXER_INSTANCE_TYPE;volume_size=$NODE_GROUP_MIXER_VOLUME_SIZE"
+    }
+}
+EOF
+)
 
 # Merge JSON for images with top level JSON
 if [ "$NODE_GROUP_ORIGINS_MIN" -gt 0 ]; then
@@ -219,6 +257,9 @@ if [ "$NODE_GROUP_TRANSCODERS_MIN" -gt 0 ]; then
 fi
 if [ "$NODE_GROUP_RELAYS_MIN" -gt 0 ]; then
     combined_json=$(jq --argjson relay "$(echo "$node_group_json_images_relay" | jq .)" '.images = .images + $relay' <<<"$combined_json")
+fi
+if [ "$NODE_GROUP_MIXER_MIN" -gt 0 ]; then
+    combined_json=$(jq --argjson mixer "$(echo "$node_group_json_images_mixer" | jq .)" '.images = .images + $mixer' <<<"$combined_json")
 fi
 
 # JSON for Origin (all in one) role
@@ -306,6 +347,25 @@ node_group_json_roles_relay=$(
 }
 EOF
 )
+# JSON for Mixer role
+node_group_json_roles_mixer=$(
+    cat <<EOF
+{
+    "mixer": {
+        "name": "mixer",
+        "imageName": "mixer_image",
+        "capabilities": ["MIX"],
+        "initScripts": ["sudo /usr/local/red5pro/extras/brewmixer/node-mixer-sm-deploy.sh"],
+        "propertyOverrides": [
+            {
+                "fileName": "plugins/nodemixer/module-nodemixer.xml",
+                "blocks": ["R5AS-BREWMIXER"]
+            }
+        ]
+    }
+}
+EOF
+)
 
 # Merge JSON for roles with top level JSON
 if [ "$NODE_GROUP_ORIGINS_MIN" -gt 0 ] && [ "$NODE_GROUP_EDGES_MIN" -eq 0 ] && [ "$NODE_GROUP_TRANSCODERS_MIN" -eq 0 ] && [ "$NODE_GROUP_RELAYS_MIN" -eq 0 ]; then
@@ -325,6 +385,9 @@ if [ "$NODE_GROUP_TRANSCODERS_MIN" -gt 0 ]; then
 fi
 if [ "$NODE_GROUP_RELAYS_MIN" -gt 0 ]; then
     combined_json=$(jq --argjson relay "$(echo "$node_group_json_roles_relay" | jq .)" '.roles = .roles + $relay' <<<"$combined_json")
+fi
+if [ "$NODE_GROUP_MIXER_MIN" -gt 0 ]; then
+    combined_json=$(jq --argjson mixer "$(echo "$node_group_json_roles_mixer" | jq .)" '.roles = .roles + $mixer' <<<"$combined_json")
 fi
 
 # Generate JSON for groups for each region
@@ -348,7 +411,6 @@ for region in "${regions[@]}"; do
 EOF
     )
     # JSON for subgroups - Origin
-    origin_out_limit=$(echo "$NODE_GROUP_ORIGINS_CONNECTION_LIMIT * $NODE_GROUP_ORIGIN_OUT_THRESHOLD" | bc | awk '{printf "%.0f", $0}')
     node_group_json_subgroup_origin=$(
         cat <<EOF
 {
@@ -359,16 +421,15 @@ EOF
         "min": "$NODE_GROUP_ORIGINS_MIN",
         "max": "$NODE_GROUP_ORIGINS_MAX",
         "increment": 1,
-        "outExpression": "avg(connections.publisher) > $origin_out_limit",
-        "inExpression": "avg(connections.publisher) < 2",
-        "capacityRankingExpression": "connections.publisher",
-        "capacityLimitExpression": "$NODE_GROUP_ORIGINS_CONNECTION_LIMIT"
+        "outExpression": "avg(cpu.usage) > 55.0",
+        "inExpression": "avg(cpu.usage) < 20.0",
+        "capacityRankingExpression": "cpu.usage",
+        "capacityLimitExpression": "90.0"
     }
 }
 EOF
     )
     # JSON for subgroups - Edge
-    edge_out_limit=$(echo "$NODE_GROUP_EDGES_CONNECTION_LIMIT * $NODE_GROUP_EDGE_OUT_THRESHOLD" | bc | awk '{printf "%.0f", $0}')
     node_group_json_subgroup_edge=$(
         cat <<EOF
 {
@@ -379,16 +440,15 @@ EOF
         "min": "$NODE_GROUP_EDGES_MIN",
         "max": "$NODE_GROUP_EDGES_MAX",
         "increment": 1,
-        "outExpression": "avg(connections.subscriber) > $edge_out_limit",
-        "inExpression": "avg(connections.subscriber) < 20",
-        "capacityRankingExpression": "connections.subscriber",
-        "capacityLimitExpression": "$NODE_GROUP_EDGES_CONNECTION_LIMIT"
+        "outExpression": "avg(cpu.usage) > 55.0",
+        "inExpression": "avg(cpu.usage) < 20.0",
+        "capacityRankingExpression": "cpu.usage",
+        "capacityLimitExpression": "90.0"
     }
 }
 EOF
     )
     # JSON for subgroups - Transcoder
-    transcoder_out_limit=$(echo "$NODE_GROUP_TRANSCODERS_CONNECTION_LIMIT * $NODE_GROUP_TRANSCODER_OUT_THRESHOLD" | bc | awk '{printf "%.0f", $0}')
     node_group_json_subgroup_transcoder=$(
         cat <<EOF
 {
@@ -399,10 +459,10 @@ EOF
         "min": "$NODE_GROUP_TRANSCODERS_MIN",
         "max": "$NODE_GROUP_TRANSCODERS_MAX",
         "increment": 1,
-        "outExpression": "avg(connections.publisher) > $transcoder_out_limit",
-        "inExpression": "avg(connections.publisher) < 2",
-        "capacityRankingExpression": "connections.publisher",
-        "capacityLimitExpression": "$NODE_GROUP_TRANSCODERS_CONNECTION_LIMIT"
+        "outExpression": "avg(cpu.usage) > 55.0",
+        "inExpression": "avg(cpu.usage) < 20.0",
+        "capacityRankingExpression": "cpu.usage",
+        "capacityLimitExpression": "90.0"
     }
 }
 EOF
@@ -426,6 +486,25 @@ EOF
 }
 EOF
     )
+    # JSON for subgroups - Mixer
+    node_group_json_subgroup_mixer=$(
+        cat <<EOF
+{
+    "mixer": {
+        "nodeGroupName": "$NODE_GROUP_NAME",
+        "subGroupName": "$region",
+        "nodeRoleName": "mixer",
+        "min": "$NODE_GROUP_MIXER_MIN",
+        "max": "$NODE_GROUP_MIXER_MAX",
+        "increment": 1,
+        "outExpression": "avg(cpu.usage) > 55.0",
+        "inExpression": "avg(cpu.usage) < 20.0",
+        "capacityRankingExpression": "cpu.usage",
+        "capacityLimitExpression": "90.0"
+    }
+}
+EOF
+    )
     # Merge JSON for subgroups
     if [ "$NODE_GROUP_ORIGINS_MIN" -gt 0 ]; then
         group_combined_json=$(echo "$node_group_json_subgroup_top_level" | jq --argjson origin "$(echo "$node_group_json_subgroup_origin" | jq .)" '.[].rulesByRole = $origin')
@@ -438,6 +517,9 @@ EOF
     fi
     if [ "$NODE_GROUP_RELAYS_MIN" -gt 0 ]; then
         group_combined_json=$(echo "$group_combined_json" | jq --argjson relay "$(echo "$node_group_json_subgroup_relay" | jq .)" '.[].rulesByRole = .[].rulesByRole + $relay')
+    fi
+    if [ "$NODE_GROUP_MIXER_MIN" -gt 0 ]; then
+        group_combined_json=$(echo "$group_combined_json" | jq --argjson mixer "$(echo "$node_group_json_subgroup_mixer" | jq .)" '.[].rulesByRole = .[].rulesByRole + $mixer')
     fi
 
     # Merge JSON for subgroups with top level JSON
@@ -484,20 +566,6 @@ node_group_json_property_social_pusher=$(
 }
 EOF
 )
-# Restreamer
-node_group_json_property_restreamer=$(
-    cat <<EOF
-{
-    "fileName": "conf/restreamer-plugin.properties",
-    "properties": {
-        "enable.tsingest": "$NODE_GROUP_RESTREAMER_TSINGEST",
-        "enable.ipcam": "$NODE_GROUP_RESTREAMER_IPCAM",
-        "enable.whip": "$NODE_GROUP_RESTREAMER_WHIP",
-        "enable.srtingest": "$NODE_GROUP_RESTREAMER_SRTINGEST"
-    }
-}
-EOF
-)
 
 # Generate property overrides for each node type
 generate_json_property_for_nodes() {
@@ -521,6 +589,9 @@ generate_json_property_for_nodes() {
         relay)
             node_group_json_property_relay=$(jq --argjson property "$node_config_json" '. + [$property]' <<<"$node_group_json_property_relay")
             ;;
+        mixer)
+            node_group_json_property_mixer=$(jq --argjson property "$node_config_json" '. + [$property]' <<<"$node_group_json_property_mixer")
+            ;;
         esac
     done
 }
@@ -529,6 +600,7 @@ node_group_json_property_origin="[]"
 node_group_json_property_edge="[]"
 node_group_json_property_transcoder="[]"
 node_group_json_property_relay="[]"
+node_group_json_property_mixer="[]"
 
 # Generate property overrides for each node type. List of JSON objects
 if [ "$NODE_GROUP_ROUND_TRIP_AUTH_ENABLE" = true ]; then
@@ -543,11 +615,6 @@ if [ "$NODE_GROUP_SOCIAL_PUSHER_ENABLE" = true ]; then
     log_i "Social Pusher enabled"
     generate_json_property_for_nodes "$NODE_GROUP_SOCIAL_PUSHER_TARGET_NODES" "$node_group_json_property_social_pusher"
 fi
-if [ "$NODE_GROUP_RESTREAMER_ENABLE" = true ]; then
-    log_i "Restreamer enabled"
-    generate_json_property_for_nodes "$NODE_GROUP_RESTREAMER_TARGET_NODES" "$node_group_json_property_restreamer"
-fi
-
 # Merge property overrides with top level JSON
 if [ "$NODE_GROUP_ORIGINS_MIN" -gt 0 ]; then
     combined_json=$(echo "$combined_json" | jq --argjson origin "$(echo "$node_group_json_property_origin" | jq .)" '.roles.origin.propertyOverrides = $origin')
@@ -570,8 +637,7 @@ echo "$combined_json" | jq -r
 ############################################################################################################
 
 check_stream_manager() {
-    log_i "Checking Stream Manager status."
-    log_i "Stream Manager HTTPS: https://$SM_IP/as/v1/admin/healthz or HTTP: http://$SM_IP/as/v1/admin/healthz"
+    log_i "Checking Stream Manager status. SM HOST: $SM_IP"
 
     for i in {1..20}; do
         # Check HTTPS
@@ -605,7 +671,7 @@ create_jwT_token() {
     USER_AND_PASSWORD_IN_BASE64=$(echo -n "$R5AS_AUTH_USER:$R5AS_AUTH_PASS" | base64)
 
     for i in {1..5}; do
-        JWT_TOKEN_JSON=$(curl --insecure -s -X 'PUT' "$SM_URL/as/v1/auth/login" -H 'accept: application/json' -H "Authorization: Basic $USER_AND_PASSWORD_IN_BASE64")
+        JWT_TOKEN_JSON=$(curl --insecure -s -m 10 -X 'PUT' "$SM_URL/as/v1/auth/login" -H 'accept: application/json' -H "Authorization: Basic $USER_AND_PASSWORD_IN_BASE64")
         JWT_TOKEN=$(jq -r '.token' <<<"$JWT_TOKEN_JSON")
 
         if [ -z "$JWT_TOKEN" ] || [ "$JWT_TOKEN" == "null" ]; then
@@ -628,7 +694,7 @@ create_new_node_group() {
     log_i "Creating a new Node Group with name: $NODE_GROUP_NAME"
 
     for i in {1..5}; do
-        node_group_resp=$(curl --insecure -s -o /dev/null -w "%{http_code}" --location --request POST "$SM_URL/as/v1/admin/nodegroup" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' --data-raw "$combined_json")
+        node_group_resp=$(curl --insecure -s -m 30 -o /dev/null -w "%{http_code}" --location --request POST "$SM_URL/as/v1/admin/nodegroup" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' --data-raw "$combined_json")
 
         if [[ "$node_group_resp" == "200" ]]; then
             log_i "Node group created successfully."
@@ -638,7 +704,7 @@ create_new_node_group() {
         fi
 
         if [ "$i" -eq 5 ]; then
-            node_group_resp_error=$(curl --insecure -s --request POST "$SM_URL/as/v1/admin/nodegroup" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' --data-raw "$combined_json")
+            node_group_resp_error=$(curl --insecure -s -m 30 --request POST "$SM_URL/as/v1/admin/nodegroup" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' --data-raw "$combined_json")
             log_d "Node group response with error: $node_group_resp_error"
             log_e "Node group was not created!!! EXIT..."
             exit 1
@@ -652,16 +718,26 @@ check_node_group() {
 
     NODES_URL="$SM_URL/as/v1/admin/nodegroup/status/$NODE_GROUP_NAME"
 
-    for i in {1..20}; do
-        curl --insecure -s --request GET "$NODES_URL" --header "Authorization: Bearer ${JWT_TOKEN}" | jq -r '.[] | [.scalingEvent.nodeId, .nodeEvent.publicIp // "null", .nodeEvent.privateIp // "null", .nodeEvent.nodeRoleName // "null", .scalingEvent.state, .scalingEvent.test // "null"] | join(" ")' >temp.txt
+    node_status_file=$(mktemp "${TMPDIR:-/tmp}/nodegroup_status.XXXXXX")
+    trap 'rm -f "$node_status_file"' EXIT
 
-        node_bad_state=0
+    for ((i = 1; i <= NODE_GROUP_CHECK_MAX_ATTEMPTS; i++)); do
+        curl --insecure -s -m 10 --request GET "$NODES_URL" --header "Authorization: Bearer ${JWT_TOKEN}" \
+            | jq -r '.[]? | select(type == "object") | [.scalingEvent.nodeId, .nodeEvent.publicIp // "null", .nodeEvent.privateIp // "null", .scalingEvent.nodeRoleName // "null", .scalingEvent.state] | join(" ")' 2>/dev/null >"$node_status_file"
 
-        if [ ! -s temp.txt ]; then
+        # Required INSERVICE count per role, tracked in plain variables (not associative
+        # arrays) for compatibility with bash 3.2 (macOS default). Extra nodes autoscaled
+        # by SM on top of these (e.g. due to high CPU at startup) should not block readiness.
+        inservice_origin=0
+        inservice_edge=0
+        inservice_transcoder=0
+        inservice_relay=0
+        inservice_mixer=0
+
+        if [ ! -s "$node_status_file" ]; then
             log_d "Nodes are not ready yet! - Attempt $i"
-            node_bad_state=1
         else
-            while read line; do
+            while read -r line; do
                 node_id=$(echo "$line" | awk '{print $1}')
                 node_public_ip=$(echo "$line" | awk '{print $2}')
                 node_private_ip=$(echo "$line" | awk '{print $3}')
@@ -670,28 +746,50 @@ check_node_group() {
 
                 if [[ "$node_state" == "INSERVICE" ]]; then
                     log_i "NodeID: $node_id, NodePublicIP: $node_public_ip, NodePrivateIP: $node_private_ip, NodeRole: $node_role, NodeState: $node_state - READY"
+                    case "$node_role" in
+                    origin) inservice_origin=$((inservice_origin + 1)) ;;
+                    edge) inservice_edge=$((inservice_edge + 1)) ;;
+                    transcoder) inservice_transcoder=$((inservice_transcoder + 1)) ;;
+                    relay) inservice_relay=$((inservice_relay + 1)) ;;
+                    mixer) inservice_mixer=$((inservice_mixer + 1)) ;;
+                    esac
+                elif [[ "$node_state" == "FAULT" ]]; then
+                    log_e "NodeID: $node_id, NodePublicIP: $node_public_ip, NodePrivateIP: $node_private_ip, NodeRole: $node_role, NodeState: $node_state - FAULT"
+                    log_e "Node is in FAULT state. Please check the node and SM logs for more details. Exiting..."
+                    exit 1
                 else
                     log_d "NodeID: $node_id, NodePublicIP: $node_public_ip, NodePrivateIP: $node_private_ip, NodeRole: $node_role, NodeState: $node_state - NOT READY"
-                    node_bad_state=1
                 fi
-            done <temp.txt
+            done <"$node_status_file"
         fi
 
-        if [[ $node_bad_state -ne 1 ]]; then
-            log_i "All nodes are ready to go! :)"
-            if [ -f temp.txt ]; then
-                rm temp.txt
-            fi
-            break
+        required_satisfied=1
+        [ "$NODE_GROUP_ORIGINS_MIN" -gt 0 ] && [ "$inservice_origin" -lt "$NODE_GROUP_ORIGINS_MIN" ] && required_satisfied=0
+        [ "$NODE_GROUP_EDGES_MIN" -gt 0 ] && [ "$inservice_edge" -lt "$NODE_GROUP_EDGES_MIN" ] && required_satisfied=0
+        [ "$NODE_GROUP_TRANSCODERS_MIN" -gt 0 ] && [ "$inservice_transcoder" -lt "$NODE_GROUP_TRANSCODERS_MIN" ] && required_satisfied=0
+        [ "$NODE_GROUP_RELAYS_MIN" -gt 0 ] && [ "$inservice_relay" -lt "$NODE_GROUP_RELAYS_MIN" ] && required_satisfied=0
+        [ "$NODE_GROUP_MIXER_MIN" -gt 0 ] && [ "$inservice_mixer" -lt "$NODE_GROUP_MIXER_MIN" ] && required_satisfied=0
+
+        # Build a single colored "role: ready/required" summary line for the active roles.
+        progress_line=""
+        [ "$NODE_GROUP_ORIGINS_MIN" -gt 0 ] && progress_line="${progress_line}$(role_progress_fragment origin "$inservice_origin" "$NODE_GROUP_ORIGINS_MIN"), "
+        [ "$NODE_GROUP_EDGES_MIN" -gt 0 ] && progress_line="${progress_line}$(role_progress_fragment edge "$inservice_edge" "$NODE_GROUP_EDGES_MIN"), "
+        [ "$NODE_GROUP_TRANSCODERS_MIN" -gt 0 ] && progress_line="${progress_line}$(role_progress_fragment transcoder "$inservice_transcoder" "$NODE_GROUP_TRANSCODERS_MIN"), "
+        [ "$NODE_GROUP_RELAYS_MIN" -gt 0 ] && progress_line="${progress_line}$(role_progress_fragment relay "$inservice_relay" "$NODE_GROUP_RELAYS_MIN"), "
+        [ "$NODE_GROUP_MIXER_MIN" -gt 0 ] && progress_line="${progress_line}$(role_progress_fragment mixer "$inservice_mixer" "$NODE_GROUP_MIXER_MIN"), "
+        progress_line="${progress_line%, }"
+        log_p "Progress (attempt $i/$NODE_GROUP_CHECK_MAX_ATTEMPTS): $progress_line"
+
+        if [[ $required_satisfied -eq 1 ]]; then
+            log_i "All required nodes are ready to go! :)"
+            return 0
         fi
 
-        if [[ $i -eq 20 ]]; then
-            log_e "Something wrong with nodes states. (Stream Manager 2.0 was not able to create nodes or nodes can't connect to Stream Manager 2.0)."
-            log_e "Please check the nodes in Stream Manager 2.0 and delete/create node group config manually."
-            log_e "Stream Manager 2.0 URL: $SM_URL/debug"
-            log_e "Documentation: https://www.red5.net/docs/red5-pro/users-guide/stream-manager-2-0/stream-manager-2-node-group-config/"
+        if [[ $i -eq $NODE_GROUP_CHECK_MAX_ATTEMPTS ]]; then
+            log_e "Something wrong with nodes states. (SM2.0 was not able to create required nodes or nodes can't connect to SM). EXIT..."
+            exit 1
         fi
-        sleep 20
+        sleep "$NODE_GROUP_CHECK_INTERVAL_SECONDS"
     done
 }
 

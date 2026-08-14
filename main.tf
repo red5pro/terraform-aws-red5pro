@@ -1,8 +1,8 @@
 locals {
-  standalone                    = var.type == "standalone" ? true : false
-  cluster                       = var.type == "cluster" ? true : false
-  autoscale                     = var.type == "autoscale" ? true : false
-  cluster_or_autoscale          = local.cluster || local.autoscale ? true : false
+  standalone                    = var.type == "standalone"
+  cluster                       = var.type == "cluster"
+  autoscale                     = var.type == "autoscale"
+  cluster_or_autoscale          = local.cluster || local.autoscale
   ssh_key_name                  = var.ssh_key_use_existing ? data.aws_key_pair.ssh_key_pair[0].key_name : aws_key_pair.red5pro_ssh_key[0].key_name
   ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_private_key_path_existing) : tls_private_key.red5pro_ssh_key[0].private_key_pem
   ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_private_key_path_existing : local_file.red5pro_ssh_key_pem[0].filename
@@ -135,8 +135,6 @@ data "aws_vpc" "selected" {
   id    = var.vpc_id_existing
   lifecycle {
     postcondition {
-      #enable_dns_support   = true
-      #enable_dns_hostnames = true
       condition     = self.enable_dns_support == true && self.enable_dns_hostnames == true
       error_message = "ERROR! AWS VPC: ${var.vpc_id_existing} DNS resolution and DNS hostnames need to be enabled. Please check/fix it using AWS console."
     }
@@ -515,28 +513,21 @@ resource "aws_instance" "red5pro_standalone" {
     volume_size = var.standalone_volume_size
   }
 
+  connection {
+    host        = self.public_ip
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = local.ssh_private_key
+  }
+
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
     destination = "/home/ubuntu"
-
-    connection {
-      host        = self.public_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = local.ssh_private_key
-    }
   }
 
   provisioner "file" {
     source      = var.path_to_red5pro_build
     destination = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
-
-    connection {
-      host        = self.public_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = local.ssh_private_key
-    }
   }
 
   provisioner "remote-exec" {
@@ -583,8 +574,8 @@ resource "aws_instance" "red5pro_standalone" {
       "[ $BREW_MIXER_ENABLE = true ] && echo 'Start Brew Mixer configuration...' && cd /usr/local/red5pro/extras/brewmixer/ && sudo bash ./node-mixer-standalone-deploy.sh",
       "sudo systemctl daemon-reload && sudo systemctl restart red5pro",
       "sudo mkdir -p /usr/local/red5pro/certs",
-      "echo '${try(file(var.https_ssl_certificate_cert_path), "")}' | sudo tee -a /usr/local/red5pro/certs/fullchain.pem",
-      "echo '${try(file(var.https_ssl_certificate_key_path), "")}' | sudo tee -a /usr/local/red5pro/certs/privkey.pem",
+      "echo '${try(file(var.https_ssl_certificate_cert_path), "")}' | sudo tee -a /usr/local/red5pro/certs/fullchain.pem >/dev/null",
+      "echo '${try(file(var.https_ssl_certificate_key_path), "")}' | sudo tee -a /usr/local/red5pro/certs/privkey.pem >/dev/null",
       "export SSL='${var.https_ssl_certificate}'",
       "export SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
       "export SSL_MAIL='${var.https_ssl_certificate_email}'",
@@ -593,12 +584,6 @@ resource "aws_instance" "red5pro_standalone" {
       "nohup sudo -E /home/ubuntu/red5pro-installer/r5p_ssl_check_install.sh >> /home/ubuntu/red5pro-installer/r5p_ssl_check_install.log &",
       "sleep 2"
     ]
-    connection {
-      host        = self.public_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = local.ssh_private_key
-    }
   }
 
   tags = merge({ "Name" = "${var.name}-standalone-server" }, var.tags, )
@@ -719,7 +704,7 @@ resource "tls_locally_signed_cert" "kafka_server_cert" {
   # CA certificate
   ca_cert_pem = tls_self_signed_cert.ca_cert[0].cert_pem
 
-  validity_period_hours = 1 * 365 * 24
+  validity_period_hours = 365 * 24
 
   allowed_uses = [
     "digital_signature",
@@ -751,17 +736,16 @@ resource "aws_instance" "red5pro_kafka" {
 resource "null_resource" "red5pro_kafka" {
   count = local.kafka_standalone_instance ? 1 : 0
 
+  connection {
+    host        = aws_instance.red5pro_kafka[0].public_ip
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = local.ssh_private_key
+  }
+
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
     destination = "/home/ubuntu"
-
-    connection {
-      host        = aws_instance.red5pro_kafka[0].public_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = local.ssh_private_key
-    }
-
   }
 
   provisioner "remote-exec" {
@@ -769,11 +753,11 @@ resource "null_resource" "red5pro_kafka" {
       "sudo iptables -F",
       "sudo netfilter-persistent save",
       "sudo cloud-init status --wait",
-      "echo 'ssl.keystore.key=${local.kafka_ssl_keystore_key}' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties",
-      "echo 'ssl.truststore.certificates=${local.kafka_ssl_truststore_cert}' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties",
-      "echo 'ssl.keystore.certificate.chain=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties",
-      "echo 'listener.name.broker.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties",
-      "echo 'listener.name.controller.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties",
+      "echo 'ssl.keystore.key=${local.kafka_ssl_keystore_key}' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties >/dev/null",
+      "echo 'ssl.truststore.certificates=${local.kafka_ssl_truststore_cert}' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties >/dev/null",
+      "echo 'ssl.keystore.certificate.chain=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties >/dev/null",
+      "echo 'listener.name.broker.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties >/dev/null",
+      "echo 'listener.name.controller.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${nonsensitive(random_string.kafka_admin_username[0].result)}\" password=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_admin_username[0].result)}=\"${nonsensitive(random_id.kafka_admin_password[0].id)}\" user_${nonsensitive(random_string.kafka_client_username[0].result)}=\"${nonsensitive(random_id.kafka_client_password[0].id)}\";' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties >/dev/null",
       "echo 'advertised.listeners=BROKER://${local.kafka_ip}:9092' | sudo tee -a /home/ubuntu/red5pro-installer/server.properties",
       "export KAFKA_ARCHIVE_URL='${var.kafka_standalone_instance_arhive_url}'",
       "export KAFKA_CLUSTER_ID='${random_id.kafka_cluster_id[0].b64_std}'",
@@ -781,12 +765,6 @@ resource "null_resource" "red5pro_kafka" {
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_kafka_install.sh",
     ]
-    connection {
-      host        = aws_instance.red5pro_kafka[0].public_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = local.ssh_private_key
-    }
   }
   depends_on = [tls_cert_request.kafka_server_csr, aws_instance.red5pro_kafka]
 }
@@ -984,7 +962,7 @@ resource "aws_instance" "red5pro_sm" {
           TRAEFIK_HOST=${var.stream_manager_public_hostname}
           TRAEFIK_SSL_EMAIL=${var.https_ssl_certificate_email}
           TRAEFIK_CMD=${local.stream_manager_ssl == "imported" ? "--providers.file.filename=/scripts/traefik.yaml" : ""}
-          AS_ADMIN_UI_VERSION=${var.stream_manager_admin_ui_version}
+          AS_ADMIN_UI_VERSION=${var.stream_manager_version}
           AS_ADMIN_UI_MAIN_REGION=${var.aws_region}
           AS_ADMIN_UI_NODE_IMAGE_NAME=${local.red5pro_node_image_name}
           AS_ADMIN_UI_AWS_VPC=${local.vpc_name}
@@ -992,7 +970,7 @@ resource "aws_instance" "red5pro_sm" {
         EOF
   )
   tags = merge({ "Name" = local.autoscale ? "${var.name}-stream-manager-image" : "${var.name}-stream-manager", }, var.tags, )
-  
+
   lifecycle {
     precondition {
       condition     = var.stream_manager_public_hostname != ""
@@ -1004,29 +982,34 @@ resource "aws_instance" "red5pro_sm" {
 resource "null_resource" "red5pro_sm" {
   count = local.cluster_or_autoscale ? 1 : 0
 
+  connection {
+    host        = local.stream_manager_ssh_ip
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = local.ssh_private_key
+  }
+
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
     destination = "/home/ubuntu"
-
-    connection {
-      host        = local.stream_manager_ssh_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = local.ssh_private_key
-    }
   }
   provisioner "remote-exec" {
     inline = [
       "until sudo cloud-init status | grep 'done'; do echo 'waiting for cloud-init'; sleep 10; done",
-      "echo 'KAFKA_SSL_KEYSTORE_KEY=${local.kafka_ssl_keystore_key}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_SSL_TRUSTSTORE_CERTIFICATES=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_REPLICAS=${local.kafka_on_sm_replicas}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'KAFKA_IP=${local.kafka_ip}' | sudo tee -a /usr/local/stream-manager/.env",
-      "echo 'TRAEFIK_IP=${local.stream_manager_ssh_ip}' | sudo tee -a /usr/local/stream-manager/.env", # Use only in Cluster deployment
+      "echo 'KAFKA_SSL_KEYSTORE_KEY=${local.kafka_ssl_keystore_key}' | sudo tee -a /usr/local/stream-manager/.env >/dev/null",
+      "echo 'KAFKA_SSL_TRUSTSTORE_CERTIFICATES=${local.kafka_ssl_truststore_cert}' | sudo tee -a /usr/local/stream-manager/.env >/dev/null",
+      "echo 'KAFKA_SSL_KEYSTORE_CERTIFICATE_CHAIN=${local.kafka_ssl_keystore_cert_chain}' | sudo tee -a /usr/local/stream-manager/.env >/dev/null",
+      <<-EOT
+      sudo tee -a /usr/local/stream-manager/.env <<'EOM'
+      KAFKA_REPLICAS=${local.kafka_on_sm_replicas}
+      KAFKA_IP=${local.kafka_ip}
+      TRAEFIK_IP=${local.stream_manager_ssh_ip}
+      EOM
+      EOT
+      ,
       "export SM_SSL='${local.stream_manager_ssl}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
-      "export SM_SSL_DOMAIN='${var.https_ssl_certificate_domain_name}'",
+      "export KAFKA_REPLICAS='${local.kafka_on_sm_replicas}'",
       "export CONTAINER_REGISTRY='${var.stream_manager_container_registry}'",
       "export CONTAINER_REGISTRY_USER='${var.stream_manager_container_registry_user}'",
       "export CONTAINER_REGISTRY_PASSWORD='${var.stream_manager_container_registry_password}'",
@@ -1034,13 +1017,6 @@ resource "null_resource" "red5pro_sm" {
       "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_sm2_aws.sh",
     ]
-    connection {
-      host        = local.stream_manager_ssh_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = local.ssh_private_key
-    }
-
   }
   depends_on = [tls_cert_request.kafka_server_csr, aws_instance.red5pro_sm, null_resource.red5pro_kafka]
 }
@@ -1080,7 +1056,7 @@ resource "aws_launch_template" "red5pro_sm_lt" {
 
   metadata_options {
     http_endpoint = "enabled"
-    http_tokens   = "required"  # Enforce IMDSv2, disable IMDSv1
+    http_tokens   = "required" # Enforce IMDSv2, disable IMDSv1
   }
 
   network_interfaces {
@@ -1182,6 +1158,13 @@ resource "aws_lb" "red5pro_sm_lb" {
   enable_deletion_protection = false
 
   tags = merge({ "Name" = "${var.name}-sm-lb" }, var.tags, )
+
+  lifecycle {
+    precondition {
+      condition     = var.https_ssl_certificate != "letsencrypt"
+      error_message = "ERROR! https_ssl_certificate=letsencrypt is not supported for type=autoscale - the AWS application load balancer only gets an HTTPS listener when https_ssl_certificate is imported or existing. The ACME challenge cannot reach Stream Manager through the load balancer."
+    }
+  }
 }
 
 # AWS Stream Manager autoscaling - LB HTTP listener
@@ -1235,28 +1218,22 @@ resource "aws_instance" "red5pro_node" {
   root_block_device {
     volume_size = var.node_image_volume_size
   }
+
+  connection {
+    host        = self.public_ip
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = local.ssh_private_key
+  }
+
   provisioner "file" {
     source      = "${abspath(path.module)}/red5pro-installer"
     destination = "/home/ubuntu"
-
-    connection {
-      host        = self.public_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = local.ssh_private_key
-    }
   }
 
   provisioner "file" {
     source      = var.path_to_red5pro_build
     destination = "/home/ubuntu/red5pro-installer/${basename(var.path_to_red5pro_build)}"
-
-    connection {
-      host        = self.public_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = local.ssh_private_key
-    }
   }
 
   provisioner "remote-exec" {
@@ -1270,12 +1247,6 @@ resource "aws_instance" "red5pro_node" {
       "sudo -E /home/ubuntu/red5pro-installer/r5p_install_server_basic.sh",
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_node.sh",
     ]
-    connection {
-      host        = self.public_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = local.ssh_private_key
-    }
   }
 
   tags = merge({ "Name" = "${var.name}-node-image" }, var.tags, )
@@ -1356,7 +1327,7 @@ resource "time_sleep" "wait_for_delete_nodegroup" {
     aws_lb_listener.red5pro_sm_http[0],
     aws_eip_association.elastic_ip_association_sm[0],
   ]
-  destroy_duration = "60s"
+  destroy_duration = "120s"
 }
 
 resource "null_resource" "node_group" {
@@ -1371,53 +1342,44 @@ resource "null_resource" "node_group" {
     when    = create
     command = "bash ${abspath(path.module)}/red5pro-installer/r5p_create_node_group.sh"
     environment = {
-      SM_IP                                          = "${local.stream_manager_ip}"
-      NODE_GROUP_NAME                                = "${substr(var.name, 0, 16)}"
-      R5AS_AUTH_USER                                 = "${var.stream_manager_auth_user}"
-      R5AS_AUTH_PASS                                 = "${var.stream_manager_auth_password}"
+      SM_IP                                          = local.stream_manager_ip
+      NODE_GROUP_NAME                                = substr(var.name, 0, 16)
+      R5AS_AUTH_USER                                 = var.stream_manager_auth_user
+      R5AS_AUTH_PASS                                 = var.stream_manager_auth_password
       NODE_GROUP_CLOUD_PLATFORM                      = "AWS"
-      NODE_GROUP_REGIONS                             = "${var.aws_region}"
-      NODE_GROUP_ENVIRONMENT                         = "${var.name}"
-      NODE_GROUP_VPC_NAME                            = "${local.vpc_name}"
-      NODE_GROUP_SECURITY_GROUP_NAME                 = "${aws_security_group.red5pro_node_sg[0].name}"
-      NODE_GROUP_IMAGE_NAME                          = "${aws_ami_from_instance.red5pro_node_image[0].name}"
-      NODE_GROUP_ORIGINS_MIN                         = "${var.node_group_origins_min}"
-      NODE_GROUP_ORIGINS_MAX                         = "${var.node_group_origins_max}"
-      NODE_GROUP_ORIGIN_INSTANCE_TYPE                = "${var.node_group_origins_instance_type}"
-      NODE_GROUP_ORIGIN_VOLUME_SIZE                  = "${var.node_group_origins_volume_size}"
-      NODE_GROUP_ORIGINS_CONNECTION_LIMIT            = "${var.node_group_origins_connection_limit}"
-      NODE_GROUP_EDGES_MIN                           = "${var.node_group_edges_min}"
-      NODE_GROUP_EDGES_MAX                           = "${var.node_group_edges_max}"
-      NODE_GROUP_EDGE_INSTANCE_TYPE                  = "${var.node_group_edges_instance_type}"
-      NODE_GROUP_EDGE_VOLUME_SIZE                    = "${var.node_group_edges_volume_size}"
-      NODE_GROUP_EDGES_CONNECTION_LIMIT              = "${var.node_group_edges_connection_limit}"
-      NODE_GROUP_TRANSCODERS_MIN                     = "${var.node_group_transcoders_min}"
-      NODE_GROUP_TRANSCODERS_MAX                     = "${var.node_group_transcoders_max}"
-      NODE_GROUP_TRANSCODER_INSTANCE_TYPE            = "${var.node_group_transcoders_instance_type}"
-      NODE_GROUP_TRANSCODER_VOLUME_SIZE              = "${var.node_group_transcoders_volume_size}"
-      NODE_GROUP_TRANSCODERS_CONNECTION_LIMIT        = "${var.node_group_transcoders_connection_limit}"
-      NODE_GROUP_RELAYS_MIN                          = "${var.node_group_relays_min}"
-      NODE_GROUP_RELAYS_MAX                          = "${var.node_group_relays_max}"
-      NODE_GROUP_RELAY_INSTANCE_TYPE                 = "${var.node_group_relays_instance_type}"
-      NODE_GROUP_RELAY_VOLUME_SIZE                   = "${var.node_group_relays_volume_size}"
-      NODE_GROUP_ROUND_TRIP_AUTH_ENABLE              = "${var.node_config_round_trip_auth.enable}"
-      NODE_GROUP_ROUNT_TRIP_AUTH_TARGET_NODES        = "${join(",", var.node_config_round_trip_auth.target_nodes)}"
-      NODE_GROUP_ROUND_TRIP_AUTH_HOST                = "${var.node_config_round_trip_auth.auth_host}"
-      NODE_GROUP_ROUND_TRIP_AUTH_PORT                = "${var.node_config_round_trip_auth.auth_port}"
-      NODE_GROUP_ROUND_TRIP_AUTH_PROTOCOL            = "${var.node_config_round_trip_auth.auth_protocol}"
-      NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE   = "${var.node_config_round_trip_auth.auth_endpoint_validate}"
-      NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE = "${var.node_config_round_trip_auth.auth_endpoint_invalidate}"
-      NODE_GROUP_WEBHOOK_ENABLE                      = "${var.node_config_webhooks.enable}"
-      NODE_GROUP_WEBHOOK_TARGET_NODES                = "${join(",", var.node_config_webhooks.target_nodes)}"
-      NODE_GROUP_WEBHOOK_ENDPOINT                    = "${var.node_config_webhooks.webhook_endpoint}"
-      NODE_GROUP_SOCIAL_PUSHER_ENABLE                = "${var.node_config_social_pusher.enable}"
-      NODE_GROUP_SOCIAL_PUSHER_TARGET_NODES          = "${join(",", var.node_config_social_pusher.target_nodes)}"
-      NODE_GROUP_RESTREAMER_ENABLE                   = "${var.node_config_restreamer.enable}"
-      NODE_GROUP_RESTREAMER_TARGET_NODES             = "${join(",", var.node_config_restreamer.target_nodes)}"
-      NODE_GROUP_RESTREAMER_TSINGEST                 = "${var.node_config_restreamer.restreamer_tsingest}"
-      NODE_GROUP_RESTREAMER_IPCAM                    = "${var.node_config_restreamer.restreamer_ipcam}"
-      NODE_GROUP_RESTREAMER_WHIP                     = "${var.node_config_restreamer.restreamer_whip}"
-      NODE_GROUP_RESTREAMER_SRTINGEST                = "${var.node_config_restreamer.restreamer_srtingest}"
+      NODE_GROUP_REGIONS                             = var.aws_region
+      NODE_GROUP_ENVIRONMENT                         = var.name
+      NODE_GROUP_VPC_NAME                            = local.vpc_name
+      NODE_GROUP_SECURITY_GROUP_NAME                 = aws_security_group.red5pro_node_sg[0].name
+      NODE_GROUP_IMAGE_NAME                          = aws_ami_from_instance.red5pro_node_image[0].name
+      NODE_GROUP_ORIGINS_MIN                         = var.node_group_origins_min
+      NODE_GROUP_ORIGINS_MAX                         = var.node_group_origins_max
+      NODE_GROUP_ORIGIN_INSTANCE_TYPE                = var.node_group_origins_instance_type
+      NODE_GROUP_ORIGIN_VOLUME_SIZE                  = var.node_group_origins_volume_size
+      NODE_GROUP_EDGES_MIN                           = var.node_group_edges_min
+      NODE_GROUP_EDGES_MAX                           = var.node_group_edges_max
+      NODE_GROUP_EDGE_INSTANCE_TYPE                  = var.node_group_edges_instance_type
+      NODE_GROUP_EDGE_VOLUME_SIZE                    = var.node_group_edges_volume_size
+      NODE_GROUP_TRANSCODERS_MIN                     = var.node_group_transcoders_min
+      NODE_GROUP_TRANSCODERS_MAX                     = var.node_group_transcoders_max
+      NODE_GROUP_TRANSCODER_INSTANCE_TYPE            = var.node_group_transcoders_instance_type
+      NODE_GROUP_TRANSCODER_VOLUME_SIZE              = var.node_group_transcoders_volume_size
+      NODE_GROUP_RELAYS_MIN                          = var.node_group_relays_min
+      NODE_GROUP_RELAYS_MAX                          = var.node_group_relays_max
+      NODE_GROUP_RELAY_INSTANCE_TYPE                 = var.node_group_relays_instance_type
+      NODE_GROUP_RELAY_VOLUME_SIZE                   = var.node_group_relays_volume_size
+      NODE_GROUP_ROUND_TRIP_AUTH_ENABLE              = var.node_config_round_trip_auth.enable
+      NODE_GROUP_ROUNT_TRIP_AUTH_TARGET_NODES        = join(",", var.node_config_round_trip_auth.target_nodes)
+      NODE_GROUP_ROUND_TRIP_AUTH_HOST                = var.node_config_round_trip_auth.auth_host
+      NODE_GROUP_ROUND_TRIP_AUTH_PORT                = var.node_config_round_trip_auth.auth_port
+      NODE_GROUP_ROUND_TRIP_AUTH_PROTOCOL            = var.node_config_round_trip_auth.auth_protocol
+      NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_VALIDATE   = var.node_config_round_trip_auth.auth_endpoint_validate
+      NODE_GROUP_ROUND_TRIP_AUTH_ENDPOINT_INVALIDATE = var.node_config_round_trip_auth.auth_endpoint_invalidate
+      NODE_GROUP_WEBHOOK_ENABLE                      = var.node_config_webhooks.enable
+      NODE_GROUP_WEBHOOK_TARGET_NODES                = join(",", var.node_config_webhooks.target_nodes)
+      NODE_GROUP_WEBHOOK_ENDPOINT                    = var.node_config_webhooks.webhook_endpoint
+      NODE_GROUP_SOCIAL_PUSHER_ENABLE                = var.node_config_social_pusher.enable
+      NODE_GROUP_SOCIAL_PUSHER_TARGET_NODES          = join(",", var.node_config_social_pusher.target_nodes)
     }
   }
   provisioner "local-exec" {

@@ -1,0 +1,516 @@
+---
+version: '3.8'
+name: autoscaling
+
+x-logging-config: &logging-config
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  as-kafka-init:
+    deploy:
+      replicas: ${AS_KAFKA_INIT_REPLICAS:-1}
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-kafka-init:${AS_VERSION:-latest}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/kafka-init/healthz"]
+      interval: 2s
+      timeout: 10s
+      retries: 150  
+      start_period: 300s 
+    environment:
+      R5AS_AUTOSCALE_PARTITIONS: ${R5AS_AUTOSCALE_PARTITIONS:-1}
+      R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
+      R5AS_BOOTSTRAP_SERVERS: ${KAFKA_IP}:9092
+      R5AS_SECURITY_PROTOCOL_CONFIG: SASL_SSL
+      R5AS_SSL_KEYSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_TRUSTSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_CA_CERTIFICATE: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
+      R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
+      R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
+      R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
+      R5AS_APPLICATION_PORT: ${R5AS_APPLICATION_PORT:-8080}
+      R5AS_CLUSTER_AVAILABILITY_TIMEOUT: ${R5AS_CLUSTER_AVAILABILITY_TIMEOUT:-300000}
+      R5AS_CLUSTER_CONNECTION_RETRY_INITIAL: ${R5AS_CLUSTER_CONNECTION_RETRY_INITIAL:-1000}
+      R5AS_CLUSTER_CONNECTION_RETRY_MAX: ${R5AS_CLUSTER_CONNECTION_RETRY_MAX:-30000}
+      R5AS_CLUSTER_CONNECTION_RETRY_MULTIPLIER: ${R5AS_CLUSTER_CONNECTION_RETRY_MULTIPLIER:-2.0}
+      R5AS_TOPIC_READINESS_TIMEOUT: ${R5AS_TOPIC_READINESS_TIMEOUT:-120000}
+      R5AS_TOPIC_READINESS_CHECK_INTERVAL: ${R5AS_TOPIC_READINESS_CHECK_INTERVAL:-5000}
+      R5AS_TOPIC_CREATION_TIMEOUT: ${R5AS_TOPIC_CREATION_TIMEOUT:-30000}
+      R5AS_KAFKA_CLIENT_TIMEOUT: ${R5AS_KAFKA_CLIENT_TIMEOUT:-10000}
+      R5AS_HEALTH_CHECK_INTERVAL: ${R5AS_HEALTH_CHECK_INTERVAL:-30000}
+      R5AS_PRODUCE_CONSUME_TEST_TIMEOUT: ${R5AS_PRODUCE_CONSUME_TEST_TIMEOUT:-15000}
+    logging: *logging-config
+
+  as-admin:
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-admin:${AS_VERSION:-latest}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/admin/healthz"]
+      start_period: 10s
+    depends_on:
+      as-kafka-init:
+        condition: service_healthy
+      as-autoscale-service:
+        condition: service_healthy
+    ports:
+      - 8080
+    deploy:
+      replicas: 1
+    environment:
+      R5AS_STATE_DIRECTORY: /root/kafka-streams
+      R5AS_AUTOSCALE_PARTITIONS: ${R5AS_AUTOSCALE_PARTITIONS:-1}
+      R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
+      R5AS_BOOTSTRAP_SERVERS: ${KAFKA_IP}:9092
+      R5AS_TERRAFORM_QUERY_INTERVAL: ${R5AS_TERRAFORM_QUERY_INTERVAL:-600000}
+      R5AS_SECURITY_PROTOCOL_CONFIG: SASL_SSL
+      R5AS_SSL_KEYSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_TRUSTSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_CA_CERTIFICATE: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
+      R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
+      R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
+      R5AS_SASL_ENABLED_MECHANISMS: PLAIN
+      SPRINGDOC_API_DOCS_PATH: /as/v1/admin/v3/api-docs
+      SPRINGDOC_SWAGGER_UI_URLS_0_URL: /as/v1/autoscale/v3/api-docs
+      SPRINGDOC_SWAGGER_UI_URLS_0_NAME: autoscale
+      SPRINGDOC_SWAGGER_UI_URLS_1_URL: /as/v1/auth/v3/api-docs
+      SPRINGDOC_SWAGGER_UI_URLS_1_NAME: auth
+      SPRINGDOC_SWAGGER_UI_URLS_2_URL: /as/v1/streams/v3/api-docs
+      SPRINGDOC_SWAGGER_UI_URLS_2_NAME: streams
+      SPRINGDOC_SWAGGER_UI_URLS_3_URL: /as/v1/admin/v3/api-docs
+      SPRINGDOC_SWAGGER_UI_URLS_3_NAME: autoscale-admin
+      R5AS_CLOUD_PLATFORM_TYPE: ${R5AS_CLOUD_PLATFORM_TYPE:-AWS} # GCP, OCI, LINODE
+      R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET:?R5AS_AUTH_SECRET is not set}
+      R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
+      R5AS_WS_PING_PONG_INTERVAL_S: ${R5AS_WS_PING_PONG_INTERVAL_S:-30}
+      R5AS_WS_PONG_TIMEOUT_S: ${R5AS_WS_PONG_TIMEOUT_S:-50}
+      R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
+      R5AS_PROCESS_NODEGROUP_CONFIG_TIMEOUT: ${R5AS_PROCESS_NODEGROUP_CONFIG_TIMEOUT:-30000}
+      R5AS_CONSUMER_REQUEST_TIMEOUT: ${R5AS_CONSUMER_REQUEST_TIMEOUT:-300000}
+      R5AS_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_CONSUMER_MAX_POLL_INTERVAL:-600000}
+      R5AS_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
+      R5AS_GLOBAL_CONSUMER_REQUEST_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_REQUEST_TIMEOUT:-300000}
+      R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL:-600000}
+      R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
+      R5AS_PRODUCER_REQUEST_TIMEOUT: ${R5AS_PRODUCER_REQUEST_TIMEOUT:-300000}
+    labels:
+      traefik.http.routers.config-swagger.rule: "PathPrefix(`/swagger-ui`)"
+      traefik.http.routers.config-swagger.entrypoints: "web"
+      prometheus.scrape: true
+      prometheus.path: /metrics
+      traefik.enable: "true"
+      traefik.http.routers.admin-springdoc.rule: "PathPrefix(`/as/v1/admin/v3`)"
+      traefik.http.routers.admin-springdoc.entrypoints: "web"
+      traefik.http.routers.admin-springdoc.middlewares: "strip-swagger-admin@docker"
+      traefik.http.middlewares.strip-swagger-admin.stripprefix.prefixes: "/as/v1/admin"
+      traefik.http.routers.as-admin.rule: "PathPrefix(`/as/v1/admin`)"
+      traefik.http.routers.as-admin.entrypoints: "web"
+      traefik.http.routers.as-admin.middlewares: "strip-admin@docker"
+      traefik.http.middlewares.strip-admin.stripprefix.prefixes: "/as/v1/"
+    logging: *logging-config
+
+  as-terraform:
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-terraform:${AS_VERSION:-latest}
+    network_mode: host  # Required for IMDSv2 access from container
+    depends_on:
+      as-kafka-init:
+        condition: service_healthy
+    environment:
+      R5AS_STATE_DIRECTORY: /root/kafka-streams
+      R5AS_AUTOSCALE_PARTITIONS: ${R5AS_AUTOSCALE_PARTITIONS:-1}
+      R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
+      R5AS_BOOTSTRAP_SERVERS: ${KAFKA_IP}:9092
+      R5AS_SECURITY_PROTOCOL_CONFIG: SASL_SSL
+      R5AS_SSL_KEYSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_TRUSTSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_CA_CERTIFICATE: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
+      R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
+      R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
+      R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
+      R5AS_COMMAND_INACTIVITY_GAP_MS: ${R5AS_COMMAND_INACTIVITY_GAP_MS:-10000}
+      R5AS_TERRAFORM_PARALLELISM: ${R5AS_TERRAFORM_PARALLELISM:-50}
+      R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
+      R5AS_TERRAFORM_TIMEOUT: ${R5AS_TERRAFORM_TIMEOUT:-1800000}
+      R5AS_CONSUMER_REQUEST_TIMEOUT: ${R5AS_CONSUMER_REQUEST_TIMEOUT:-300000}
+      R5AS_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_CONSUMER_MAX_POLL_INTERVAL:-600000}
+      R5AS_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
+      R5AS_GLOBAL_CONSUMER_REQUEST_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_REQUEST_TIMEOUT:-300000}
+      R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL:-600000}
+      R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
+      R5AS_PRODUCER_REQUEST_TIMEOUT: ${R5AS_PRODUCER_REQUEST_TIMEOUT:-300000}
+      TF_VAR_aws_ssh_key_pair: ${TF_VAR_aws_ssh_key_pair}
+      TF_VAR_aws_enable_root_volume_block_encryption: ${TF_VAR_aws_enable_root_volume_block_encryption:-true}
+      TF_VAR_r5p_license_key: ${TF_VAR_r5p_license_key}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    logging: *logging-config
+
+  as-proxy:
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-proxy:${AS_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      as-kafka-init:
+        condition: service_healthy
+    ports:
+      - 9080:8080
+    environment:
+      R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
+      R5AS_STATE_DIRECTORY: /root/kafka-streams
+      R5AS_BOOTSTRAP_SERVERS: ${KAFKA_IP}:9092
+      R5AS_SECURITY_PROTOCOL_CONFIG: SASL_SSL
+      R5AS_SSL_KEYSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_TRUSTSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_CA_CERTIFICATE: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
+      R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
+      R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
+      R5AS_SASL_ENABLED_MECHANISMS: PLAIN
+      R5AS_TRAEFIK_HOST: ${TRAEFIK_HOST:-localhost}
+      R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET}
+      R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
+      # R5AS_AUTOSCALE_DOMAIN: ${TRAEFIK_HOST:-localhost}
+      R5AS_PROXY_HTTP_REQUEST_TIMEOUT_S: ${R5AS_PROXY_HTTP_REQUEST_TIMEOUT_S:-60}
+      R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
+    labels:
+      traefik.enable: true
+      traefik.http.routers.asproxy.rule: PathPrefix(`/as/v1/proxy`)
+      traefik.http.routers.asproxy.entrypoints: web
+      traefik.http.routers.asproxy.middlewares: strip-asproxy@docker
+      traefik.http.middlewares.strip-asproxy.stripprefix.prefixes: /as/v1/proxy
+    logging: *logging-config
+
+  as-autoscale-service:
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-autoscale-service:${AS_VERSION:-latest}
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+    depends_on:
+      as-kafka-init:
+        condition: service_healthy
+      as-terraform:
+        condition: service_started
+      as-auth:
+        condition: service_started
+      as-streams:
+        condition: service_started
+      reverse-proxy:
+        condition: service_started
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/autoscale/healthz"]
+      interval: 10s
+      timeout: 60s
+      retries: 18  # 3 mins
+      start_period: 300s  # grace period, not minimum
+    ports:
+      - "8080"
+    environment:
+      R5AS_AUTOSCALE_PARTITIONS: ${R5AS_AUTOSCALE_PARTITIONS:-1}
+      R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
+      R5AS_STATE_DIRECTORY: /root/kafka-streams
+      R5AS_BOOTSTRAP_SERVERS: ${KAFKA_IP}:9092
+      R5AS_BOOTSTRAP_SERVERS_FOR_NODES: ${KAFKA_IP}:9092
+      R5AS_AUTOCALE_EVALUATION_INTERVAL: ${R5AS_AUTOCALE_EVALUATION_INTERVAL:-4000}
+      R5AS_APPLICATION_HOST: ${R5AS_APPLICATION_HOST:-localhost}
+      R5AS_SECURITY_PROTOCOL_CONFIG: SASL_SSL
+      R5AS_SSL_KEYSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_TRUSTSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_CA_CERTIFICATE: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
+      R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
+      R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
+      R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
+      R5AS_TRAEFIK_HOST: ${TRAEFIK_HOST:-localhost}
+      R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET}
+      R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
+
+      # 2400000 = 40 * 60 * 1000, 40 minutes
+      R5AS_NODE_REQUEST_TIMEOUT: ${R5AS_NODE_REQUEST_TIMEOUT:-2400000} # 40 minutes
+      R5AS_NODE_CREATING_TIMEOUT: ${R5AS_NODE_CREATING_TIMEOUT:-2400000} # 40 minutes
+      R5AS_NODE_CREATED_TIMEOUT: ${R5AS_NODE_CREATED_TIMEOUT:-1200000} # 20 minutes
+      R5AS_NODE_STARTED_TIMEOUT: ${R5AS_NODE_STARTED_TIMEOUT:-600000} # 10 minutes
+      R5AS_NODE_SUNSET_TIMEOUT: ${R5AS_NODE_SUNSET_TIMEOUT:-600000} # 10 minutes
+      R5AS_NODE_DOOMED_TIMEOUT: ${R5AS_NODE_DOOMED_TIMEOUT:-60000} # 1 minute
+      R5AS_NODE_FAULT_TIMEOUT: ${R5AS_NODE_FAULT_TIMEOUT:-300000} # 5 minutes
+
+      # How long (ms) without ClusterNodeEvent before node is considered at FAULT
+      R5AS_NODE_STATUS: ${R5AS_NODE_STATUS:-60000} # 1 minute
+
+      # Max number of FAULT nodes in a given SubGroup-Role, beyond which ScaleRules are no longer processed.
+      R5AS_FAILED_NODE_THRESHOLD: ${R5AS_FAILED_NODE_THRESHOLD:-10} # 10 nodes
+      
+      # Should FAULT nodes be reinstated if they begin sending ClusterNodeEvents?
+      # Use true for production environments. Leave false to diagnose issues.
+      R5AS_AUTO_REINSTATE_FAULT_NODES: ${R5AS_AUTO_REINSTATE_FAULT_NODES:-true}
+      
+      # Instance ID of this Stream Manager (must be unique per SM)
+      R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
+
+      R5AS_CONSUMER_REQUEST_TIMEOUT: ${R5AS_CONSUMER_REQUEST_TIMEOUT:-300000}
+      R5AS_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_CONSUMER_MAX_POLL_INTERVAL:-600000}
+      R5AS_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
+      R5AS_GLOBAL_CONSUMER_REQUEST_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_REQUEST_TIMEOUT:-300000}
+      R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL:-600000}
+      R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
+      R5AS_PRODUCER_REQUEST_TIMEOUT: ${R5AS_PRODUCER_REQUEST_TIMEOUT:-300000}
+
+      R5AS_CONSUMER_SESSION_TIMEOUT_MS: ${R5AS_CONSUMER_SESSION_TIMEOUT_MS:-60000}
+      R5AS_CONSUMER_HEARTBEAT_INTERVAL_MS: ${R5AS_CONSUMER_HEARTBEAT_INTERVAL_MS:-20000}
+      R5AS_CONSUMER_MAX_POLL_INTERVAL_MS: ${R5AS_CONSUMER_MAX_POLL_INTERVAL_MS:-300000}
+      R5AS_CONSUMER_GROUP_INSTANCE_ID_SUFFIX: ${R5AS_CONSUMER_GROUP_INSTANCE_ID_SUFFIX:-}
+      R5AS_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY: ${R5AS_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY:-org.apache.kafka.clients.consumer.CooperativeStickyAssignor}
+      R5AS_STREAMS_COMMIT_INTERVAL_MS: ${R5AS_STREAMS_COMMIT_INTERVAL_MS:-1000}
+      R5AS_PRODUCER_BATCH_SIZE: ${R5AS_PRODUCER_BATCH_SIZE:-65536}
+      R5AS_PRODUCER_LINGER_MS: ${R5AS_PRODUCER_LINGER_MS:-50}
+      R5AS_PRODUCER_TRANSACTION_TIMEOUT: ${R5AS_PRODUCER_TRANSACTION_TIMEOUT:-900000}
+    labels:
+      traefik.enable: true
+      traefik.http.routers.autoscale-springdoc.rule: PathPrefix(`/as/v1/autoscale/v3`)
+      traefik.http.routers.autoscale-springdoc.entrypoints: web
+      traefik.http.routers.autoscale-springdoc.middlewares: strip-autoscale@docker
+      traefik.http.middlewares.strip-autoscale.stripprefix.prefixes: /as/v1/autoscale
+      traefik.http.routers.autoscale.rule: PathPrefix(`/as/v1/autoscale`)
+      traefik.http.routers.autoscale.entrypoints: web
+      traefik.http.routers.autoscale.middlewares: strip-m-autoscale@docker
+      traefik.http.middlewares.strip-m-autoscale.stripprefix.prefixes: /as/v1
+    logging: *logging-config
+
+  as-auth:
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-auth:${AS_VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - 10080:8080
+    environment:
+      R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET:?R5AS_AUTH_SECRET is not set}
+      R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
+      R5AS_AUTH_USER: ${R5AS_AUTH_USER:?R5AS_AUTH_USER is not set}
+      R5AS_AUTH_PASS: ${R5AS_AUTH_PASS:?R5AS_AUTH_PASS is not set}
+      R5AS_PROXY_USER: ${R5AS_PROXY_USER:?R5AS_PROXY_USER is not set}
+      R5AS_PROXY_PASS: ${R5AS_PROXY_PASS:?R5AS_PROXY_PASS is not set}
+      R5AS_SPATIAL_USER: ${R5AS_SPATIAL_USER:?R5AS_SPATIAL_USER is not set}
+      R5AS_SPATIAL_PASS: ${R5AS_SPATIAL_PASS:?R5AS_SPATIAL_PASS is not set}
+    labels:
+      traefik.enable: true
+      traefik.http.routers.asauth.rule: PathPrefix(`/as/v1/auth`)
+      traefik.http.routers.asauth.entrypoints: web
+      traefik.http.routers.asauth.middlewares: strip-asauth@docker
+      traefik.http.middlewares.strip-asauth.stripprefix.prefixes: /as/v1
+    logging: *logging-config
+
+  as-streams:
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-streams:${AS_VERSION:-latest}
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+    depends_on:
+      as-kafka-init:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/streams/stream/healthz"]
+      interval: 10s
+      timeout: 60s
+      retries: 18  # 3 mins
+      start_period: 300s  # grace period, not minimum
+    environment:
+      R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET:?R5AS_AUTH_SECRET is not set}
+      R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
+      R5AS_STATE_DIRECTORY: /root/kafka-streams
+      R5AS_BOOTSTRAP_SERVERS: ${KAFKA_IP}:9092
+      R5AS_MESSAGE_BUS_CLEAR_STREAMS: ${R5AS_MESSAGE_BUS_CLEAR_STREAMS:-false}
+      R5AS_AUTOSCALE_PARTITIONS: ${R5AS_AUTOSCALE_PARTITIONS:-1}
+      R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
+      R5AS_SECURITY_PROTOCOL_CONFIG: SASL_SSL
+      R5AS_SSL_KEYSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_TRUSTSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_CA_CERTIFICATE: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
+      R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
+      R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
+      R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
+      R5AS_RESTREAMER_REDISTRIBUTE_SECONDS: ${R5AS_RESTREAMER_REDISTRIBUTE_SECONDS:-60}
+      R5AS_STREAM_TIMEOUT: ${R5AS_STREAM_TIMEOUT:-30}
+
+      R5AS_CONSUMER_REQUEST_TIMEOUT: ${R5AS_CONSUMER_REQUEST_TIMEOUT:-300000}
+      R5AS_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_CONSUMER_MAX_POLL_INTERVAL:-600000}
+      R5AS_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
+      R5AS_GLOBAL_CONSUMER_REQUEST_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_REQUEST_TIMEOUT:-300000}
+      R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL:-600000}
+      R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
+      R5AS_PRODUCER_REQUEST_TIMEOUT: ${R5AS_PRODUCER_REQUEST_TIMEOUT:-300000}
+
+      R5AS_CONSUMER_SESSION_TIMEOUT_MS: ${R5AS_CONSUMER_SESSION_TIMEOUT_MS:-60000}
+      R5AS_CONSUMER_HEARTBEAT_INTERVAL_MS: ${R5AS_CONSUMER_HEARTBEAT_INTERVAL_MS:-20000}
+      R5AS_CONSUMER_MAX_POLL_INTERVAL_MS: ${R5AS_CONSUMER_MAX_POLL_INTERVAL_MS:-300000}
+      R5AS_CONSUMER_GROUP_INSTANCE_ID_SUFFIX: ${R5AS_CONSUMER_GROUP_INSTANCE_ID_SUFFIX:-}
+      R5AS_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY: ${R5AS_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY:-org.apache.kafka.clients.consumer.CooperativeStickyAssignor}
+      R5AS_STREAMS_COMMIT_INTERVAL_MS: ${R5AS_STREAMS_COMMIT_INTERVAL_MS:-1000}
+      R5AS_PRODUCER_BATCH_SIZE: ${R5AS_PRODUCER_BATCH_SIZE:-65536}
+      R5AS_PRODUCER_LINGER_MS: ${R5AS_PRODUCER_LINGER_MS:-50}
+      R5AS_PRODUCER_TRANSACTION_TIMEOUT: ${R5AS_PRODUCER_TRANSACTION_TIMEOUT:-900000}
+      R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
+    labels:
+      prometheus.scrape: true
+      prometheus.path: /streams/metrics
+      traefik.enable: true
+      traefik.http.routers.asstreams.rule: PathPrefix(`/as/v1/streams`)
+      traefik.http.routers.asstreams.entrypoints: web
+      traefik.http.routers.asstreams.middlewares: strip-asstreams@docker
+      traefik.http.middlewares.strip-asstreams.stripprefix.prefixes: /as/v1
+    logging: *logging-config
+
+  as-conference:
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-conference:${AS_VERSION:-latest}
+    restart: unless-stopped
+    deploy:
+      replicas: ${CONFERENCE_SERVICES:-1}
+    depends_on:
+      as-kafka-init:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/conference/healthz"]
+      interval: 10s
+      timeout: 60s
+      retries: 18  # 3 mins
+      start_period: 300s  # grace period, not minimum
+    environment:
+      R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET:?R5AS_AUTH_SECRET is not set}
+      R5AS_CONFERENCE_SECRET: ${R5AS_CONFERENCE_SECRET:?R5AS_CONFERENCE_SECRET is not set}
+      R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
+      R5AS_STATE_DIRECTORY: /root/kafka-streams
+      R5AS_BOOTSTRAP_SERVERS: ${KAFKA_IP}:9092
+      R5AS_MESSAGE_BUS_CLEAR_STREAMS: ${R5AS_MESSAGE_BUS_CLEAR_STREAMS:-false}
+      R5AS_AUTOSCALE_PARTITIONS: ${R5AS_AUTOSCALE_PARTITIONS:-1}
+      R5AS_NODE_API_ACCESS_TOKEN: ${R5AS_NODE_API_ACCESS_TOKEN:?R5AS_NODE_API_ACCESS_TOKEN is not set}
+      R5AS_TRANSCRIPTION_ENDPOINT: ${R5AS_TRANSCRIPTION_ENDPOINT}
+      R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
+      R5AS_SECURITY_PROTOCOL_CONFIG: SASL_SSL
+      R5AS_SSL_KEYSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_TRUSTSTORE_TYPE_CONFIG: PEM
+      R5AS_SSL_CA_CERTIFICATE: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
+      R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
+      R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
+      R5AS_SASL_ENABLED_MECHANISMS: PLAIN
+      R5AS_TRAEFIK_HOST: ${TRAEFIK_HOST:-localhost}
+      R5AS_CONSUMER_REQUEST_TIMEOUT: ${R5AS_CONSUMER_REQUEST_TIMEOUT:-300000}
+      R5AS_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_CONSUMER_MAX_POLL_INTERVAL:-600000}
+      R5AS_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
+      R5AS_GLOBAL_CONSUMER_REQUEST_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_REQUEST_TIMEOUT:-300000}
+      R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL:-600000}
+      R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
+      R5AS_PRODUCER_REQUEST_TIMEOUT: ${R5AS_PRODUCER_REQUEST_TIMEOUT:-300000}
+    labels:
+      traefik.enable: true
+      traefik.http.routers.asconference.rule: PathPrefix(`/as/v1/conference`)
+      traefik.http.routers.asconference.entrypoints: web
+      traefik.http.routers.asconference.middlewares: strip-asconference@docker
+      traefik.http.middlewares.strip-asconference.stripprefix.prefixes: /as/v1/
+      traefik.http.middlewares.strip-asconference.stripprefix.forceSlash: false
+    logging: *logging-config
+
+  reverse-proxy:
+    image: traefik
+    restart: unless-stopped
+    command:
+      --api.insecure=true
+      --api.dashboard=true
+      --providers.docker=true
+      --providers.docker.exposedbydefault=false
+      --entrypoints.web.address=:80
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./certs:/certs"
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      traefik.enable: true
+      traefik.http.routers.traefik-ui.entrypoints: web
+      traefik.http.routers.traefik-ui.rule: PathPrefix(`/dashboard`) || PathPrefix(`/api`)
+      traefik.http.services.traefik-ui.loadbalancer.server.port: 8080
+    logging: *logging-config
+
+  as-testbeds:
+     image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-testbed:${AS_TESTBED_VERSION:-${AS_VERSION:-latest}}
+     restart: unless-stopped
+     depends_on:
+       as-auth:
+         condition: service_started
+       as-streams:
+         condition: service_started
+       as-admin:
+         condition: service_started
+     ports:
+       - 12080:80
+     labels:
+       traefik.enable: true
+       traefik.http.routers.red5.entrypoints: web
+       traefik.http.routers.red5.rule: PathPrefix(`/red5`)
+       traefik.http.routers.red5.middlewares: our-slash@docker
+       traefik.http.services.testbed-service.loadbalancer.server.port: 80
+       traefik.http.routers.red5css.entrypoints: web
+       traefik.http.routers.red5css.rule: PathPrefix(`/css`)
+       traefik.http.routers.red5images.entrypoints: web
+       traefik.http.routers.red5images.rule: PathPrefix(`/images`)
+       traefik.http.routers.red5lib.entrypoints: web
+       traefik.http.routers.red5lib.rule: PathPrefix(`/lib`)
+       traefik.http.routers.red5script.entrypoints: web
+       traefik.http.routers.red5script.rule: PathPrefix(`/script`)
+       traefik.http.middlewares.our-slash.chain.middlewares: strip-prefix-1,strip-prefix-2
+       traefik.http.middlewares.strip-prefix-1.redirectregex.regex: ^(https?://[^/]+/[a-z0-9_]+)$
+       traefik.http.middlewares.strip-prefix-1.redirectregex.replacement: $${1}/
+       traefik.http.middlewares.strip-prefix-1.redirectregex.permanent: true
+       traefik.http.middlewares.strip-prefix-2.stripprefixregex.regex: /[a-z0-9_]+
+     logging:
+      driver: none # disable logging
+
+  as-debug-ui:
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-debug-ui:${AS_VERSION:-latest}
+    restart: unless-stopped
+    labels:
+      traefik.enable: true
+      traefik.http.routers.caddy.entrypoints: web
+      traefik.http.routers.caddy.rule: PathPrefix(`/`)
+    logging:
+      driver: none # disable logging
+
+  as-admin-ui:
+    deploy:
+      replicas: ${AS_ADMIN_UI_REPLICAS:-1}
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.50'
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/as-admin-ui:${AS_ADMIN_UI_VERSION:-${AS_VERSION:-latest}}
+    depends_on:
+      reverse-proxy:
+        condition: service_started
+    environment:
+      # Core
+      REACT_APP_API_BASE_URL: https://${TRAEFIK_HOST:-localhost}
+      REACT_APP_API_TIMEOUT: 30000
+      REACT_APP_SM_VERSION: ${AS_VERSION:-latest}
+      REACT_APP_MAIN_REGION: ${AS_ADMIN_UI_MAIN_REGION:-}
+      REACT_APP_BASENAME: ${AS_ADMIN_UI_BASENAME:-/as-admin-ui}
+      # Default Node Image (all cloud platforms)
+      REACT_APP_NODE_IMAGE_NAME: ${AS_ADMIN_UI_NODE_IMAGE_NAME:-}
+      # AWS
+      REACT_APP_AWS_VPC: ${AS_ADMIN_UI_AWS_VPC:-}
+      REACT_APP_AWS_SECURITY_GROUP: ${AS_ADMIN_UI_AWS_SECURITY_GROUP:-}
+    labels:
+      traefik.enable: true
+      # UI under /as-admin-ui
+      traefik.http.routers.as-admin-ui.rule: "PathPrefix(`${AS_ADMIN_UI_BASENAME:-/as-admin-ui}`)"
+      traefik.http.routers.as-admin-ui.entrypoints: web
+      traefik.http.routers.as-admin-ui.middlewares: strip-as-admin-ui@docker
+      traefik.http.middlewares.strip-as-admin-ui.stripprefix.prefixes: ${AS_ADMIN_UI_BASENAME:-/as-admin-ui}
+      traefik.http.middlewares.strip-as-admin-ui.stripprefix.forceSlash: false
+      # API calls from the UI remain same-origin (/api/as/*) and are forwarded to this container.
+      # Use higher priority than traefik dashboard /api router.
+      traefik.http.routers.as-admin-ui-api.rule: PathPrefix(`/api/as/`)
+      traefik.http.routers.as-admin-ui-api.entrypoints: web
+      traefik.http.routers.as-admin-ui-api.priority: 1000
+      traefik.http.services.as-admin-ui.loadbalancer.server.port: 80
+    logging: *logging-config
+
+  
