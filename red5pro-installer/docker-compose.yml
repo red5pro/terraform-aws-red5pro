@@ -59,6 +59,7 @@ services:
     deploy:
       replicas: 1
     environment:
+      R5AS_SECRETS_KEY_FILE: ${R5AS_SECRETS_KEY_FILE:-/run/secrets/r5as-secrets.key}
       R5AS_STATE_DIRECTORY: /root/kafka-streams
       R5AS_AUTOSCALE_PARTITIONS: ${R5AS_AUTOSCALE_PARTITIONS:-1}
       R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
@@ -94,6 +95,8 @@ services:
       R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL: ${R5AS_GLOBAL_CONSUMER_MAX_POLL_INTERVAL:-600000}
       R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT: ${R5AS_GLOBAL_CONSUMER_FETCH_MAX_WAIT_TIMEOUT:-1000}
       R5AS_PRODUCER_REQUEST_TIMEOUT: ${R5AS_PRODUCER_REQUEST_TIMEOUT:-300000}
+    volumes:
+      - ./keys/r5as-secrets.key:/run/secrets/r5as-secrets.key:ro
     labels:
       traefik.http.routers.config-swagger.rule: "PathPrefix(`/swagger-ui`)"
       traefik.http.routers.config-swagger.entrypoints: "web"
@@ -120,6 +123,7 @@ services:
       as-kafka-init:
         condition: service_healthy
     environment:
+      R5AS_SECRETS_KEY_FILE: ${R5AS_SECRETS_KEY_FILE:-/run/secrets/r5as-secrets.key}
       R5AS_STATE_DIRECTORY: /root/kafka-streams
       R5AS_AUTOSCALE_PARTITIONS: ${R5AS_AUTOSCALE_PARTITIONS:-1}
       R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
@@ -130,7 +134,7 @@ services:
       R5AS_SSL_CA_CERTIFICATE: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
       R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
       R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
-      R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
+      R5AS_SASL_ENABLED_MECHANISMS: PLAIN
       R5AS_COMMAND_INACTIVITY_GAP_MS: ${R5AS_COMMAND_INACTIVITY_GAP_MS:-10000}
       R5AS_TERRAFORM_PARALLELISM: ${R5AS_TERRAFORM_PARALLELISM:-50}
       R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
@@ -147,6 +151,7 @@ services:
       TF_VAR_r5p_license_key: ${TF_VAR_r5p_license_key}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./keys/r5as-secrets.key:/run/secrets/r5as-secrets.key:ro
     logging: *logging-config
 
   as-proxy:
@@ -158,6 +163,7 @@ services:
     ports:
       - 9080:8080
     environment:
+      R5AS_SECRETS_KEY_FILE: ${R5AS_SECRETS_KEY_FILE:-/run/secrets/r5as-secrets.key}
       R5AS_REPLICATION_FACTOR: ${R5AS_REPLICATION_FACTOR:-1}
       R5AS_STATE_DIRECTORY: /root/kafka-streams
       R5AS_BOOTSTRAP_SERVERS: ${KAFKA_IP}:9092
@@ -174,6 +180,8 @@ services:
       # R5AS_AUTOSCALE_DOMAIN: ${TRAEFIK_HOST:-localhost}
       R5AS_PROXY_HTTP_REQUEST_TIMEOUT_S: ${R5AS_PROXY_HTTP_REQUEST_TIMEOUT_S:-60}
       R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
+    volumes:
+      - ./keys/r5as-secrets.key:/run/secrets/r5as-secrets.key:ro
     labels:
       traefik.enable: true
       traefik.http.routers.asproxy.rule: PathPrefix(`/as/v1/proxy`)
@@ -314,6 +322,7 @@ services:
       retries: 18  # 3 mins
       start_period: 300s  # grace period, not minimum
     environment:
+      R5AS_SECRETS_KEY_FILE: ${R5AS_SECRETS_KEY_FILE:-/run/secrets/r5as-secrets.key}
       R5AS_AUTH_SECRET: ${R5AS_AUTH_SECRET:?R5AS_AUTH_SECRET is not set}
       R5AS_AUTH_JWT_TTL_MINUTES: ${R5AS_AUTH_JWT_TTL_MINUTES:-800}
       R5AS_STATE_DIRECTORY: /root/kafka-streams
@@ -327,7 +336,7 @@ services:
       R5AS_SSL_CA_CERTIFICATE: ${KAFKA_SSL_TRUSTSTORE_CERTIFICATES}
       R5AS_SASL_USERNAME: ${KAFKA_CLIENT_USERNAME:-client}
       R5AS_SASL_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
-      R5AS_SASL_ENABLED_MECHANISMS: PLAIN 
+      R5AS_SASL_ENABLED_MECHANISMS: PLAIN
       R5AS_RESTREAMER_REDISTRIBUTE_SECONDS: ${R5AS_RESTREAMER_REDISTRIBUTE_SECONDS:-60}
       R5AS_STREAM_TIMEOUT: ${R5AS_STREAM_TIMEOUT:-30}
 
@@ -349,6 +358,8 @@ services:
       R5AS_PRODUCER_LINGER_MS: ${R5AS_PRODUCER_LINGER_MS:-50}
       R5AS_PRODUCER_TRANSACTION_TIMEOUT: ${R5AS_PRODUCER_TRANSACTION_TIMEOUT:-900000}
       R5AS_GROUP_INSTANCE_ID: ${R5AS_GROUP_INSTANCE_ID:-1}
+    volumes:
+      - ./keys/r5as-secrets.key:/run/secrets/r5as-secrets.key:ro
     labels:
       prometheus.scrape: true
       prometheus.path: /streams/metrics
