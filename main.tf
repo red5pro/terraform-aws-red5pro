@@ -1007,6 +1007,7 @@ resource "aws_instance" "red5pro_sm" {
           AS_ADMIN_UI_NODE_IMAGE_NAME=${local.red5pro_node_image_name}
           AS_ADMIN_UI_AWS_VPC=${local.vpc_name}
           AS_ADMIN_UI_AWS_SECURITY_GROUP=${aws_security_group.red5pro_node_sg[0].name}
+          AS_ADMIN_UI_AWS_SUBNET=${local.node_group_subnet}
         EOF
   )
   tags = merge({ "Name" = local.autoscale ? "${var.name}-stream-manager-image" : "${var.name}-stream-manager", }, var.tags, )
