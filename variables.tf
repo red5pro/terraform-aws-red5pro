@@ -49,12 +49,21 @@ variable "vpc_use_existing" {
   default     = false
 }
 variable "vpc_id_existing" {
-  description = "VPC ID, this VPC should have minimum 2 public subnets."
+  description = "VPC ID, this VPC should have public subnets. Use vpc_subnet_ids_existing to select which subnets to deploy into."
   type        = string
   default     = "vpc-12345"
   validation {
     condition     = length(var.vpc_id_existing) > 4 && substr(var.vpc_id_existing, 0, 4) == "vpc-"
     error_message = "The vpc_id_existing value must be a valid! Example: vpc-12345"
+  }
+}
+variable "vpc_subnet_ids_existing" {
+  description = "Existing public subnet IDs to deploy into, used only when vpc_use_existing = true. Leave empty to use all subnets of the existing VPC. Every subnet must be public: auto-assign public IP enabled and a 0.0.0.0/0 route via an Internet Gateway. Deployment type standalone/cluster requires minimum 1 subnet, autoscale requires minimum 2 subnets in different availability zones. These subnets are also used by the Stream Manager for the autoscaling nodes."
+  type        = list(string)
+  default     = []
+  validation {
+    condition     = alltrue([for subnet_id in var.vpc_subnet_ids_existing : can(regex("^subnet-", subnet_id))])
+    error_message = "The vpc_subnet_ids_existing value must be a list of valid subnet IDs! Example: [\"subnet-12345\", \"subnet-67890\"]"
   }
 }
 

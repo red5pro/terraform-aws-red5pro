@@ -37,8 +37,9 @@ module "red5pro" {
   ssh_key_private_key_path_existing = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # SSH private key path existing in local machine
 
   # VPC configuration
-  vpc_use_existing = false       # true - use existing VPC and subnets, false - create new VPC and subnets automatically
-  vpc_id_existing  = "vpc-12345" # VPC ID for existing VPC
+  vpc_use_existing        = false            # true - use existing VPC and subnets, false - create new VPC and subnets automatically
+  vpc_id_existing         = "vpc-12345"      # VPC ID for existing VPC
+  vpc_subnet_ids_existing = ["subnet-12345"] # Public subnet IDs of the existing VPC, minimum 1. Empty list - use all subnets of the existing VPC
 
   # Elastic IP configuration
   standalone_elastic_ip_use_existing = false     # true - use existing elastic IP, false - create new elastic IP automatically

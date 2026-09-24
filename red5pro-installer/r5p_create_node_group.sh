@@ -15,7 +15,7 @@
 # NODE_GROUP_CLOUD_PLATFORM="OCI" # AWS, GCP, LINODE, OCI, DO, OPENSTACK
 # NODE_GROUP_REGIONS="us-ashburn-1"
 # NODE_GROUP_ENVIRONMENT="environment-name-example"
-# NODE_GROUP_SUBNET_NAME="subnet-name-example" #OCI only
+# NODE_GROUP_SUBNET_NAME="subnet-name-example" # OCI and AWS only. AWS - one or more comma separated subnet IDs or values of the subnet tag Name, optional
 # NODE_GROUP_VPC_NAME="vpc-name-example"
 # NODE_GROUP_SECURITY_GROUP_NAME="security-group-name-example" # Not used for GCP
 
@@ -136,6 +136,10 @@ NODE_GROUP_DESCRIPTION="${NODE_GROUP_DESCRIPTION} in ${NODE_GROUP_CLOUD_PLATFORM
 # Generate Cloud properties based on the cloud platform
 CLOUD_PROPERTIES_OCI="environment=$NODE_GROUP_ENVIRONMENT;subnet=$NODE_GROUP_SUBNET_NAME;security_group=$NODE_GROUP_SECURITY_GROUP_NAME"
 CLOUD_PROPERTIES_AWS="environment=$NODE_GROUP_ENVIRONMENT;vpc=$NODE_GROUP_VPC_NAME;security_group=$NODE_GROUP_SECURITY_GROUP_NAME"
+# AWS - subnet is optional, without it the Stream Manager selects a public subnet of the VPC automatically
+if [ -n "$NODE_GROUP_SUBNET_NAME" ]; then
+    CLOUD_PROPERTIES_AWS="${CLOUD_PROPERTIES_AWS};subnet=${NODE_GROUP_SUBNET_NAME}"
+fi
 CLOUD_PROPERTIES_GCP="environment=$NODE_GROUP_ENVIRONMENT;vpc=$NODE_GROUP_VPC_NAME"
 CLOUD_PROPERTIES_LINODE="environment=$NODE_GROUP_ENVIRONMENT;vpc=$NODE_GROUP_VPC_NAME;security_group=$NODE_GROUP_SECURITY_GROUP_NAME"
 CLOUD_PROPERTIES_DO="environment=$NODE_GROUP_ENVIRONMENT;vpc=$NODE_GROUP_VPC_NAME"

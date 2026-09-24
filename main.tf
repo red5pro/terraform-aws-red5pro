@@ -1,14 +1,18 @@
 locals {
-  standalone                    = var.type == "standalone"
-  cluster                       = var.type == "cluster"
-  autoscale                     = var.type == "autoscale"
-  cluster_or_autoscale          = local.cluster || local.autoscale
-  ssh_key_name                  = var.ssh_key_use_existing ? data.aws_key_pair.ssh_key_pair[0].key_name : aws_key_pair.red5pro_ssh_key[0].key_name
-  ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_private_key_path_existing) : tls_private_key.red5pro_ssh_key[0].private_key_pem
-  ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_private_key_path_existing : local_file.red5pro_ssh_key_pem[0].filename
-  vpc_id                        = var.vpc_use_existing ? var.vpc_id_existing : aws_vpc.red5pro_vpc[0].id
-  vpc_name                      = var.vpc_use_existing ? data.aws_vpc.selected[0].tags.Name : aws_vpc.red5pro_vpc[0].tags.Name
-  subnet_ids                    = var.vpc_use_existing ? data.aws_subnets.all[0].ids : tolist(aws_subnet.red5pro_subnets[*].id)
+  standalone           = var.type == "standalone"
+  cluster              = var.type == "cluster"
+  autoscale            = var.type == "autoscale"
+  cluster_or_autoscale = local.cluster || local.autoscale
+  ssh_key_name         = var.ssh_key_use_existing ? data.aws_key_pair.ssh_key_pair[0].key_name : aws_key_pair.red5pro_ssh_key[0].key_name
+  ssh_private_key      = var.ssh_key_use_existing ? file(var.ssh_key_private_key_path_existing) : tls_private_key.red5pro_ssh_key[0].private_key_pem
+  ssh_private_key_path = var.ssh_key_use_existing ? var.ssh_key_private_key_path_existing : local_file.red5pro_ssh_key_pem[0].filename
+  vpc_id               = var.vpc_use_existing ? var.vpc_id_existing : aws_vpc.red5pro_vpc[0].id
+  vpc_name             = var.vpc_use_existing ? data.aws_vpc.selected[0].tags.Name : aws_vpc.red5pro_vpc[0].tags.Name
+  vpc_subnets_discover = var.vpc_use_existing && length(var.vpc_subnet_ids_existing) == 0
+  subnet_ids           = var.vpc_use_existing ? (length(var.vpc_subnet_ids_existing) > 0 ? var.vpc_subnet_ids_existing : data.aws_subnets.all[0].ids) : tolist(aws_subnet.red5pro_subnets[*].id)
+  subnet_ids_minimum   = local.autoscale ? 2 : 1
+  # Subnets for the autoscaling nodes, empty value - Stream Manager selects a public subnet of the VPC automatically
+  node_group_subnet             = var.vpc_use_existing ? join(",", var.vpc_subnet_ids_existing) : ""
   kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
   kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? aws_instance.red5pro_kafka[0].private_ip : aws_instance.red5pro_sm[0].private_ip : "null"
   kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
@@ -141,27 +145,54 @@ data "aws_vpc" "selected" {
   }
 }
 
+# Discover all subnets of the existing VPC, only if vpc_subnet_ids_existing is empty
 data "aws_subnets" "all" {
-  count = var.vpc_use_existing ? 1 : 0
+  count = local.vpc_subnets_discover ? 1 : 0
   filter {
     name   = "vpc-id"
     values = [var.vpc_id_existing]
   }
+}
+
+data "aws_subnet" "selected" {
+  for_each = var.vpc_use_existing ? toset(local.subnet_ids) : toset([])
+  id       = each.value
   lifecycle {
     postcondition {
-      condition     = length(self.ids) >= 2
-      error_message = "ERROR! AWS VPC: ${var.vpc_id_existing} doesn't have enough subnets. Minimum 2. Please try to use different VPC or create it by terraform."
+      condition     = self.vpc_id == var.vpc_id_existing
+      error_message = "ERROR! Subnet ${self.id} belongs to VPC ${self.vpc_id}, but VPC ${var.vpc_id_existing} is used for this deployment. Please check the 'vpc_subnet_ids_existing' variable."
+    }
+    postcondition {
+      condition     = self.map_public_ip_on_launch == true
+      error_message = "ERROR! Subnet ${self.id} configured without assigning Public IP on launch instances. Please check/fix it using AWS console or use the 'vpc_subnet_ids_existing' variable to select public subnets only."
     }
   }
 }
 
-data "aws_subnet" "all_subnets" {
-  for_each = var.vpc_use_existing ? toset(data.aws_subnets.all[0].ids) : toset([])
-  id       = each.value
+# Check that every selected subnet is public - has a 0.0.0.0/0 route via an Internet Gateway
+data "aws_route_table" "selected" {
+  for_each  = var.vpc_use_existing ? toset(local.subnet_ids) : toset([])
+  subnet_id = each.value
   lifecycle {
     postcondition {
-      condition     = self.map_public_ip_on_launch == true
-      error_message = "ERROR! Subnet ${self.id} configured without assigning Public IP on launch instances. Please check/fix it using AWS console."
+      condition     = length([for route in self.routes : route if route.cidr_block == "0.0.0.0/0" && can(regex("^igw-", route.gateway_id))]) > 0
+      error_message = "ERROR! Subnet ${each.value} is not public - route table doesn't have a 0.0.0.0/0 route via an Internet Gateway. Please use the 'vpc_subnet_ids_existing' variable to select public subnets only."
+    }
+  }
+}
+
+# Check the amount of subnets and availability zones for the selected deployment type
+resource "terraform_data" "validate_subnets" {
+  count = var.vpc_use_existing ? 1 : 0
+  input = local.subnet_ids
+  lifecycle {
+    precondition {
+      condition     = length(local.subnet_ids) >= local.subnet_ids_minimum
+      error_message = "ERROR! Deployment type '${var.type}' requires minimum ${local.subnet_ids_minimum} public subnet(s), but ${length(local.subnet_ids)} configured. Please check the 'vpc_subnet_ids_existing' variable."
+    }
+    precondition {
+      condition     = local.autoscale ? length(distinct([for subnet in data.aws_subnet.selected : subnet.availability_zone])) >= 2 : true
+      error_message = "ERROR! Deployment type 'autoscale' requires public subnets in minimum 2 different availability zones, it is required by the AWS Load Balancer. Please check the 'vpc_subnet_ids_existing' variable."
     }
   }
 }
@@ -1359,6 +1390,7 @@ resource "null_resource" "node_group" {
       NODE_GROUP_REGIONS                             = var.aws_region
       NODE_GROUP_ENVIRONMENT                         = var.name
       NODE_GROUP_VPC_NAME                            = local.vpc_name
+      NODE_GROUP_SUBNET_NAME                         = local.node_group_subnet
       NODE_GROUP_SECURITY_GROUP_NAME                 = aws_security_group.red5pro_node_sg[0].name
       NODE_GROUP_IMAGE_NAME                          = aws_ami_from_instance.red5pro_node_image[0].name
       NODE_GROUP_ORIGINS_MIN                         = var.node_group_origins_min
