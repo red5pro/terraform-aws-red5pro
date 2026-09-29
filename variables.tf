@@ -487,6 +487,52 @@ variable "security_group_stream_manager_egress" {
   ]
 }
 
+variable "security_group_stream_proxy_ingress" {
+  description = "Security group for Stream Managers - Stream Proxy ingress, used only when stream_proxy_enable = true"
+  type = list(object({
+    description     = string
+    from_port       = string
+    to_port         = string
+    protocol        = string
+    cidr_block      = string
+    ipv6_cidr_block = string
+  }))
+  default = [
+    {
+      description     = "Stream Proxy RTMP and RTMPS"
+      from_port       = "1935"
+      to_port         = "1944"
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+    {
+      description     = "Stream Proxy RTSP and RTSPS"
+      from_port       = "8554"
+      to_port         = "8563"
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+    {
+      description     = "Stream Proxy RTSP UDP"
+      from_port       = "8554"
+      to_port         = "8558"
+      protocol        = "udp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+    {
+      description     = "Stream Proxy SRT"
+      from_port       = "10100"
+      to_port         = "10149"
+      protocol        = "udp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+  ]
+}
+
 variable "security_group_kafka_ingress" {
   description = "Security group for Kafka standalone instance - ingress"
   type = list(object({

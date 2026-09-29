@@ -30,8 +30,8 @@ locals {
   # aws_instance.red5pro_sm user_data does not reference the AMI and SM is not ordered after it.
   red5pro_node_image_name = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${random_id.node_image_suffix[0].hex}" : ""
   # The Stream Proxy selects a node group by the letter at the end of its name, A first,
-  # then B and so on, so the default name ends with A. Node group name is max 16 characters.
-  node_group_name = "${trimsuffix(substr(var.name, 0, 14), "-")}-A"
+  # then B and so on, so with the proxy the name ends with A. Node group name is max 16 characters.
+  node_group_name = local.stream_proxy_enable ? "${trimsuffix(substr(var.name, 0, 14), "-")}-A" : substr(var.name, 0, 16)
   # Stream Proxy runs in the Stream Manager compose stack, deployment type cluster only
   stream_proxy_enable = local.cluster && var.stream_proxy_enable
   # The public IP is used instead of stream_manager_public_hostname on purpose: nginx
@@ -39,12 +39,6 @@ locals {
   # a VPC without outbound DNS. Traefik accepts the Stream Manager public IP as a host,
   # it is in the router rules together with TRAEFIK_HOST.
   stream_proxy_sm_url = "${local.stream_manager_ssl == "none" ? "http" : "https"}://${local.stream_manager_ssh_ip}"
-  stream_proxy_ingress = [
-    { description = "Stream Proxy RTMP and RTMPS", from_port = 1935, to_port = 1944, protocol = "tcp" },
-    { description = "Stream Proxy RTSP and RTSPS", from_port = 8554, to_port = 8563, protocol = "tcp" },
-    { description = "Stream Proxy RTSP UDP", from_port = 8554, to_port = 8558, protocol = "udp" },
-    { description = "Stream Proxy SRT", from_port = 10100, to_port = 10149, protocol = "udp" },
-  ]
 }
 
 ################################################################################
@@ -330,13 +324,26 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_ingress_ipv6" {
 }
 # Ports of the Red5 Pro Stream Proxy, added only when stream_proxy_enable = true
 resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_stream_proxy_ingress_ipv4" {
-  count             = local.stream_proxy_enable ? length(local.stream_proxy_ingress) : 0
+  count             = local.stream_proxy_enable ? length(var.security_group_stream_proxy_ingress) : 0
   security_group_id = aws_security_group.red5pro_sm_sg[0].id
-  cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = local.stream_proxy_ingress[count.index].protocol
-  from_port         = local.stream_proxy_ingress[count.index].from_port
-  to_port           = local.stream_proxy_ingress[count.index].to_port
-  description       = local.stream_proxy_ingress[count.index].description
+  cidr_ipv4         = var.security_group_stream_proxy_ingress[count.index].cidr_block
+  ip_protocol       = var.security_group_stream_proxy_ingress[count.index].protocol
+  from_port         = var.security_group_stream_proxy_ingress[count.index].protocol == "-1" ? null : var.security_group_stream_proxy_ingress[count.index].from_port
+  to_port           = var.security_group_stream_proxy_ingress[count.index].protocol == "-1" ? null : var.security_group_stream_proxy_ingress[count.index].to_port
+  description       = var.security_group_stream_proxy_ingress[count.index].description
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_stream_proxy_ingress_ipv6" {
+  for_each = local.stream_proxy_enable ? {
+    for idx, rule in var.security_group_stream_proxy_ingress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+
+  security_group_id = aws_security_group.red5pro_sm_sg[0].id
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
 }
 
 resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv4" {
