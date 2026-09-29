@@ -43,6 +43,8 @@ services:
     labels:
       traefik.http.routers.asstreams.rule: PathPrefix(`/as/v1/streams`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
       traefik.http.routers.asstreams.entrypoints: websecure
+      traefik.http.routers.asstreams-v2.rule: PathPrefix(`/as/v2/streams`) && (Host(`${TRAEFIK_HOST:?Ensure TRAEFIK_HOST is set to the DNS name of your server.}`) || Host(`${TRAEFIK_IP:?Ensure TRAEFIK_IP is set to the Public IP of your server.}`))
+      traefik.http.routers.asstreams-v2.entrypoints: websecure
 
   reverse-proxy:
     command:

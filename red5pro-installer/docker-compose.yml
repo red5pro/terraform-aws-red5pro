@@ -368,6 +368,10 @@ services:
       traefik.http.routers.asstreams.entrypoints: web
       traefik.http.routers.asstreams.middlewares: strip-asstreams@docker
       traefik.http.middlewares.strip-asstreams.stripprefix.prefixes: /as/v1
+      traefik.http.routers.asstreams-v2.rule: PathPrefix(`/as/v2/streams`)
+      traefik.http.routers.asstreams-v2.entrypoints: web
+      traefik.http.routers.asstreams-v2.middlewares: strip-asstreams-v2@docker
+      traefik.http.middlewares.strip-asstreams-v2.stripprefix.prefixes: /as/v2
     logging: *logging-config
 
   as-conference:
