@@ -78,6 +78,27 @@ output "security_group_name_standalone" {
   description = "Security group name Standalone Red5 Pro server"
   value       = try(aws_security_group.red5pro_standalone_sg[0].name, "")
 }
+output "security_group_name_rabbitmq" {
+  description = "Security group name standalone RabbitMQ instance"
+  value       = try(aws_security_group.red5pro_rabbitmq_sg[0].name, "")
+}
+output "rabbitmq_private_ip" {
+  description = "RabbitMQ standalone instance private IP (use as rmq1.address for nodes in the same VPC)"
+  value       = try(aws_instance.red5pro_rabbitmq[0].private_ip, "")
+}
+output "rabbitmq_public_ip" {
+  description = "RabbitMQ standalone instance public IP"
+  value       = try(aws_instance.red5pro_rabbitmq[0].public_ip, "")
+}
+output "rabbitmq_user" {
+  description = "RabbitMQ user name"
+  value       = local.rabbitmq_standalone_instance ? var.rabbitmq_user : ""
+}
+output "rabbitmq_password" {
+  description = "RabbitMQ user password"
+  value       = local.rabbitmq_password
+  sensitive   = true
+}
 output "r5as_conference_secret" {
   description = "Auto-generated R5AS Conference secret (hex)"
   value       = try(random_id.r5as_conference_secret[0].hex, "")

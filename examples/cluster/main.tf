@@ -31,6 +31,13 @@ module "red5pro" {
   kafka_standalone_instance_type   = "m5.xlarge" # Instance type for Kafka standalone instance
   kafka_standalone_volume_size     = 16          # Volume size in GB for Kafka standalone instance
 
+  # RabbitMQ standalone instance configuration (optional)
+  rabbitmq_standalone_instance_create = false
+  rabbitmq_standalone_instance_type   = "t3.medium" # Instance type for RabbitMQ standalone instance
+  rabbitmq_standalone_volume_size     = 16          # Volume size in GB for RabbitMQ standalone instance
+  rabbitmq_user                       = "red5pro"   # RabbitMQ user name
+  rabbitmq_password                   = ""          # RabbitMQ user password, empty value - generate a random password
+
   # Stream Manager configuration 
   stream_manager_instance_type    = "m5.xlarge"                # Instance type for Stream Manager
   stream_manager_volume_size      = 16                         # Volume size for Stream Manager

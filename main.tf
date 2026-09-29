@@ -16,6 +16,9 @@ locals {
   kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
   kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? aws_instance.red5pro_kafka[0].private_ip : aws_instance.red5pro_sm[0].private_ip : "null"
   kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
+  rabbitmq_standalone_instance  = local.cluster_or_autoscale && var.rabbitmq_standalone_instance_create
+  rabbitmq_password             = local.rabbitmq_standalone_instance ? var.rabbitmq_password != "" ? var.rabbitmq_password : random_password.rabbitmq_password[0].result : ""
+  vpc_cidr_block                = var.vpc_use_existing ? data.aws_vpc.selected[0].cidr_block : aws_vpc.red5pro_vpc[0].cidr_block
   kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
   kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
   kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
@@ -477,6 +480,69 @@ resource "aws_vpc_security_group_egress_rule" "red5pro_kafka_egress_ipv6" {
   description       = each.value.description
 }
 
+# Security group for RabbitMQ (AWS VPC)
+resource "aws_security_group" "red5pro_rabbitmq_sg" {
+  count       = local.rabbitmq_standalone_instance ? 1 : 0
+  name        = "${var.name}-rabbitmq-sg"
+  description = "Allow inbound/outbound traffic for RabbitMQ"
+  vpc_id      = local.vpc_id
+
+  tags = merge({ "Name" = "${var.name}-rabbitmq-sg" }, var.tags, )
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_rabbitmq_ingress_amqp" {
+  count             = local.rabbitmq_standalone_instance ? 1 : 0
+  security_group_id = aws_security_group.red5pro_rabbitmq_sg[0].id
+  cidr_ipv4         = local.vpc_cidr_block
+  ip_protocol       = "tcp"
+  from_port         = 5672
+  to_port           = 5672
+  description       = "RabbitMQ AMQP from VPC"
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_rabbitmq_ingress_ipv4" {
+  count             = local.rabbitmq_standalone_instance ? length(var.security_group_rabbitmq_ingress) : 0
+  security_group_id = aws_security_group.red5pro_rabbitmq_sg[0].id
+  cidr_ipv4         = var.security_group_rabbitmq_ingress[count.index].cidr_block
+  ip_protocol       = var.security_group_rabbitmq_ingress[count.index].protocol
+  from_port         = var.security_group_rabbitmq_ingress[count.index].protocol == "-1" ? null : var.security_group_rabbitmq_ingress[count.index].from_port
+  to_port           = var.security_group_rabbitmq_ingress[count.index].protocol == "-1" ? null : var.security_group_rabbitmq_ingress[count.index].to_port
+  description       = var.security_group_rabbitmq_ingress[count.index].description
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_rabbitmq_ingress_ipv6" {
+  for_each = local.rabbitmq_standalone_instance ? {
+    for idx, rule in var.security_group_rabbitmq_ingress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+
+  security_group_id = aws_security_group.red5pro_rabbitmq_sg[0].id
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
+}
+resource "aws_vpc_security_group_egress_rule" "red5pro_rabbitmq_egress_ipv4" {
+  count             = local.rabbitmq_standalone_instance ? length(var.security_group_rabbitmq_egress) : 0
+  security_group_id = aws_security_group.red5pro_rabbitmq_sg[0].id
+  cidr_ipv4         = var.security_group_rabbitmq_egress[count.index].cidr_block
+  ip_protocol       = var.security_group_rabbitmq_egress[count.index].protocol
+  from_port         = var.security_group_rabbitmq_egress[count.index].protocol == "-1" ? null : var.security_group_rabbitmq_egress[count.index].from_port
+  to_port           = var.security_group_rabbitmq_egress[count.index].protocol == "-1" ? null : var.security_group_rabbitmq_egress[count.index].to_port
+  description       = var.security_group_rabbitmq_egress[count.index].description
+}
+resource "aws_vpc_security_group_egress_rule" "red5pro_rabbitmq_egress_ipv6" {
+  for_each = local.rabbitmq_standalone_instance ? {
+    for idx, rule in var.security_group_rabbitmq_egress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+
+  security_group_id = aws_security_group.red5pro_rabbitmq_sg[0].id
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
+}
+
 # Security group for StreamManager and Node images (AWS VPC)
 resource "aws_security_group" "red5pro_images_sg" {
   count       = local.cluster || local.autoscale ? 1 : 0
@@ -850,6 +916,60 @@ resource "null_resource" "red5pro_kafka" {
     ]
   }
   depends_on = [tls_cert_request.kafka_server_csr, aws_instance.red5pro_kafka]
+}
+
+################################################################################
+# RabbitMQ server (AWS instance)
+################################################################################
+
+resource "random_password" "rabbitmq_password" {
+  count   = local.rabbitmq_standalone_instance && var.rabbitmq_password == "" ? 1 : 0
+  length  = 32
+  special = false
+}
+
+resource "aws_instance" "red5pro_rabbitmq" {
+  count                  = local.rabbitmq_standalone_instance ? 1 : 0
+  ami                    = data.aws_ami.latest_ubuntu.id
+  instance_type          = var.rabbitmq_standalone_instance_type
+  key_name               = local.ssh_key_name
+  subnet_id              = element(local.subnet_ids, 0)
+  vpc_security_group_ids = [aws_security_group.red5pro_rabbitmq_sg[0].id]
+
+  root_block_device {
+    volume_size = var.rabbitmq_standalone_volume_size
+  }
+  tags = merge({ "Name" = "${var.name}-rabbitmq-standalone", }, var.tags, )
+}
+
+resource "null_resource" "red5pro_rabbitmq" {
+  count = local.rabbitmq_standalone_instance ? 1 : 0
+
+  connection {
+    host        = aws_instance.red5pro_rabbitmq[0].public_ip
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = local.ssh_private_key
+  }
+
+  provisioner "file" {
+    source      = "${abspath(path.module)}/red5pro-installer"
+    destination = "/home/ubuntu"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo iptables -F",
+      "sudo netfilter-persistent save",
+      "sudo cloud-init status --wait",
+      "export RMQ_USER='${var.rabbitmq_user}'",
+      "export RMQ_PASSWORD='${nonsensitive(local.rabbitmq_password)}'",
+      "cd /home/ubuntu/red5pro-installer/",
+      "sudo chmod +x /home/ubuntu/red5pro-installer/*.sh",
+      "sudo -E /home/ubuntu/red5pro-installer/r5p_rabbitmq_install.sh",
+    ]
+  }
+  depends_on = [aws_instance.red5pro_rabbitmq]
 }
 
 ################################################################################

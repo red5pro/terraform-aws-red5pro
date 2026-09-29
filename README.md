@@ -220,9 +220,11 @@ Set **`stream_manager_public_hostname`** to the DNS name clients use for Stream 
 - Security list
     - Security group for Stream Manager 2.0
     - Security group for Kafka
+    - Security group for RabbitMQ (optional)
     - Security group for Red5 Pro (SM2.0) Autoscaling nodes
 - SSH key pair (use existing or create a new one)
 - Standalone Kafka instance (optional).
+- Standalone RabbitMQ instance (optional). AMQP port `5672` is open only for the VPC CIDR, nodes connect to its private IP.
 - Stream Manager 2.0 instance. Optionally include a Kafka server on the same instance.
 - SSL certificate for Stream Manager 2.0 instance. Options:
   - `none` - Stream Manager 2.0 without HTTPS and SSL certificate. Only HTTP on port `80`
@@ -264,6 +266,13 @@ module "red5pro" {
   kafka_standalone_instance_create = false
   kafka_standalone_instance_type   = "m5.xlarge" # Instance type for Kafka standalone instance
   kafka_standalone_volume_size     = 16          # Volume size in GB for Kafka standalone instance
+
+  # RabbitMQ standalone instance configuration (optional)
+  rabbitmq_standalone_instance_create = false
+  rabbitmq_standalone_instance_type   = "t3.medium" # Instance type for RabbitMQ standalone instance
+  rabbitmq_standalone_volume_size     = 16          # Volume size in GB for RabbitMQ standalone instance
+  rabbitmq_user                       = "red5pro"   # RabbitMQ user name
+  rabbitmq_password                   = ""          # RabbitMQ user password, empty value - generate a random password
 
   # Stream Manager configuration 
   stream_manager_instance_type    = "m5.xlarge"                # Instance type for Stream Manager
@@ -372,9 +381,11 @@ Set **`stream_manager_public_hostname`** to the DNS name clients use (e.g. `sm.e
 - Security list
     - Security group for Stream Manager 2.0
     - Security group for Kafka
+    - Security group for RabbitMQ (optional)
     - Security group for Red5 Pro (SM2.0) Autoscaling nodes
 - SSH key pair (use existing or create a new one)
 - Standalone Kafka instance
+- Standalone RabbitMQ instance (optional). AMQP port `5672` is open only for the VPC CIDR, nodes connect to its private IP.
 - Stream Manager 2.0 instance image
 - Instance poll for Stream Manager 2.0 instances
 - Autoscaling configuration for Stream Manager 2.0 instances
@@ -418,6 +429,13 @@ module "red5pro" {
   # Kafka standalone instance configuration
   kafka_standalone_instance_type = "m5.xlarge" # Instance type for Kafka standalone instance
   kafka_standalone_volume_size   = 16          # Volume size in GB for Kafka standalone instance
+
+  # RabbitMQ standalone instance configuration (optional)
+  rabbitmq_standalone_instance_create = false
+  rabbitmq_standalone_instance_type   = "t3.medium" # Instance type for RabbitMQ standalone instance
+  rabbitmq_standalone_volume_size     = 16          # Volume size in GB for RabbitMQ standalone instance
+  rabbitmq_user                       = "red5pro"   # RabbitMQ user name
+  rabbitmq_password                   = ""          # RabbitMQ user password, empty value - generate a random password
 
   # Stream Manager configuration 
   stream_manager_instance_type                = "m5.xlarge"                # Instance type for Stream Manager
