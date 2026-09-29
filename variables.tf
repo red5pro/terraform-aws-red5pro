@@ -352,6 +352,18 @@ variable "stream_manager_auth_password" {
   type        = string
   default     = ""
 }
+# Red5 Pro Stream Proxy configuration
+variable "stream_proxy_enable" {
+  description = "Deploy Red5 Pro Stream Proxy alongside the Stream Manager 2.0 services. Supported for deployment type cluster only. It publishes RTMP/RTMPS 1935-1944, RTSP/RTSPS 8554-8563 and SRT 10100-10149 on the Stream Manager instance, and the matching rules are added to the Stream Manager security group."
+  type        = bool
+  default     = false
+}
+variable "stream_proxy_version" {
+  description = "Red5 Pro Stream Proxy docker image version, used only when stream_proxy_enable = true. Example: main.b41"
+  type        = string
+  default     = ""
+}
+
 # Red5 Pro general configuration
 variable "red5pro_license_key" {
   description = "Red5 Pro license key (https://www.red5.net/docs/installation/installation/license-key/)"

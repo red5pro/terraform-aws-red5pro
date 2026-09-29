@@ -1,0 +1,41 @@
+---
+# Loaded via COMPOSE_FILE (see config_sm() in r5p_install_sm2_aws.sh) only when
+# STREAM_PROXY_ENABLE=true. Adds the Red5 Pro Stream Proxy to the Stream Manager
+# compose stack and publishes the RTMP/RTMPS, RTSP/RTSPS and SRT ports on the
+# Stream Manager instance, so the matching rules have to be open in the Stream
+# Manager security group.
+#
+# The port ranges below match the R5SP_PORT_* defaults and are not configurable
+# through the module. The Stream Manager credentials are reused from R5AS_AUTH_*.
+#
+# R5SP_STREAM_MANAGER_URL is an IP based URL by default: nginx inside the proxy
+# resolves host names through public resolvers (1.1.1.1, 8.8.8.8) instead of the
+# VPC resolver, which fails in a VPC that does not allow outbound DNS.
+
+services:
+  r5streamproxy:
+    image: ${CONTAINER_REGISTRY:-docker.io/red5pro}/red5pro-stream-proxy:${STREAM_PROXY_VERSION:?STREAM_PROXY_VERSION is not set}
+    restart: unless-stopped
+    container_name: red5pro-stream-proxy
+    environment:
+      R5SP_STREAM_MANAGER_VERSION: ${R5SP_STREAM_MANAGER_VERSION:-cloud}
+      R5SP_STREAM_MANAGER_URL: ${R5SP_STREAM_MANAGER_URL:?R5SP_STREAM_MANAGER_URL is not set}
+      R5SP_SM_USERNAME: ${R5AS_AUTH_USER:?R5AS_AUTH_USER is not set}
+      R5SP_SM_PASSWORD: ${R5AS_AUTH_PASS:?R5AS_AUTH_PASS is not set}
+      R5SP_PORT_START: ${R5SP_PORT_START:-10100}
+      R5SP_PORT_RANGE_SIZE: ${R5SP_PORT_RANGE_SIZE:-10}
+      R5SP_PORT_RANGES: ${R5SP_PORT_RANGES:-5}
+    volumes:
+      - "./stream-proxy-certs/cert.pem:/usr/local/nginx/conf/cert.pem:ro"
+      - "./stream-proxy-certs/privkey.pem:/usr/local/nginx/conf/key.pem:ro"
+    ports:
+      - "1935-1944:1935-1944"         # RTMP 1935-1939 and RTMPS 1940-1944 (TCP)
+      - "8554-8563:8554-8563"         # RTSP 8554-8558 and RTSPS 8559-8563 (TCP)
+      - "8554-8558:8554-8558/udp"     # RTSP 8554-8558 (UDP)
+      - "10100-10149:10100-10149/udp" # SRT restreaming (UDP)
+      - "8090:8080"                   # Health check (TCP)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
