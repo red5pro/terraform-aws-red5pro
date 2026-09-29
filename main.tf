@@ -1,14 +1,18 @@
 locals {
-  standalone                    = var.type == "standalone"
-  cluster                       = var.type == "cluster"
-  autoscale                     = var.type == "autoscale"
-  cluster_or_autoscale          = local.cluster || local.autoscale
-  ssh_key_name                  = var.ssh_key_use_existing ? data.aws_key_pair.ssh_key_pair[0].key_name : aws_key_pair.red5pro_ssh_key[0].key_name
-  ssh_private_key               = var.ssh_key_use_existing ? file(var.ssh_key_private_key_path_existing) : tls_private_key.red5pro_ssh_key[0].private_key_pem
-  ssh_private_key_path          = var.ssh_key_use_existing ? var.ssh_key_private_key_path_existing : local_file.red5pro_ssh_key_pem[0].filename
-  vpc_id                        = var.vpc_use_existing ? var.vpc_id_existing : aws_vpc.red5pro_vpc[0].id
-  vpc_name                      = var.vpc_use_existing ? data.aws_vpc.selected[0].tags.Name : aws_vpc.red5pro_vpc[0].tags.Name
-  subnet_ids                    = var.vpc_use_existing ? data.aws_subnets.all[0].ids : tolist(aws_subnet.red5pro_subnets[*].id)
+  standalone           = var.type == "standalone"
+  cluster              = var.type == "cluster"
+  autoscale            = var.type == "autoscale"
+  cluster_or_autoscale = local.cluster || local.autoscale
+  ssh_key_name         = var.ssh_key_use_existing ? data.aws_key_pair.ssh_key_pair[0].key_name : aws_key_pair.red5pro_ssh_key[0].key_name
+  ssh_private_key      = var.ssh_key_use_existing ? file(var.ssh_key_private_key_path_existing) : tls_private_key.red5pro_ssh_key[0].private_key_pem
+  ssh_private_key_path = var.ssh_key_use_existing ? var.ssh_key_private_key_path_existing : local_file.red5pro_ssh_key_pem[0].filename
+  vpc_id               = var.vpc_use_existing ? var.vpc_id_existing : aws_vpc.red5pro_vpc[0].id
+  vpc_name             = var.vpc_use_existing ? data.aws_vpc.selected[0].tags.Name : aws_vpc.red5pro_vpc[0].tags.Name
+  vpc_subnets_discover = var.vpc_use_existing && length(var.vpc_subnet_ids_existing) == 0
+  subnet_ids           = var.vpc_use_existing ? (length(var.vpc_subnet_ids_existing) > 0 ? var.vpc_subnet_ids_existing : data.aws_subnets.all[0].ids) : tolist(aws_subnet.red5pro_subnets[*].id)
+  subnet_ids_minimum   = local.autoscale ? 2 : 1
+  # Subnets for the autoscaling nodes, empty value - Stream Manager selects a public subnet of the VPC automatically
+  node_group_subnet             = var.vpc_use_existing ? join(",", var.vpc_subnet_ids_existing) : ""
   kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
   kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? aws_instance.red5pro_kafka[0].private_ip : aws_instance.red5pro_sm[0].private_ip : "null"
   kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
@@ -25,6 +29,16 @@ locals {
   # Same value as aws_ami_from_instance.red5pro_node_image name, but computed here so
   # aws_instance.red5pro_sm user_data does not reference the AMI and SM is not ordered after it.
   red5pro_node_image_name = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${random_id.node_image_suffix[0].hex}" : ""
+  # The Stream Proxy selects a node group by the letter at the end of its name, A first,
+  # then B and so on, so with the proxy the name ends with A. Node group name is max 16 characters.
+  node_group_name = local.stream_proxy_enable ? "${trimsuffix(substr(var.name, 0, 14), "-")}-A" : substr(var.name, 0, 16)
+  # Stream Proxy runs in the Stream Manager compose stack, deployment type cluster only
+  stream_proxy_enable = local.cluster && var.stream_proxy_enable
+  # The public IP is used instead of stream_manager_public_hostname on purpose: nginx
+  # inside the Stream Proxy resolves host names through public resolvers, which fails in
+  # a VPC without outbound DNS. Traefik accepts the Stream Manager public IP as a host,
+  # it is in the router rules together with TRAEFIK_HOST.
+  stream_proxy_sm_url = "${local.stream_manager_ssl == "none" ? "http" : "https"}://${local.stream_manager_ssh_ip}"
 }
 
 ################################################################################
@@ -141,27 +155,72 @@ data "aws_vpc" "selected" {
   }
 }
 
+# Discover all subnets of the existing VPC, only if vpc_subnet_ids_existing is empty
 data "aws_subnets" "all" {
-  count = var.vpc_use_existing ? 1 : 0
+  count = local.vpc_subnets_discover ? 1 : 0
   filter {
     name   = "vpc-id"
     values = [var.vpc_id_existing]
   }
+}
+
+data "aws_subnet" "selected" {
+  for_each = var.vpc_use_existing ? toset(local.subnet_ids) : toset([])
+  id       = each.value
   lifecycle {
     postcondition {
-      condition     = length(self.ids) >= 2
-      error_message = "ERROR! AWS VPC: ${var.vpc_id_existing} doesn't have enough subnets. Minimum 2. Please try to use different VPC or create it by terraform."
+      condition     = self.vpc_id == var.vpc_id_existing
+      error_message = "ERROR! Subnet ${self.id} belongs to VPC ${self.vpc_id}, but VPC ${var.vpc_id_existing} is used for this deployment. Please check the 'vpc_subnet_ids_existing' variable."
+    }
+    postcondition {
+      condition     = self.map_public_ip_on_launch == true
+      error_message = "ERROR! Subnet ${self.id} configured without assigning Public IP on launch instances. Please check/fix it using AWS console or use the 'vpc_subnet_ids_existing' variable to select public subnets only."
     }
   }
 }
 
-data "aws_subnet" "all_subnets" {
-  for_each = var.vpc_use_existing ? toset(data.aws_subnets.all[0].ids) : toset([])
-  id       = each.value
+# Check that every selected subnet is public - has a 0.0.0.0/0 route via an Internet Gateway
+data "aws_route_table" "selected" {
+  for_each  = var.vpc_use_existing ? toset(local.subnet_ids) : toset([])
+  subnet_id = each.value
   lifecycle {
     postcondition {
-      condition     = self.map_public_ip_on_launch == true
-      error_message = "ERROR! Subnet ${self.id} configured without assigning Public IP on launch instances. Please check/fix it using AWS console."
+      condition     = length([for route in self.routes : route if route.cidr_block == "0.0.0.0/0" && can(regex("^igw-", route.gateway_id))]) > 0
+      error_message = "ERROR! Subnet ${each.value} is not public - route table doesn't have a 0.0.0.0/0 route via an Internet Gateway. Please use the 'vpc_subnet_ids_existing' variable to select public subnets only."
+    }
+  }
+}
+
+# Check the amount of subnets and availability zones for the selected deployment type
+resource "terraform_data" "validate_subnets" {
+  count = var.vpc_use_existing ? 1 : 0
+  input = local.subnet_ids
+  lifecycle {
+    precondition {
+      condition     = length(local.subnet_ids) >= local.subnet_ids_minimum
+      error_message = "ERROR! Deployment type '${var.type}' requires minimum ${local.subnet_ids_minimum} public subnet(s), but ${length(local.subnet_ids)} configured. Please check the 'vpc_subnet_ids_existing' variable."
+    }
+    precondition {
+      condition     = local.autoscale ? length(distinct([for subnet in data.aws_subnet.selected : subnet.availability_zone])) >= 2 : true
+      error_message = "ERROR! Deployment type 'autoscale' requires public subnets in minimum 2 different availability zones, it is required by the AWS Load Balancer. Please check the 'vpc_subnet_ids_existing' variable."
+    }
+  }
+}
+
+# Stream Proxy configuration check, it is a separate resource so the errors are
+# reported before anything is created
+resource "terraform_data" "validate_stream_proxy" {
+  count = var.stream_proxy_enable ? 1 : 0
+  input = var.stream_proxy_version
+
+  lifecycle {
+    precondition {
+      condition     = local.cluster
+      error_message = "ERROR! stream_proxy_enable = true is supported only for type = cluster, current type is ${var.type}. The Stream Proxy runs on the Stream Manager instance and its RTMP, RTSP and SRT ports cannot be served by the application load balancer of the autoscale deployment."
+    }
+    precondition {
+      condition     = var.stream_proxy_version != ""
+      error_message = "ERROR! Value in variable stream_proxy_version is required when stream_proxy_enable = true! Example: main.b41"
     }
   }
 }
@@ -263,6 +322,30 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_ingress_ipv6" {
   to_port           = each.value.protocol == "-1" ? null : each.value.to_port
   description       = each.value.description
 }
+# Ports of the Red5 Pro Stream Proxy, added only when stream_proxy_enable = true
+resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_stream_proxy_ingress_ipv4" {
+  count             = local.stream_proxy_enable ? length(var.security_group_stream_proxy_ingress) : 0
+  security_group_id = aws_security_group.red5pro_sm_sg[0].id
+  cidr_ipv4         = var.security_group_stream_proxy_ingress[count.index].cidr_block
+  ip_protocol       = var.security_group_stream_proxy_ingress[count.index].protocol
+  from_port         = var.security_group_stream_proxy_ingress[count.index].protocol == "-1" ? null : var.security_group_stream_proxy_ingress[count.index].from_port
+  to_port           = var.security_group_stream_proxy_ingress[count.index].protocol == "-1" ? null : var.security_group_stream_proxy_ingress[count.index].to_port
+  description       = var.security_group_stream_proxy_ingress[count.index].description
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_stream_proxy_ingress_ipv6" {
+  for_each = local.stream_proxy_enable ? {
+    for idx, rule in var.security_group_stream_proxy_ingress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+
+  security_group_id = aws_security_group.red5pro_sm_sg[0].id
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
+}
+
 resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv4" {
   count             = local.cluster_or_autoscale ? length(var.security_group_stream_manager_egress) : 0
   security_group_id = aws_security_group.red5pro_sm_sg[0].id
@@ -976,6 +1059,7 @@ resource "aws_instance" "red5pro_sm" {
           AS_ADMIN_UI_NODE_IMAGE_NAME=${local.red5pro_node_image_name}
           AS_ADMIN_UI_AWS_VPC=${local.vpc_name}
           AS_ADMIN_UI_AWS_SECURITY_GROUP=${aws_security_group.red5pro_node_sg[0].name}
+          AS_ADMIN_UI_AWS_SUBNET=${local.node_group_subnet}
         EOF
   )
   tags = merge({ "Name" = local.autoscale ? "${var.name}-stream-manager-image" : "${var.name}-stream-manager", }, var.tags, )
@@ -1013,10 +1097,12 @@ resource "null_resource" "red5pro_sm" {
       KAFKA_REPLICAS=${local.kafka_on_sm_replicas}
       KAFKA_IP=${local.kafka_ip}
       TRAEFIK_IP=${local.stream_manager_ssh_ip}
+      ${local.stream_proxy_enable ? "STREAM_PROXY_VERSION=${var.stream_proxy_version}\nR5SP_STREAM_MANAGER_URL=${local.stream_proxy_sm_url}" : ""}
       EOM
       EOT
       ,
       "export SM_SSL='${local.stream_manager_ssl}'",
+      "export STREAM_PROXY_ENABLE='${local.stream_proxy_enable}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
       "export KAFKA_REPLICAS='${local.kafka_on_sm_replicas}'",
       "export CONTAINER_REGISTRY='${var.stream_manager_container_registry}'",
@@ -1352,13 +1438,14 @@ resource "null_resource" "node_group" {
     command = "bash ${abspath(path.module)}/red5pro-installer/r5p_create_node_group.sh"
     environment = {
       SM_IP                                          = local.stream_manager_ip
-      NODE_GROUP_NAME                                = substr(var.name, 0, 16)
+      NODE_GROUP_NAME                                = local.node_group_name
       R5AS_AUTH_USER                                 = var.stream_manager_auth_user
       R5AS_AUTH_PASS                                 = var.stream_manager_auth_password
       NODE_GROUP_CLOUD_PLATFORM                      = "AWS"
       NODE_GROUP_REGIONS                             = var.aws_region
       NODE_GROUP_ENVIRONMENT                         = var.name
       NODE_GROUP_VPC_NAME                            = local.vpc_name
+      NODE_GROUP_SUBNET_NAME                         = local.node_group_subnet
       NODE_GROUP_SECURITY_GROUP_NAME                 = aws_security_group.red5pro_node_sg[0].name
       NODE_GROUP_IMAGE_NAME                          = aws_ami_from_instance.red5pro_node_image[0].name
       NODE_GROUP_ORIGINS_MIN                         = var.node_group_origins_min

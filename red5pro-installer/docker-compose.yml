@@ -508,6 +508,7 @@ services:
       # AWS
       REACT_APP_AWS_VPC: ${AS_ADMIN_UI_AWS_VPC:-}
       REACT_APP_AWS_SECURITY_GROUP: ${AS_ADMIN_UI_AWS_SECURITY_GROUP:-}
+      REACT_APP_AWS_SUBNET: ${AS_ADMIN_UI_AWS_SUBNET:-}
     labels:
       traefik.enable: true
       # UI under /as-admin-ui
