@@ -13,6 +13,7 @@
 # CONTAINER_REGISTRY=""
 # CONTAINER_REGISTRY_USER=""
 # CONTAINER_REGISTRY_PASSWORD=""
+# STREAM_PROXY_ENABLE=""
 
 export DEBIAN_FRONTEND=noninteractive
 export NEEDRESTART_SUSPEND=1
@@ -110,6 +111,38 @@ install_docker() {
     usermod -aG docker ubuntu
 }
 
+# The Stream Proxy runs nginx, which needs the certificate as PEM files. With
+# SM_SSL=letsencrypt the Stream Manager certificate lives inside the Traefik ACME
+# store (certs/red5.json) and there are no PEM files to mount, so a dedicated
+# self-signed pair is created for the proxy.
+create_stream_proxy_certs() {
+    local certs_dir="$SM_HOME/stream-proxy-certs"
+
+    if [ -s "$certs_dir/cert.pem" ] && [ -s "$certs_dir/privkey.pem" ]; then
+        log_i "Stream Proxy certificate already exists in $certs_dir"
+        return
+    fi
+
+    local cert_cn
+    cert_cn=$(grep -E '^TRAEFIK_HOST=' "$SM_HOME/.env" | tail -n 1 | cut -d= -f2-)
+    if [ -z "$cert_cn" ]; then
+        cert_cn="stream-proxy"
+    fi
+
+    log_i "Generate self-signed certificate for the Stream Proxy, CN=$cert_cn"
+    mkdir -p "$certs_dir"
+    if ! openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+        -keyout "$certs_dir/privkey.pem" \
+        -out "$certs_dir/cert.pem" \
+        -subj "/CN=$cert_cn" \
+        -addext "subjectAltName=DNS:$cert_cn" &>/dev/null; then
+        log_e "Failed to generate the Stream Proxy self-signed certificate"
+        exit 1
+    fi
+    chmod 644 "$certs_dir/cert.pem"
+    chmod 600 "$certs_dir/privkey.pem"
+}
+
 config_sm() {
     log_i "Config Stream Manager"
 
@@ -180,6 +213,19 @@ config_sm() {
         fi
     else
         log_i "KAFKA_REPLICAS=0 - Kafka runs on a standalone instance, no embedded kafka0 service"
+    fi
+
+    if [ "$STREAM_PROXY_ENABLE" == "true" ]; then
+        log_i "STREAM_PROXY_ENABLE=true - layering docker-compose.stream-proxy.yml"
+        if [ -f "$CURRENT_DIRECTORY/docker-compose.stream-proxy.yml" ]; then
+            cp "$CURRENT_DIRECTORY/docker-compose.stream-proxy.yml" "$SM_HOME/"
+            compose_files="$compose_files:docker-compose.stream-proxy.yml"
+            create_stream_proxy_certs
+        else
+            log_e "File $CURRENT_DIRECTORY/docker-compose.stream-proxy.yml not found"
+            ls -la "$CURRENT_DIRECTORY/"
+            exit 1
+        fi
     fi
 
     log_i "Compose files in use: $compose_files"

@@ -29,6 +29,16 @@ locals {
   # Same value as aws_ami_from_instance.red5pro_node_image name, but computed here so
   # aws_instance.red5pro_sm user_data does not reference the AMI and SM is not ordered after it.
   red5pro_node_image_name = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${random_id.node_image_suffix[0].hex}" : ""
+  # The Stream Proxy selects a node group by the letter at the end of its name, A first,
+  # then B and so on, so with the proxy the name ends with A. Node group name is max 16 characters.
+  node_group_name = local.stream_proxy_enable ? "${trimsuffix(substr(var.name, 0, 14), "-")}-A" : substr(var.name, 0, 16)
+  # Stream Proxy runs in the Stream Manager compose stack, deployment type cluster only
+  stream_proxy_enable = local.cluster && var.stream_proxy_enable
+  # The public IP is used instead of stream_manager_public_hostname on purpose: nginx
+  # inside the Stream Proxy resolves host names through public resolvers, which fails in
+  # a VPC without outbound DNS. Traefik accepts the Stream Manager public IP as a host,
+  # it is in the router rules together with TRAEFIK_HOST.
+  stream_proxy_sm_url = "${local.stream_manager_ssl == "none" ? "http" : "https"}://${local.stream_manager_ssh_ip}"
 }
 
 ################################################################################
@@ -197,6 +207,24 @@ resource "terraform_data" "validate_subnets" {
   }
 }
 
+# Stream Proxy configuration check, it is a separate resource so the errors are
+# reported before anything is created
+resource "terraform_data" "validate_stream_proxy" {
+  count = var.stream_proxy_enable ? 1 : 0
+  input = var.stream_proxy_version
+
+  lifecycle {
+    precondition {
+      condition     = local.cluster
+      error_message = "ERROR! stream_proxy_enable = true is supported only for type = cluster, current type is ${var.type}. The Stream Proxy runs on the Stream Manager instance and its RTMP, RTSP and SRT ports cannot be served by the application load balancer of the autoscale deployment."
+    }
+    precondition {
+      condition     = var.stream_proxy_version != ""
+      error_message = "ERROR! Value in variable stream_proxy_version is required when stream_proxy_enable = true! Example: main.b41"
+    }
+  }
+}
+
 ################################################################################
 # VPC - Create new (VPC + Internet geteway + Subnets + Route table)
 ################################################################################
@@ -294,6 +322,30 @@ resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_ingress_ipv6" {
   to_port           = each.value.protocol == "-1" ? null : each.value.to_port
   description       = each.value.description
 }
+# Ports of the Red5 Pro Stream Proxy, added only when stream_proxy_enable = true
+resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_stream_proxy_ingress_ipv4" {
+  count             = local.stream_proxy_enable ? length(var.security_group_stream_proxy_ingress) : 0
+  security_group_id = aws_security_group.red5pro_sm_sg[0].id
+  cidr_ipv4         = var.security_group_stream_proxy_ingress[count.index].cidr_block
+  ip_protocol       = var.security_group_stream_proxy_ingress[count.index].protocol
+  from_port         = var.security_group_stream_proxy_ingress[count.index].protocol == "-1" ? null : var.security_group_stream_proxy_ingress[count.index].from_port
+  to_port           = var.security_group_stream_proxy_ingress[count.index].protocol == "-1" ? null : var.security_group_stream_proxy_ingress[count.index].to_port
+  description       = var.security_group_stream_proxy_ingress[count.index].description
+}
+resource "aws_vpc_security_group_ingress_rule" "red5pro_sm_stream_proxy_ingress_ipv6" {
+  for_each = local.stream_proxy_enable ? {
+    for idx, rule in var.security_group_stream_proxy_ingress : idx => rule
+    if rule.ipv6_cidr_block != "" && rule.ipv6_cidr_block != null
+  } : {}
+
+  security_group_id = aws_security_group.red5pro_sm_sg[0].id
+  cidr_ipv6         = each.value.ipv6_cidr_block
+  ip_protocol       = each.value.protocol
+  from_port         = each.value.protocol == "-1" ? null : each.value.from_port
+  to_port           = each.value.protocol == "-1" ? null : each.value.to_port
+  description       = each.value.description
+}
+
 resource "aws_vpc_security_group_egress_rule" "red5pro_sm_egress_ipv4" {
   count             = local.cluster_or_autoscale ? length(var.security_group_stream_manager_egress) : 0
   security_group_id = aws_security_group.red5pro_sm_sg[0].id
@@ -1045,10 +1097,12 @@ resource "null_resource" "red5pro_sm" {
       KAFKA_REPLICAS=${local.kafka_on_sm_replicas}
       KAFKA_IP=${local.kafka_ip}
       TRAEFIK_IP=${local.stream_manager_ssh_ip}
+      ${local.stream_proxy_enable ? "STREAM_PROXY_VERSION=${var.stream_proxy_version}\nR5SP_STREAM_MANAGER_URL=${local.stream_proxy_sm_url}" : ""}
       EOM
       EOT
       ,
       "export SM_SSL='${local.stream_manager_ssl}'",
+      "export STREAM_PROXY_ENABLE='${local.stream_proxy_enable}'",
       "export SM_STANDALONE='${local.stream_manager_standalone}'",
       "export KAFKA_REPLICAS='${local.kafka_on_sm_replicas}'",
       "export CONTAINER_REGISTRY='${var.stream_manager_container_registry}'",
@@ -1384,7 +1438,7 @@ resource "null_resource" "node_group" {
     command = "bash ${abspath(path.module)}/red5pro-installer/r5p_create_node_group.sh"
     environment = {
       SM_IP                                          = local.stream_manager_ip
-      NODE_GROUP_NAME                                = substr(var.name, 0, 16)
+      NODE_GROUP_NAME                                = local.node_group_name
       R5AS_AUTH_USER                                 = var.stream_manager_auth_user
       R5AS_AUTH_PASS                                 = var.stream_manager_auth_password
       NODE_GROUP_CLOUD_PLATFORM                      = "AWS"

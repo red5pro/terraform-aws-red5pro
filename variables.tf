@@ -352,6 +352,18 @@ variable "stream_manager_auth_password" {
   type        = string
   default     = ""
 }
+# Red5 Pro Stream Proxy configuration
+variable "stream_proxy_enable" {
+  description = "Deploy Red5 Pro Stream Proxy alongside the Stream Manager 2.0 services. Supported for deployment type cluster only. It publishes RTMP/RTMPS 1935-1944, RTSP/RTSPS 8554-8563 and SRT 10100-10149 on the Stream Manager instance, and the matching rules are added to the Stream Manager security group."
+  type        = bool
+  default     = false
+}
+variable "stream_proxy_version" {
+  description = "Red5 Pro Stream Proxy docker image version, used only when stream_proxy_enable = true. Example: main.b41"
+  type        = string
+  default     = ""
+}
+
 # Red5 Pro general configuration
 variable "red5pro_license_key" {
   description = "Red5 Pro license key (https://www.red5.net/docs/installation/installation/license-key/)"
@@ -469,6 +481,52 @@ variable "security_group_stream_manager_egress" {
       from_port       = "-1"
       to_port         = "-1"
       protocol        = "-1"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+  ]
+}
+
+variable "security_group_stream_proxy_ingress" {
+  description = "Security group for Stream Managers - Stream Proxy ingress, used only when stream_proxy_enable = true"
+  type = list(object({
+    description     = string
+    from_port       = string
+    to_port         = string
+    protocol        = string
+    cidr_block      = string
+    ipv6_cidr_block = string
+  }))
+  default = [
+    {
+      description     = "Stream Proxy RTMP and RTMPS"
+      from_port       = "1935"
+      to_port         = "1944"
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+    {
+      description     = "Stream Proxy RTSP and RTSPS"
+      from_port       = "8554"
+      to_port         = "8563"
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+    {
+      description     = "Stream Proxy RTSP UDP"
+      from_port       = "8554"
+      to_port         = "8558"
+      protocol        = "udp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+    {
+      description     = "Stream Proxy SRT"
+      from_port       = "10100"
+      to_port         = "10149"
+      protocol        = "udp"
       cidr_block      = "0.0.0.0/0"
       ipv6_cidr_block = "::/0"
     },
