@@ -278,23 +278,37 @@ variable "kafka_standalone_instance_arhive_url" {
 }
 
 # RabbitMQ configuration
-variable "rabbitmq_standalone_instance_create" {
-  description = "Create a new RabbitMQ standalone instance (cluster/autoscale only) true/false"
+variable "rabbitmq_create" {
+  description = "Create RabbitMQ instances (cluster/autoscale only) true/false"
   type        = bool
   default     = false
 }
-variable "rabbitmq_standalone_instance_type" {
+variable "rabbitmq_mode" {
+  description = "RabbitMQ deployment mode: single - one instance, cluster - 3 instances in a RabbitMQ cluster"
+  type        = string
+  default     = "single"
+  validation {
+    condition     = contains(["single", "cluster"], var.rabbitmq_mode)
+    error_message = "The rabbitmq_mode value must be single or cluster"
+  }
+}
+variable "rabbitmq_image" {
+  description = "RabbitMQ Docker image"
+  type        = string
+  default     = "rabbitmq:4.2-management"
+}
+variable "rabbitmq_instance_type" {
   description = "RabbitMQ instance type"
   type        = string
   default     = "t3.medium"
 }
-variable "rabbitmq_standalone_volume_size" {
+variable "rabbitmq_volume_size" {
   description = "value to set the volume size for RabbitMQ"
   type        = number
   default     = 16
   validation {
-    condition     = var.rabbitmq_standalone_volume_size >= 8
-    error_message = "The rabbitmq_standalone_volume_size value must be a valid! Minimum 8"
+    condition     = var.rabbitmq_volume_size >= 8
+    error_message = "The rabbitmq_volume_size value must be a valid! Minimum 8"
   }
 }
 variable "rabbitmq_user" {
@@ -626,7 +640,7 @@ variable "security_group_kafka_egress" {
 }
 
 variable "security_group_rabbitmq_ingress" {
-  description = "Security group for RabbitMQ standalone instance - ingress. AMQP port 5672 is always allowed from the VPC CIDR"
+  description = "Security group for RabbitMQ instances - ingress. AMQP port 5672 is always allowed from the VPC CIDR, cluster ports between RabbitMQ instances"
   type = list(object({
     description     = string
     from_port       = string
@@ -648,7 +662,7 @@ variable "security_group_rabbitmq_ingress" {
 }
 
 variable "security_group_rabbitmq_egress" {
-  description = "Security group for RabbitMQ standalone instance - egress"
+  description = "Security group for RabbitMQ instances - egress"
   type = list(object({
     description     = string
     from_port       = string

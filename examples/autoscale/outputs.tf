@@ -50,13 +50,13 @@ output "security_group_name_sm" {
   description = "Security group name Stream Manager 2.0"
   value       = module.red5pro.security_group_name_sm
 }
-output "rabbitmq_private_ip" {
-  description = "RabbitMQ standalone instance private IP"
-  value       = module.red5pro.rabbitmq_private_ip
+output "rabbitmq_private_ips" {
+  description = "RabbitMQ instances private IPs"
+  value       = module.red5pro.rabbitmq_private_ips
 }
-output "rabbitmq_public_ip" {
-  description = "RabbitMQ standalone instance public IP"
-  value       = module.red5pro.rabbitmq_public_ip
+output "rabbitmq_public_ips" {
+  description = "RabbitMQ instances public IPs"
+  value       = module.red5pro.rabbitmq_public_ips
 }
 output "rabbitmq_user" {
   description = "RabbitMQ user name"

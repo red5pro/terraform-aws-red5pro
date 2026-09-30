@@ -79,20 +79,20 @@ output "security_group_name_standalone" {
   value       = try(aws_security_group.red5pro_standalone_sg[0].name, "")
 }
 output "security_group_name_rabbitmq" {
-  description = "Security group name standalone RabbitMQ instance"
+  description = "Security group name RabbitMQ instances"
   value       = try(aws_security_group.red5pro_rabbitmq_sg[0].name, "")
 }
-output "rabbitmq_private_ip" {
-  description = "RabbitMQ standalone instance private IP (use as rmq1.address for nodes in the same VPC)"
-  value       = try(aws_instance.red5pro_rabbitmq[0].private_ip, "")
+output "rabbitmq_private_ips" {
+  description = "RabbitMQ instances private IPs (use as rmq1.address, rmq2.address for nodes in the same VPC)"
+  value       = aws_instance.red5pro_rabbitmq[*].private_ip
 }
-output "rabbitmq_public_ip" {
-  description = "RabbitMQ standalone instance public IP"
-  value       = try(aws_instance.red5pro_rabbitmq[0].public_ip, "")
+output "rabbitmq_public_ips" {
+  description = "RabbitMQ instances public IPs"
+  value       = aws_instance.red5pro_rabbitmq[*].public_ip
 }
 output "rabbitmq_user" {
   description = "RabbitMQ user name"
-  value       = local.rabbitmq_standalone_instance ? var.rabbitmq_user : ""
+  value       = local.rabbitmq_create ? var.rabbitmq_user : ""
 }
 output "rabbitmq_password" {
   description = "RabbitMQ user password"
