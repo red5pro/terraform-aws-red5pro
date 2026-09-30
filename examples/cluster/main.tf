@@ -33,12 +33,12 @@ module "red5pro" {
 
   # RabbitMQ configuration (optional)
   rabbitmq_create        = false
-  rabbitmq_mode          = "single"                  # single - one instance, cluster - 3 instances in a RabbitMQ cluster
-  rabbitmq_image         = "rabbitmq:4.2-management" # RabbitMQ Docker image
-  rabbitmq_instance_type = "t3.medium"               # Instance type for RabbitMQ instances
-  rabbitmq_volume_size   = 16                        # Volume size in GB for RabbitMQ instances
-  rabbitmq_user          = "red5pro"                 # RabbitMQ user name
-  rabbitmq_password      = ""                        # RabbitMQ user password, empty value - generate a random password
+  rabbitmq_mode          = "single"                    # single - one instance, cluster - 3 instances in a RabbitMQ cluster
+  rabbitmq_image         = "rabbitmq:4.3.6-management" # RabbitMQ Docker image
+  rabbitmq_instance_type = "t3.medium"                 # Instance type for RabbitMQ instances
+  rabbitmq_volume_size   = 16                          # Volume size in GB for RabbitMQ instances
+  rabbitmq_user          = "red5pro"                   # RabbitMQ user name
+  rabbitmq_password      = ""                          # RabbitMQ user password, empty value - generate a random password
 
   # Stream Manager configuration 
   stream_manager_instance_type    = "m5.xlarge"                # Instance type for Stream Manager

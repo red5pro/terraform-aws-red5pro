@@ -2,7 +2,7 @@
 ######################################
 # Install RabbitMQ Server with Docker Compose (single node or cluster node)
 ######################################
-# RMQ_IMAGE="rabbitmq:4.2-management"
+# RMQ_IMAGE="rabbitmq:4.3.6-management"
 # RMQ_USER="red5pro"
 # RMQ_PASSWORD="password"
 # RMQ_VHOST="red5pro"
@@ -121,7 +121,6 @@ config_rabbitmq() {
         echo "management.tcp.port = 15672"
         echo "disk_free_limit.relative = 1.0"
         if [ "$NODE_COUNT" -gt 1 ]; then
-            echo "cluster_partition_handling = pause_minority"
             echo "cluster_formation.peer_discovery_backend = classic_config"
             local i
             for i in "${!NODE_IPS[@]}"; do

@@ -295,7 +295,7 @@ variable "rabbitmq_mode" {
 variable "rabbitmq_image" {
   description = "RabbitMQ Docker image"
   type        = string
-  default     = "rabbitmq:4.2-management"
+  default     = "rabbitmq:4.3.6-management"
 }
 variable "rabbitmq_instance_type" {
   description = "RabbitMQ instance type"
