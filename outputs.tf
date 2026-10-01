@@ -99,6 +99,15 @@ output "rabbitmq_password" {
   value       = local.rabbitmq_password
   sensitive   = true
 }
+output "stream_manager_intent_user" {
+  description = "Stream Manager 2.0 intent API user name"
+  value       = local.cluster_or_autoscale ? var.stream_manager_intent_user : ""
+}
+output "stream_manager_intent_password" {
+  description = "Stream Manager 2.0 intent API user password"
+  value       = local.stream_manager_intent_password
+  sensitive   = true
+}
 output "r5as_conference_secret" {
   description = "Auto-generated R5AS Conference secret (hex)"
   value       = try(random_id.r5as_conference_secret[0].hex, "")

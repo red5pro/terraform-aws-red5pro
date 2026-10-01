@@ -299,6 +299,8 @@ services:
       R5AS_PROXY_PASS: ${R5AS_PROXY_PASS:?R5AS_PROXY_PASS is not set}
       R5AS_SPATIAL_USER: ${R5AS_SPATIAL_USER:?R5AS_SPATIAL_USER is not set}
       R5AS_SPATIAL_PASS: ${R5AS_SPATIAL_PASS:?R5AS_SPATIAL_PASS is not set}
+      R5AS_INTENT_USER: ${R5AS_INTENT_USER:?R5AS_INTENT_USER is not set}
+      R5AS_INTENT_PASS: ${R5AS_INTENT_PASS:?R5AS_INTENT_PASS is not set}
     labels:
       traefik.enable: true
       traefik.http.routers.asauth.rule: PathPrefix(`/as/v1/auth`)

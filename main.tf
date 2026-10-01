@@ -12,24 +12,25 @@ locals {
   subnet_ids           = var.vpc_use_existing ? (length(var.vpc_subnet_ids_existing) > 0 ? var.vpc_subnet_ids_existing : data.aws_subnets.all[0].ids) : tolist(aws_subnet.red5pro_subnets[*].id)
   subnet_ids_minimum   = local.autoscale ? 2 : 1
   # Subnets for the autoscaling nodes, empty value - Stream Manager selects a public subnet of the VPC automatically
-  node_group_subnet             = var.vpc_use_existing ? join(",", var.vpc_subnet_ids_existing) : ""
-  kafka_standalone_instance     = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
-  kafka_ip                      = local.cluster_or_autoscale ? local.kafka_standalone_instance ? aws_instance.red5pro_kafka[0].private_ip : aws_instance.red5pro_sm[0].private_ip : "null"
-  kafka_on_sm_replicas          = local.kafka_standalone_instance ? 0 : 1
-  rabbitmq_create               = local.cluster_or_autoscale && var.rabbitmq_create
-  rabbitmq_node_count           = local.rabbitmq_create ? var.rabbitmq_mode == "cluster" ? 3 : 1 : 0
-  rabbitmq_password             = local.rabbitmq_create ? var.rabbitmq_password != "" ? var.rabbitmq_password : random_password.rabbitmq_password[0].result : ""
-  vpc_cidr_block                = var.vpc_use_existing ? data.aws_vpc.selected[0].cidr_block : aws_vpc.red5pro_vpc[0].cidr_block
-  kafka_ssl_keystore_key        = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
-  kafka_ssl_truststore_cert     = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
-  kafka_ssl_keystore_cert_chain = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
-  stream_manager_ip             = local.autoscale ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster ? var.stream_manager_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_sm[0].public_ip : aws_eip.elastic_ip_sm[0].public_ip : "null"
-  stream_manager_ssh_ip         = local.autoscale ? aws_instance.red5pro_sm[0].public_ip : local.cluster ? var.stream_manager_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_sm[0].public_ip : aws_eip.elastic_ip_sm[0].public_ip : "null"
-  stream_manager_ssl            = local.autoscale ? "none" : var.https_ssl_certificate
-  stream_manager_standalone     = local.autoscale ? false : true
-  standalone_elastic_ip         = local.standalone ? var.standalone_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_standalone[0].public_ip : aws_eip.elastic_ip_standalone[0].public_ip : "null"
-  aws_availability_zones_amount = var.vpc_use_existing ? 0 : length(data.aws_availability_zones.available[0].names)
-  aws_subnets_amount            = var.vpc_use_existing ? 0 : length(aws_subnet.red5pro_subnets)
+  node_group_subnet              = var.vpc_use_existing ? join(",", var.vpc_subnet_ids_existing) : ""
+  kafka_standalone_instance      = local.autoscale ? true : local.cluster && var.kafka_standalone_instance_create ? true : false
+  kafka_ip                       = local.cluster_or_autoscale ? local.kafka_standalone_instance ? aws_instance.red5pro_kafka[0].private_ip : aws_instance.red5pro_sm[0].private_ip : "null"
+  kafka_on_sm_replicas           = local.kafka_standalone_instance ? 0 : 1
+  rabbitmq_create                = local.cluster_or_autoscale && var.rabbitmq_create
+  rabbitmq_node_count            = local.rabbitmq_create ? var.rabbitmq_mode == "cluster" ? 3 : 1 : 0
+  stream_manager_intent_password = local.cluster_or_autoscale ? var.stream_manager_intent_password != "" ? var.stream_manager_intent_password : random_password.r5as_intent_password[0].result : ""
+  rabbitmq_password              = local.rabbitmq_create ? var.rabbitmq_password != "" ? var.rabbitmq_password : random_password.rabbitmq_password[0].result : ""
+  vpc_cidr_block                 = var.vpc_use_existing ? data.aws_vpc.selected[0].cidr_block : aws_vpc.red5pro_vpc[0].cidr_block
+  kafka_ssl_keystore_key         = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", trimspace(tls_private_key.kafka_server_key[0].private_key_pem_pkcs8)))) : "null"
+  kafka_ssl_truststore_cert      = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_self_signed_cert.ca_cert[0].cert_pem))) : "null"
+  kafka_ssl_keystore_cert_chain  = local.cluster_or_autoscale ? nonsensitive(join("\\\\n", split("\n", tls_locally_signed_cert.kafka_server_cert[0].cert_pem))) : "null"
+  stream_manager_ip              = local.autoscale ? aws_lb.red5pro_sm_lb[0].dns_name : local.cluster ? var.stream_manager_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_sm[0].public_ip : aws_eip.elastic_ip_sm[0].public_ip : "null"
+  stream_manager_ssh_ip          = local.autoscale ? aws_instance.red5pro_sm[0].public_ip : local.cluster ? var.stream_manager_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_sm[0].public_ip : aws_eip.elastic_ip_sm[0].public_ip : "null"
+  stream_manager_ssl             = local.autoscale ? "none" : var.https_ssl_certificate
+  stream_manager_standalone      = local.autoscale ? false : true
+  standalone_elastic_ip          = local.standalone ? var.standalone_elastic_ip_use_existing ? data.aws_eip.existing_elastic_ip_standalone[0].public_ip : aws_eip.elastic_ip_standalone[0].public_ip : "null"
+  aws_availability_zones_amount  = var.vpc_use_existing ? 0 : length(data.aws_availability_zones.available[0].names)
+  aws_subnets_amount             = var.vpc_use_existing ? 0 : length(aws_subnet.red5pro_subnets)
   # Same value as aws_ami_from_instance.red5pro_node_image name, but computed here so
   # aws_instance.red5pro_sm user_data does not reference the AMI and SM is not ordered after it.
   red5pro_node_image_name = local.cluster_or_autoscale && var.node_image_create ? "${var.name}-node-image-${random_id.node_image_suffix[0].hex}" : ""
@@ -1136,6 +1137,12 @@ resource "random_id" "r5as_secrets_key" {
   byte_length = 32
 }
 
+resource "random_password" "r5as_intent_password" {
+  count   = local.cluster_or_autoscale && var.stream_manager_intent_password == "" ? 1 : 0
+  length  = 24
+  special = false
+}
+
 resource "random_id" "r5as_conference_secret" {
   count       = local.cluster_or_autoscale ? 1 : 0
   byte_length = 16
@@ -1190,6 +1197,8 @@ resource "aws_instance" "red5pro_sm" {
           R5AS_PROXY_PASS=${var.stream_manager_proxy_password}
           R5AS_SPATIAL_USER=${var.stream_manager_spatial_user}
           R5AS_SPATIAL_PASS=${var.stream_manager_spatial_password}
+          R5AS_INTENT_USER=${var.stream_manager_intent_user}
+          R5AS_INTENT_PASS=${local.stream_manager_intent_password}
           R5AS_CONFERENCE_SECRET=${random_id.r5as_conference_secret[0].hex}
           R5AS_NODE_API_ACCESS_TOKEN=${var.red5pro_api_key}
           CONTAINER_REGISTRY=${var.stream_manager_container_registry}

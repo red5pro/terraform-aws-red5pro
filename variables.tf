@@ -1072,6 +1072,17 @@ variable "stream_manager_spatial_password" {
   type        = string
   default     = ""
 }
+variable "stream_manager_intent_user" {
+  description = "value to set the user name for Stream Manager 2.0 intent API (ROLE_INTENT)"
+  type        = string
+  default     = "intent_admin"
+}
+variable "stream_manager_intent_password" {
+  description = "value to set the user password for Stream Manager 2.0 intent API (ROLE_INTENT). Generated when empty"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
 variable "stream_manager_container_registry" {
   description = "value to set the container registry for Stream Manager 2.0 (Optional) Example: container-registry/my-repo"
   type        = string
