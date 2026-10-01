@@ -22,13 +22,22 @@ module "red5pro" {
   ssh_key_private_key_path_existing = "/PATH/TO/EXISTING/SSH/PRIVATE/KEY/example_key.pem" # SSH private key path existing in local machine
 
   # VPC configuration
-  vpc_use_existing        = false                             # true - use existing VPC and subnets, false - create new VPC and subnets automatically
-  vpc_id_existing         = "vpc-12345"                       # VPC ID for existing VPC
+  vpc_use_existing        = false                            # true - use existing VPC and subnets, false - create new VPC and subnets automatically
+  vpc_id_existing         = "vpc-12345"                      # VPC ID for existing VPC
   vpc_subnet_ids_existing = ["subnet-12345", "subnet-67890"] # Public subnet IDs of the existing VPC, minimum 2 in different availability zones. Empty list - use all subnets of the existing VPC
 
   # Kafka standalone instance configuration
   kafka_standalone_instance_type = "m5.xlarge" # Instance type for Kafka standalone instance
   kafka_standalone_volume_size   = 16          # Volume size in GB for Kafka standalone instance
+
+  # RabbitMQ configuration (optional)
+  rabbitmq_create        = false
+  rabbitmq_mode          = "single"                    # single - one instance, cluster - 3 instances in a RabbitMQ cluster
+  rabbitmq_image         = "rabbitmq:4.3.6-management" # RabbitMQ Docker image
+  rabbitmq_instance_type = "t3.medium"                 # Instance type for RabbitMQ instances
+  rabbitmq_volume_size   = 16                          # Volume size in GB for RabbitMQ instances
+  rabbitmq_user          = "red5pro"                   # RabbitMQ user name
+  rabbitmq_password      = ""                          # RabbitMQ user password, empty value - generate a random password
 
   # Stream Manager configuration 
   stream_manager_instance_type                = "m5.xlarge"                # Instance type for Stream Manager
@@ -42,6 +51,8 @@ module "red5pro" {
   stream_manager_proxy_password               = "example_proxy_password"   # Stream Manager 2.0 proxy password
   stream_manager_spatial_user                 = "example_spatial_user"     # Stream Manager 2.0 spatial user name
   stream_manager_spatial_password             = "example_spatial_password" # Stream Manager 2.0 spatial password
+  stream_manager_intent_user                  = "intent_admin"             # Stream Manager 2.0 intent API user name
+  stream_manager_intent_password              = ""                         # Stream Manager 2.0 intent API password (generated when empty)
   stream_manager_version                      = "latest"                   # Stream Manager 2.0 docker images version (latest, 14.1.0, 14.1.1, etc.) - https://hub.docker.com/r/red5pro/as-admin/tags
   stream_manager_public_hostname              = "sm.example.com"           # Required: public FQDN for Traefik, admin UI, and HTTPS URLs (not a wildcard). Point DNS A/alias at the load balancer DNS name from outputs.
 

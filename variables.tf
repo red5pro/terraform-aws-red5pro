@@ -277,6 +277,60 @@ variable "kafka_standalone_instance_arhive_url" {
   default     = "https://archive.apache.org/dist/kafka/3.9.2/kafka_2.13-3.9.2.tgz"
 }
 
+# RabbitMQ configuration
+variable "rabbitmq_create" {
+  description = "Create RabbitMQ instances (cluster/autoscale only) true/false"
+  type        = bool
+  default     = false
+}
+variable "rabbitmq_mode" {
+  description = "RabbitMQ deployment mode: single - one instance, cluster - 3 instances in a RabbitMQ cluster"
+  type        = string
+  default     = "single"
+  validation {
+    condition     = contains(["single", "cluster"], var.rabbitmq_mode)
+    error_message = "The rabbitmq_mode value must be single or cluster"
+  }
+}
+variable "rabbitmq_image" {
+  description = "RabbitMQ Docker image"
+  type        = string
+  default     = "rabbitmq:4.3.6-management"
+}
+variable "rabbitmq_instance_type" {
+  description = "RabbitMQ instance type"
+  type        = string
+  default     = "t3.medium"
+}
+variable "rabbitmq_volume_size" {
+  description = "value to set the volume size for RabbitMQ"
+  type        = number
+  default     = 16
+  validation {
+    condition     = var.rabbitmq_volume_size >= 8
+    error_message = "The rabbitmq_volume_size value must be a valid! Minimum 8"
+  }
+}
+variable "rabbitmq_user" {
+  description = "RabbitMQ user name"
+  type        = string
+  default     = "red5pro"
+  validation {
+    condition     = can(regex("^[A-Za-z0-9_-]+$", var.rabbitmq_user))
+    error_message = "The rabbitmq_user value must contain only letters, digits, '_' and '-'"
+  }
+}
+variable "rabbitmq_password" {
+  description = "RabbitMQ user password, empty value - generate a random password"
+  type        = string
+  default     = ""
+  sensitive   = true
+  validation {
+    condition     = can(regex("^[A-Za-z0-9_-]*$", var.rabbitmq_password))
+    error_message = "The rabbitmq_password value must contain only letters, digits, '_' and '-'"
+  }
+}
+
 # HTTPS/SSL variables for standalone/cluster
 variable "https_ssl_certificate" {
   description = "Enable SSL (HTTPS) on the Standalone Red5 Pro server,  Stream Manager 2.0 server or Stream Manager 2.0 Load Balancer"
@@ -565,6 +619,50 @@ variable "security_group_kafka_ingress" {
 
 variable "security_group_kafka_egress" {
   description = "Security group for Kafka standalone instance - egress"
+  type = list(object({
+    description     = string
+    from_port       = string
+    to_port         = string
+    protocol        = string
+    cidr_block      = string
+    ipv6_cidr_block = string
+  }))
+  default = [
+    {
+      description     = "All egress traffic"
+      from_port       = "-1"
+      to_port         = "-1"
+      protocol        = "-1"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+  ]
+}
+
+variable "security_group_rabbitmq_ingress" {
+  description = "Security group for RabbitMQ instances - ingress. AMQP port 5672 is always allowed from the VPC CIDR, cluster ports between RabbitMQ instances"
+  type = list(object({
+    description     = string
+    from_port       = string
+    to_port         = string
+    protocol        = string
+    cidr_block      = string
+    ipv6_cidr_block = string
+  }))
+  default = [
+    {
+      description     = "SSH"
+      from_port       = "22"
+      to_port         = "22"
+      protocol        = "tcp"
+      cidr_block      = "0.0.0.0/0"
+      ipv6_cidr_block = "::/0"
+    },
+  ]
+}
+
+variable "security_group_rabbitmq_egress" {
+  description = "Security group for RabbitMQ instances - egress"
   type = list(object({
     description     = string
     from_port       = string
@@ -973,6 +1071,17 @@ variable "stream_manager_spatial_password" {
   description = "value to set the user password for Stream Manager 2.0 spatial"
   type        = string
   default     = ""
+}
+variable "stream_manager_intent_user" {
+  description = "value to set the user name for Stream Manager 2.0 intent API (ROLE_INTENT)"
+  type        = string
+  default     = "intent_admin"
+}
+variable "stream_manager_intent_password" {
+  description = "value to set the user password for Stream Manager 2.0 intent API (ROLE_INTENT). Generated when empty"
+  type        = string
+  default     = ""
+  sensitive   = true
 }
 variable "stream_manager_container_registry" {
   description = "value to set the container registry for Stream Manager 2.0 (Optional) Example: container-registry/my-repo"
