@@ -753,6 +753,7 @@ resource "aws_instance" "red5pro_standalone" {
   tags = merge({ "Name" = "${var.name}-standalone-server" }, var.tags, )
 
   lifecycle {
+    ignore_changes = [ami]
     precondition {
       condition     = fileexists(var.path_to_red5pro_build) == true
       error_message = "ERROR! Value in variable path_to_red5pro_build must be a valid! Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-0.0.0.b0-release.zip"
@@ -895,6 +896,10 @@ resource "aws_instance" "red5pro_kafka" {
   }
   tags = merge({ "Name" = "${var.name}-kafka-standalone", }, var.tags, )
 
+
+  lifecycle {
+    ignore_changes = [ami]
+  }
 }
 
 resource "null_resource" "red5pro_kafka" {
@@ -964,6 +969,10 @@ resource "aws_instance" "red5pro_rabbitmq" {
     volume_size = var.rabbitmq_volume_size
   }
   tags = merge({ "Name" = "${var.name}-rabbitmq-${count.index + 1}", }, var.tags, )
+
+  lifecycle {
+    ignore_changes = [ami]
+  }
 }
 
 resource "null_resource" "red5pro_rabbitmq" {
@@ -1221,6 +1230,7 @@ resource "aws_instance" "red5pro_sm" {
   tags = merge({ "Name" = local.autoscale ? "${var.name}-stream-manager-image" : "${var.name}-stream-manager", }, var.tags, )
 
   lifecycle {
+    ignore_changes = [ami]
     precondition {
       condition     = var.stream_manager_public_hostname != ""
       error_message = "ERROR! Value in variable stream_manager_public_hostname must be a valid FQDN! Example: sm.example.com"
@@ -1503,6 +1513,7 @@ resource "aws_instance" "red5pro_node" {
   tags = merge({ "Name" = "${var.name}-node-image" }, var.tags, )
 
   lifecycle {
+    ignore_changes = [ami]
     precondition {
       condition     = fileexists(var.path_to_red5pro_build) == true
       error_message = "ERROR! Value in variable path_to_red5pro_build must be a valid! Example: /home/ubuntu/terraform-aws-red5pro/red5pro-server-0.0.0.b0-release.zip"
