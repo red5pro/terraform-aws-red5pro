@@ -736,7 +736,7 @@ resource "aws_instance" "red5pro_standalone" {
       "sudo -E /home/ubuntu/red5pro-installer/r5p_config_efs.sh",
       "export BREW_MIXER_ENABLE='${var.standalone_red5pro_brew_mixer_enable}'",
       "[ $BREW_MIXER_ENABLE = true ] && echo 'Start Brew Mixer configuration...' && cd /usr/local/red5pro/extras/brewmixer/ && sudo bash ./node-mixer-standalone-deploy.sh",
-      "sudo systemctl daemon-reload && sudo systemctl restart red5pro",
+      "sudo systemctl daemon-reload && sudo systemctl enable red5pro && sudo systemctl restart red5pro",
       "sudo mkdir -p /usr/local/red5pro/certs",
       "echo '${try(file(var.https_ssl_certificate_cert_path), "")}' | sudo tee -a /usr/local/red5pro/certs/fullchain.pem >/dev/null",
       "echo '${try(file(var.https_ssl_certificate_key_path), "")}' | sudo tee -a /usr/local/red5pro/certs/privkey.pem >/dev/null",

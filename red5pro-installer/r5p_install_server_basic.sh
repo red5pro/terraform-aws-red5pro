@@ -266,7 +266,6 @@ install_red5pro_service(){
     cp "$RED5_HOME/red5pro.service" /lib/systemd/system/red5pro.service
         
     systemctl daemon-reload
-    systemctl enable red5pro.service
 }
 
 install_ffmpeg() {
